@@ -1,0 +1,16 @@
+user-1 private-1
+user-2 private-1
+user-2 read-only-1
+user-3 read-only-1
+# #
+user-3 read-annotate-1
+# #
+user-5 read-annotate-1 test_images_metadata/metamorph/MM_NDSTACK/TEST6.nd
+user-6 private-1
+user-6 read-only-1
+# #
+user-6 read-annotate-1
+user-7 private-1
+user-8 read-only-1
+# user-9 read-only-1 MIAS IS BROKEN
+user-12 private-1

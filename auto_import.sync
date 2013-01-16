@@ -1,0 +1,1 @@
+rsync -av --files-from=auto_import.inc jmoore@cvs:/ome/data_repo .

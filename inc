@@ -1,0 +1,13 @@
+test_images_metadata/fv1000/1h.oib
+test_images_metadata/leica-lif/Rosier.lif
+test_images_metadata/zeiss-zvi/6ch-Z-stack_deconvolved.zvi
+test_images_good/nifti/eNlf-02-05-08-rats25-28_v1_rat_25_conf_94.hdr
+test_images_good/nifti/eNlf-02-05-08-rats25-28_v1_rat_25_conf_94.img
+test_images_good/ubm/SG2.PR3
+from_skyking/gatan/jay/biosamplefullframe.dm3
+from_skyking/flex/achim/003003000.flex
+test_images_good/zeiss-lsm/2chZT.lsm
+test_images_good/dv/IAGFP-Noc01_R3D.dv
+96-well-sample-dataset
+test_images_metadata/metamorph/MM_NDSTACK/
+ROI-samples/zeiss-zvi/f1-measurements.ome.tiff
