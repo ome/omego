@@ -1,0 +1,1 @@
+rsync -av --files-from=inc pwalczysko@necromancer.openmicroscopy.org.uk:/ome/data_repo .
