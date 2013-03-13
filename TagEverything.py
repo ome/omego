@@ -149,13 +149,13 @@ for exp in allUsers:
                                     addRect(roi, x=x, y=x, theZ=1, label=str("Added by %s" % exp.getOmeName()))
                                 updateService.saveObject(roi, userConn.SERVICE_OPTS)
                         # --- ADD DATASETS to Projects ---
-                    if dtype == "Project" and d.canLink():
-                        print " ** DATASET added to Project..."
-                        dataset = omero.model.DatasetI()
-                        dataset.name = rstring(str("%s-%s" % (exp.getOmeName(), g.getName())))
-                        link = omero.model.ProjectDatasetLinkI()
-                        link.parent = d._obj
-                        link.child = dataset
-                        updateService.saveObject(link, userConn.SERVICE_OPTS)
+                    # if dtype == "Project" and d.canLink():
+                    #     print " ** DATASET added to Project..."
+                    #     dataset = omero.model.DatasetI()
+                    #     dataset.name = rstring(str("%s-%s_TEST" % (exp.getOmeName(), g.getName())))
+                    #     link = omero.model.ProjectDatasetLinkI()
+                    #     link.parent = d._obj
+                    #     link.child = dataset
+                    #     updateService.saveObject(link, userConn.SERVICE_OPTS)
     # Clean-up conn for each user
     userConn.c.closeSession()
