@@ -8,7 +8,10 @@ from omero.model import DatasetI, ProjectI, TagAnnotationI
 
 # Only these people will be logged in to do Tagging, Comments etc 
 # We will still create Tags for ALL users so they're available for others to use.
-USER_NAMES = ["user-10", "user-11", "user-12"]
+
+USER_NAMES = ["user-1", "user-2", "user-3", "user-4", "user-5", "user-6"]
+USER_NAMES = ["user-7", "user-8", "user-9", "user-10", "user-11", "user-12"]
+
 
 
 conn = BlitzGateway('root', 'omero', host='localhost')
