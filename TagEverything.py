@@ -122,7 +122,7 @@ for exp in allUsers:
                                 # Check if this user has already added Tag
                                 #if (len( list(userConn.getAnnotationLinks(dtype, parent_ids=[d.getId()], ann_ids=[t.getId()], params=p)) )==0):
                                 try:
-                                    d.linkAnnotation(t)
+                                    d.linkAnnotation(t, sameOwner=False)
                                     print " ** TAG added: %s **" % t.getTextValue()
                                 except:
                                     print "  ********* ERROR adding Tag! ***********"
@@ -134,7 +134,9 @@ for exp in allUsers:
                         # --- ADD COMMENTS ---
                         cTxt = str("Comment Added by %s" % exp.getOmeName())
                         print " ** COMMENT added to %s **" % dtype
-                        omero.gateway.CommentAnnotationWrapper.createAndLink(d, ns=None, val=cTxt)
+                        comment = omero.gateway.CommentAnnotationWrapper()
+                        comment.setValue(cTxt)
+                        d.linkAnnotation(comment, sameOwner=False)
                         # --- ADD ROIS ---
                         if dtype == "Image":
                             for r in range(ROI_COUNT):
