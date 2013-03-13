@@ -1,35 +1,35 @@
 #!/usr/bin/env python
- 
-import sys
- 
+
 import omero
 import omero.cli
 from omero.gateway import BlitzGateway
 from omero.rtypes import wrap, rlong, rdouble, rint, rstring
 from omero.model import DatasetI, ProjectI, TagAnnotationI
- 
- 
+
+# Only these people will be logged in to do Tagging, Comments etc 
+# We will still create Tags for ALL users so they're available for others to use.
+USER_NAMES = ["user-1"]
+
+
 conn = BlitzGateway('root', 'omero', host='localhost')
 conn.connect()
- 
+
 conn.SERVICE_OPTS.setOmeroGroup(-1)
- 
- 
+
+
 # ---- CONFIGURATION ----
 TAG_COUNT = 1       # Number of tags each user should use (link)
 TAG_TARGETS = ['Project', 'Dataset', 'Image', "Screen"]
 ROI_COUNT = 3
- 
+
 allUsers = []
 for exp in conn.getObjects("Experimenter"):
     n = exp.getName()
     if n not in ["root", "guest"]:
         print n
         allUsers.append(exp)
- 
-userIds = [exp.getId() for exp in allUsers]
- 
- 
+
+
 def addRect(roi, x=10, y=10, w=100, h=50, theZ=0, theT=0, label=None):
     """ create and save a rectangle shape, add it to roi """
     rect = omero.model.RectI()
@@ -45,7 +45,8 @@ def addRect(roi, x=10, y=10, w=100, h=50, theZ=0, theT=0, label=None):
         rect.textValue = wrap(label)
     rect.setRoi(roi)
     roi.addShape(rect)
- 
+
+
 # First, we want to make sure that every user has a tag(s) in every group
 print "\n---- CREATING TAGS ----\n"
 for exp in allUsers:
@@ -71,12 +72,15 @@ for exp in allUsers:
         # for t in tags:
         #     print "    TAG", t.getId(), t.getTextValue()
     userConn.c.closeSession()
- 
- 
+
+
+
 print "\n---- DOING ANNOTATING... ----\n"
 # We want to Tag loads of stuff with OUR tags and Others' tags
 for exp in allUsers:
     username = exp.getOmeName()
+    if username not in USER_NAMES:
+        continue
     print "\n\n------------ USER:", exp.getId(), username, "------------"
     userConn = BlitzGateway(username, "ome")
     userConn.connect()
@@ -86,22 +90,22 @@ for exp in allUsers:
             continue
         print "\n -- GROUP:", g.getName(), "(%s adding annotations)" % username
         userConn.SERVICE_OPTS.setOmeroGroup(g.getId())
- 
+
         # Get list of users in group:
         groupUsers = list( userConn.containedExperimenters(g.id) )
- 
+
         p = omero.sys.Parameters()
         p.theFilter = omero.sys.Filter()
         p.theFilter.limit = wrap(TAG_COUNT)
         # p.theFilter.ownerId = rlong(exp.getId())
- 
+
         # Get Tags for ALL users in the group.
         tags = list( userConn.getObjects("TagAnnotation") )
         print " - Using TAGS:"
         for t in tags:
             print '   ', t.getTextValue()
- 
- 
+
+
         # data from each user (including ME)
         for user in groupUsers:
             print "--- ANNOTATING data for USER: %s ---" % user.getOmeName()
