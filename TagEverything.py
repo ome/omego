@@ -8,7 +8,7 @@ from omero.model import DatasetI, ProjectI, TagAnnotationI
 
 # Only these people will be logged in to do Tagging, Comments etc 
 # We will still create Tags for ALL users so they're available for others to use.
-USER_NAMES = ["user-1"]
+USER_NAMES = ["user-10", "user-11", "user-12"]
 
 
 conn = BlitzGateway('root', 'omero', host='localhost')
@@ -96,7 +96,7 @@ for exp in allUsers:
 
         p = omero.sys.Parameters()
         p.theFilter = omero.sys.Filter()
-        p.theFilter.limit = wrap(TAG_COUNT)
+        # p.theFilter.limit = wrap(TAG_COUNT)
         # p.theFilter.ownerId = rlong(exp.getId())
 
         # Get Tags for ALL users in the group.
