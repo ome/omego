@@ -28,7 +28,7 @@ def create_containers(cli, dataset, project=None):
     Returns Dataset ID.
     """
     sessionId = cli._event_context.sessionUuid
-    conn = BlitzGateway()
+    conn = BlitzGateway(host='localhost')
     conn.connect(sUuid = sessionId)
     params = omero.sys.Parameters()
     params.theFilter = omero.sys.Filter()
