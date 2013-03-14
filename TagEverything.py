@@ -9,7 +9,7 @@ from omero.model import DatasetI, ProjectI, TagAnnotationI
 # Only these people will be logged in to do Tagging, Comments etc 
 # We will still create Tags for ALL users so they're available for others to use.
 
-USER_NAMES = ["user-12"]
+USER_NAMES = ["user-10", "user-11", "user-12"]
 # USER_NAMES = ["user-7", "user-8", "user-9", "user-10", "user-11", "user-12"]
 
 
@@ -22,7 +22,7 @@ conn.SERVICE_OPTS.setOmeroGroup(-1)
 
 # ---- CONFIGURATION ----
 TAG_COUNT = 1       # Number of tags each user should use (link)
-TAG_TARGETS = ["Screen", "Plate"]
+TAG_TARGETS = ['Project', 'Dataset', 'Image', "Screen", "Plate"]
 ROI_COUNT = 3
 
 allUsers = []
