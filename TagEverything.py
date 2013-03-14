@@ -111,7 +111,11 @@ for exp in allUsers:
             print "--- ANNOTATING data for USER: %s ---" % user.getOmeName()
             p.theFilter.ownerId = rlong(user.id)
             for dtype in TAG_TARGETS:
-                dataObjs = list( userConn.getObjects(dtype, params=p))   # Projects, Datasets etc.
+                if dtype == "Plate":   # Workaround for Bug: #10519
+                    plates = list( userConn.getObjects(dtype) )
+                    dataObjs = [plate for plate in plates if plate.details.owner.id.val == user.id]
+                else:
+                    dataObjs = list( userConn.getObjects(dtype, params=p))   # Projects, Datasets etc.
                 print " --> DATA: ", dataObjs
                 for d in dataObjs:
                     print "  -", dtype, d.getId(), d.name, d.details.owner.id.val, "canAnnotate()", d.canAnnotate(), "canLink()", d.canLink()
