@@ -1,0 +1,20 @@
+# User group
+user-1 private-1
+user-7 private-1
+#
+user-2 private-1
+user-2 read-only-1
+user-8 private-1
+user-8 read-only-1
+#
+user-3 read-only-1
+user-3 read-annotate-1
+user-9 read-only-1
+user-9 read-annotate-1
+#
+user-4 read-only-1
+user-4 read-write-1
+user-10 read-only-1
+user-10 read-write-1
+
+
