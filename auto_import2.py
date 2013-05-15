@@ -9,12 +9,12 @@ from omero.gateway import BlitzGateway
 from omero.rtypes import wrap
 from omero.model import DatasetI, ProjectI
 
-f = open("auto_import.users", "r")
+f = open("auto_import2.users", "r")
 users = f.read()
 f.close()
 users = [x.strip().split(" ") for x in users.split("\n") if x.strip()]
 
-f = open("auto_import.inc", "r")
+f = open("auto_import2.inc", "r")
 files = f.read()
 f.close()
 files = [x.strip() for x in files.split("\n") if x.strip()]
