@@ -31,15 +31,15 @@ group add adm-read-annotate-1 --perms 'rwra--'
 group add adm-read-write-1 --perms 'rwrw--'
 
 # Create admin group users
-user add user-13 user-13 user-13 adm-private-1 -P ome
-user add user-14 user-14 user-14 adm-private-1 adm-read-only-1 -P ome
-user add user-15 user-15 user-15 adm-read-only-1 adm-read-annotate-1 -P ome
-user add user-16 user-16 user-16 adm-read-only-1 adm-read-write-1 -P ome
-user add user-17 user-17 user-17 adm-read-annotate-1 adm-read-write-1 -P ome
-user add -a user-18 user-18 user-18 adm-private-1 adm-read-only-1 adm-read-annotate-1 adm-read-write-1 -P ome
+user add adm-user-1 adm-user-1 adm-user-1 adm-private-1 -P ome
+user add adm-user-2 adm-user-2 adm-user-2 adm-private-1 adm-read-only-1 -P ome
+user add adm-user-3 adm-user-3 adm-user-3 adm-read-only-1 adm-read-annotate-1 -P ome
+user add adm-user-4 adm-user-4 adm-user-4 adm-read-only-1 adm-read-write-1 -P ome
+user add adm-user-5 adm-user-5 adm-user-5 adm-read-annotate-1 adm-read-write-1 -P ome
+user add -a adm-user-6 adm-user-6 adm-user-6 adm-private-1 adm-read-only-1 adm-read-annotate-1 adm-read-write-1 -P ome
 
 # Set admin group owners
-group adduser --name private-1 user-13 --as-owner
-group adduser --name read-only-1 user-15 --as-owner
-group adduser --name read-annotate-1 user-17 --as-owner
-group adduser --name read-write-1 user-16 --as-owner
+group adduser --name adm-private-1 adm-user-1 --as-owner
+group adduser --name adm-read-only-1 adm-user-3 --as-owner
+group adduser --name adm-read-annotate-1 adm-user-5 --as-owner
+group adduser --name adm-read-write-1 adm-user-4 --as-owner
