@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-# local system only #sys.path.insert(0, "/home/omero/OMERO-CURRENT/lib/python")
+sys.path.insert(0, "/home/omero/OMERO-CURRENT/lib/python")
 
 import omero
 import omero.cli
