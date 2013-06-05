@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import getopt
 import sys
 import omero
 import omero.cli
@@ -179,34 +180,34 @@ class AutoImporter:
             if dataset != self.orphans:
                 targetId = self.create_screen(cli, dataset)
                 import_args.extend(["-r", str(targetId)])
-                print "Importing plate(s) into Screen:", dataset
+                output = "Importing plate(s) into Screen:" + dataset
             else:
-                print "Importing plate(s) as an orphan"
+                output = "Importing plate(s) as an orphan"
         else:
             if project == self.no_projs:
                 targetId = self.create_containers(cli, None, dataset)
                 import_args.extend(["-d", str(targetId)])
-                print "Importing image(s) into Dataset:", dataset
+                output = "Importing image(s) into Dataset:" + dataset
             elif project != self.orphans and dataset != self.orphans:
                 targetId = self.create_containers(cli, project, dataset)
                 import_args.extend(["-d", str(targetId)])
-                print "Importing image(s) into Project/Dataset:", project+"/"+dataset
+                output = "Importing image(s) into Project/Dataset:" + project+"/"+dataset
             else:
-                print "Importing image(s) as orphan(s)"
+                output = "Importing image(s) as orphan(s)"
 
         if filename is not None:
+            print output,
             try:
                 import_args.append(filename)
-                print "...using import args", import_args
+                print " ...using import args", import_args
                 cli.invoke(import_args, strict=True)
             except:
                 print "Import failed!"
         else:
-            print "...no import, just container creation."
+            print "No import, just container creation."
 
-    def auto_import(self, base):
-        basePath = path.path(base)
-        for filepath in basePath.walkdirs():
+    def auto_import(self, paths, no_imports):
+        for filepath in paths:
             parts = filepath.strip().split(os.sep)
 
             # Skip commented out users - only relevant for file
@@ -230,14 +231,17 @@ class AutoImporter:
             if not self.group_exists(user, group):
                 continue
 
-            print "-"*100
-            print "Getting import canditates..."
-            # If separate imports or further logging are required could use import_candidates.
-            import_candidates = as_dictionary([filepath])
-            if len(import_candidates) == 0:
-                print "Nothing to import, path contains no import candidates."
-                # Create P/D or S anyway.
+            if no_imports:
                 filepath = None
+            else:
+                print "-"*100
+                print "Getting import canditates..."
+                # If separate imports or further logging are required could use import_candidates.
+                import_candidates = as_dictionary([filepath])
+                if len(import_candidates) == 0:
+                    print "Nothing to import, path contains no import candidates."
+                    # Create P/D or S anyway.
+                    filepath = None
 
             print "-"*100
 
@@ -247,11 +251,37 @@ class AutoImporter:
         print "="*100
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        sys.exit('Usage: %s directory' % sys.argv[0])
 
-    if not os.path.exists(sys.argv[1]):
-        sys.exit('ERROR: Directory %s was not found!' % sys.argv[1])
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "fn", ["file", "no_import"])
+    except getopt.GetoptError as err:
+        sys.exit(str(err))
+
+    source = args[0]
+    use_file = False
+    no_imports = False
+    for o, a in opts:
+        if o in ("-f", "--file"):
+            use_file = True
+        elif o in ("-n", "--no_import"):
+            no_imports = True
+
+    if use_file:
+        if not os.path.exists(source):
+            sys.exit('ERROR: File %s was not found!' % source)
+        no_imports = True
+        try:
+            f = open(source, "r")
+            filepaths = f.read()
+            f.close()
+            paths = [source+os.sep+p for p in filepaths.split("\n")]
+        except:
+            sys.exit('ERROR: Problem accessing file %s' % source)
+    else:
+        if not os.path.exists(source):
+            sys.exit('ERROR: Directory %s was not found!' % source)
+        basePath = path.path(source)
+        paths = basePath.walkdirs()
 
     ai = AutoImporter()
-    ai.auto_import(sys.argv[1])
+    ai.auto_import(paths, no_imports)
