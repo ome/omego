@@ -89,10 +89,6 @@ except ImportError:
 class Artifacts(object):
 
     def __init__(self, build = BUILD):
-        self.server = None
-        self.win = list()
-        self.mac = list()
-        self.linux = list()
 
         url = urllib.urlopen(build+"api/xml")
         hudson_xml = url.read()
@@ -104,40 +100,24 @@ class Artifacts(object):
         base_url = build+"artifact/"
         if len(artifacts) <= 0:
             raise AttributeError("No artifacts, please check build on Hudson.")
+
+        patterns = self.get_artifacts_list()
         for artifact in artifacts:
             filename = artifact.find("fileName").text
 
-            if filename.startswith("OMERO.server"):
-                self.server = base_url + artifact.find("relativePath").text
-            elif filename.startswith('OMERO.source'):
-                self.source = base_url + artifact.find("relativePath").text
-            elif filename.startswith('OMERO.imagej') or\
-                 filename.startswith('OMERO.java') or\
-                 filename.startswith('OMERO.matlab') or\
-                 filename.startswith('OMERO.py') or\
-                 filename.startswith('OMERO.server'):
-                pass
-            elif filename.startswith("OMERO.importer"):
-                regex = re.compile(r'.*win.zip')
-                regex2 = re.compile(r'.*mac.zip')
-                if not regex.match(filename) and not regex2.match(filename):
-                    self.linux.append(base_url + artifact.find("relativePath").text)
-            else:
-                regex = re.compile(r'.*win.zip')
-                if regex.match(filename):
-                    self.win.append(base_url + artifact.find("relativePath").text)
+            for key, value in patterns.iteritems():
+                if re.compile(value).match(filename):
+                    setattr(self, key, base_url + artifact.find("relativePath").text)
+                    pass
 
-                regex = re.compile(r'.*OSX.zip')
-                if regex.match(filename):
-                    self.mac.append(base_url + artifact.find("relativePath").text)
-
-                regex = re.compile(r'.*mac.zip')
-                if regex.match(filename):
-                    self.mac.append(base_url + artifact.find("relativePath").text)
-
-                regex = re.compile(r'.*b\d+.zip')
-                if regex.match(filename):
-                    self.linux.append(base_url + artifact.find("relativePath").text)
+    def get_artifacts_list(self):
+      return {
+        'server':r'OMERO\.server.*\.zip',
+        'source':r'OMERO\.source.*\.zip',
+        'win':r'OMERO\.clients.*\.win\.zip',
+        'linux':r'OMERO\.clients.*\.linux\.zip',
+        'mac':r'OMERO\.clients.*\.mac\.zip',
+        }
 
     def download_server(self):
 
@@ -188,8 +168,8 @@ class Email(object):
                     "\n - MAC: \n %s\n " \
                     "\n - Linux: \n %s\n " \
                     "\n - Webclient available on %s. \n \n " %\
-                    (server, "\n".join(artifacts.win), "\n".join(artifacts.mac), "\
-                    \n".join(artifacts.linux), weburl)
+                    (server, artifacts.win, artifacts.mac, artifacts.linux,
+                    weburl)
         BODY = "\r\n".join((
                 "From: %s" % FROM,
                 "To: %s" % TO,
