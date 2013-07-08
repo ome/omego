@@ -119,20 +119,21 @@ class Artifacts(object):
         'mac':r'OMERO\.clients.*\.mac\.zip',
         }
 
-    def download_server(self):
+    def download(self, component):
 
-        if self.server == None:
-            raise Exception("No server found")
+        if not hasattr(self, component) or getattr(self, component) is None:
+            raise Exception("No %s found" % component)
 
-        filename = os.path.basename(self.server)
+        componenturl = getattr(self, component)
+        filename = os.path.basename(componenturl)
         unzipped = filename.replace(".zip", "")
 
         if os.path.exists(unzipped):
             return unzipped
 
         if not os.path.exists(filename):
-            print "Downloading %s..." % self.server
-            urllib.urlretrieve(self.server, filename)
+            print "Downloading %s..." % componenturl
+            urllib.urlretrieve(componenturl, filename)
 
         if "false" == SKIPUNZIP.lower():
             if UNZIPARGS:
@@ -357,7 +358,7 @@ if __name__ == "__main__":
     artifacts = Artifacts()
 
     if len(sys.argv) != 2:
-        dir = artifacts.download_server()
+        dir = artifacts.download('server')
         # Exits if directory does not exist!
     else:
         dir = sys.argv[1]
