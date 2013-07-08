@@ -59,7 +59,7 @@ DEFINE("WEB", """'[["localhost", 4064, "%s"], ["gretzky.openmicroscopy.org.uk", 
 DEFINE("SUBJECT", "OMERO - %s was upgraded" % NAME)
 DEFINE("BRANCH", "OMERO-trunk")
 DEFINE("BUILD", "http://hudson.openmicroscopy.org.uk/job/%s/lastSuccessfulBuild/" % BRANCH)
-DEFINE("SENDER", "Chris Allan <callan@lifesci.dundee.ac.uk>")
+DEFINE("SENDER", "sysadmin@openmicroscopy.org")
 DEFINE("RECIPIENTS", ["ome-nitpick@lists.openmicroscopy.org.uk"])
 DEFINE("SERVER", "%s (%s)" % (NAME, ADDRESS))
 DEFINE("SMTP_SERVER", "smtp.dundee.ac.uk")
