@@ -49,6 +49,7 @@ else:
     DEFINE("UNZIPARGS", "")
 
 # new_server.py
+DEFINE("PREFIX", "")
 DEFINE("MEM", "Xmx1024M")
 DEFINE("SYM", "OMERO-CURRENT")
 DEFINE("CFG", os.path.join(os.path.expanduser("~"), "config.xml"))
@@ -186,13 +187,14 @@ class Email(object):
 
 class Upgrade(object):
 
-    def __init__(self, dir, cfg = CFG, mem = MEM, sym = SYM, skipweb = SKIPWEB):
+    def __init__(self, dir, cfg = CFG, mem = MEM, sym = SYM, skipweb = SKIPWEB, prefix = PREFIX):
 
         print "%s: Upgrading %s (%s)..." % (self.__class__.__name__, dir, sym)
 
         self.mem = mem
         self.sym = sym
         self.skipweb = skipweb
+        self.prefix = prefix
 
         _ = self.set_cli(self.sym)
 
@@ -238,6 +240,9 @@ class Upgrade(object):
 
         for line in fileinput.input([self.dir / "etc" / "grid" / "templates.xml"], inplace=True):
             print line.replace("Xmx512M", self.mem).replace("Xmx256M", self.mem),
+
+        if self.prefix != "":
+            _(["admin","ports","--prefix",self.prefix])
 
     def start(self, _):
         _("admin start")
