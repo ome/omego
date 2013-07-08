@@ -228,7 +228,7 @@ class Upgrade(object):
         if not self.cfg.exists():
             print "%s not found. Copying old files" % self.cfg
             from path import path
-            old_grid = path("OMERO-CURRENT") / "etc" / "grid"
+            old_grid = path(self.sym) / "etc" / "grid"
             old_cfg = old_grid / "config.xml"
             old_cfg.copy(target)
         else:
@@ -338,12 +338,12 @@ class WindowsUpgrade(Upgrade):
     def rmdir(self):
         """
         """
-        self.call("rmdir OMERO-CURRENT".split())
+        self.call("rmdir %s".split() % self.sym)
 
     def mklink(self, dir):
         """
         """
-        self.call("mklink /d OMERO-CURRENT".split() + ["%s" % dir])
+        self.call("mklink /d %s".split() % self.sym + ["%s" % dir])
 
     def iisreset(self):
         """
