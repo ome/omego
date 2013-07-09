@@ -67,6 +67,13 @@ DEFINE("WEBURL", "http://%s/omero/webclient/" % ADDRESS)
 
 DEFINE("SKIPWEB", "false")
 DEFINE("SKIPUNZIP", "false")
+
+
+IS_JENKINS_JOB = all([key in os.environ for key in ["JOB_NAME",
+    "BUILD_NUMBER", "BUILD_URL"]])
+if IS_JENKINS_JOB:
+    # Set BUILD_ID to DONT_KILL_ME to avoid server shutdown at job termination
+    os.environ["BUILD_ID"] = "DONT_KILL_ME"
 ###########################################################################
 
 import fileinput
