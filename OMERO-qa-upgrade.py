@@ -53,7 +53,7 @@ DEFINE("PREFIX", "")
 DEFINE("MEM", "Xmx1024M")
 DEFINE("SYM", "OMERO-CURRENT")
 DEFINE("CFG", os.path.join(os.path.expanduser("~"), "config.xml"))
-DEFINE("WEB", """'[["localhost", 4064, "%s"], ["gretzky.openmicroscopy.org.uk", 4064, "gretzky"], ["howe.openmicroscopy.org.uk", 4064, "howe"]]'""" % NAME)
+DEFINE("WEB", '[["localhost", 4064, "%s"], ["gretzky.openmicroscopy.org.uk", 4064, "gretzky"], ["howe.openmicroscopy.org.uk", 4064, "howe"]]' % NAME)
 
 # send_email.py
 DEFINE("SUBJECT", "OMERO - %s was upgraded" % NAME)
