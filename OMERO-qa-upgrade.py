@@ -48,12 +48,17 @@ else:
     DEFINE("UNZIP", "unzip")
     DEFINE("UNZIPARGS", "")
 
-# new_server.py
+# Ports
 DEFINE("PREFIX", "")
+DEFINE("REGISTRY" ,"%s4061" % PREFIX)
+DEFINE("TCP" ,"%s4063" % PREFIX)
+DEFINE("SSL" ,"%s4064" % PREFIX)
+
+# new_server.py
 DEFINE("MEM", "Xmx1024M")
 DEFINE("SYM", "OMERO-CURRENT")
 DEFINE("CFG", os.path.join(os.path.expanduser("~"), "config.xml"))
-DEFINE("WEB", '[["localhost", 4064, "%s"], ["gretzky.openmicroscopy.org.uk", 4064, "gretzky"], ["howe.openmicroscopy.org.uk", 4064, "howe"]]' % NAME)
+DEFINE("WEB", '[["localhost", %s, "%s"], ["gretzky.openmicroscopy.org.uk", 4064, "gretzky"], ["howe.openmicroscopy.org.uk", 4064, "howe"]]' % (SSL, NAME))
 
 # send_email.py
 DEFINE("SUBJECT", "OMERO - %s was upgraded" % NAME)
@@ -194,14 +199,16 @@ class Email(object):
 
 class Upgrade(object):
 
-    def __init__(self, dir, cfg = CFG, mem = MEM, sym = SYM, skipweb = SKIPWEB, prefix = PREFIX):
+    def __init__(self, dir, cfg = CFG, mem = MEM, sym = SYM, skipweb = SKIPWEB, registry = REGISTRY, tcp = TCP, ssl = SSL):
 
         print "%s: Upgrading %s (%s)..." % (self.__class__.__name__, dir, sym)
 
         self.mem = mem
         self.sym = sym
         self.skipweb = skipweb
-        self.prefix = prefix
+        self.registry = registry
+        self.tcp = tcp
+        self.ssl = ssl
 
         _ = self.set_cli(self.sym)
 
@@ -233,6 +240,7 @@ class Upgrade(object):
         target = self.dir / "etc" / "grid" / "config.xml"
         if target.exists():
             print "Target %s already exists. Skipping..." % target
+            self.configure_ports(_)
             return # Early exit!
 
         if not self.cfg.exists():
@@ -248,8 +256,12 @@ class Upgrade(object):
         for line in fileinput.input([self.dir / "etc" / "grid" / "templates.xml"], inplace=True):
             print line.replace("Xmx512M", self.mem).replace("Xmx256M", self.mem),
 
-        if self.prefix != "":
-            _(["admin","ports","--prefix",self.prefix])
+        self.configure_ports(_)
+
+    def configure_ports(self, _):
+        # Set registry, TCP and SSL ports
+        _(["admin", "ports", "--registry", self.registry, "--tcp",
+            self.tcp, "--ssl", self.ssl])
 
     def start(self, _):
         _("admin start")
