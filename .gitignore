@@ -4,3 +4,4 @@ auto_import.log*
 from_skyking/
 test_images_good/
 test_images_metadata/
+*.pyc

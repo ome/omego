@@ -48,17 +48,23 @@ else:
     DEFINE("UNZIP", "unzip")
     DEFINE("UNZIPARGS", "")
 
+# Ports
+DEFINE("PREFIX", "")
+DEFINE("REGISTRY" ,"%s4061" % PREFIX)
+DEFINE("TCP" ,"%s4063" % PREFIX)
+DEFINE("SSL" ,"%s4064" % PREFIX)
+
 # new_server.py
 DEFINE("MEM", "Xmx1024M")
 DEFINE("SYM", "OMERO-CURRENT")
 DEFINE("CFG", os.path.join(os.path.expanduser("~"), "config.xml"))
-DEFINE("WEB", """'[["localhost", 4064, "%s"], ["gretzky.openmicroscopy.org.uk", 4064, "gretzky"], ["howe.openmicroscopy.org.uk", 4064, "howe"]]'""" % NAME)
+DEFINE("WEB", '[["localhost", %s, "%s"], ["gretzky.openmicroscopy.org.uk", 4064, "gretzky"], ["howe.openmicroscopy.org.uk", 4064, "howe"]]' % (SSL, NAME))
 
 # send_email.py
 DEFINE("SUBJECT", "OMERO - %s was upgraded" % NAME)
 DEFINE("BRANCH", "OMERO-trunk")
 DEFINE("BUILD", "http://hudson.openmicroscopy.org.uk/job/%s/lastSuccessfulBuild/" % BRANCH)
-DEFINE("SENDER", "Chris Allan <callan@lifesci.dundee.ac.uk>")
+DEFINE("SENDER", "sysadmin@openmicroscopy.org")
 DEFINE("RECIPIENTS", ["ome-nitpick@lists.openmicroscopy.org.uk"])
 DEFINE("SERVER", "%s (%s)" % (NAME, ADDRESS))
 DEFINE("SMTP_SERVER", "smtp.dundee.ac.uk")
@@ -66,6 +72,13 @@ DEFINE("WEBURL", "http://%s/omero/webclient/" % ADDRESS)
 
 DEFINE("SKIPWEB", "false")
 DEFINE("SKIPUNZIP", "false")
+
+
+IS_JENKINS_JOB = all([key in os.environ for key in ["JOB_NAME",
+    "BUILD_NUMBER", "BUILD_URL"]])
+if IS_JENKINS_JOB:
+    # Set BUILD_ID to DONT_KILL_ME to avoid server shutdown at job termination
+    os.environ["BUILD_ID"] = "DONT_KILL_ME"
 ###########################################################################
 
 import fileinput
@@ -89,10 +102,6 @@ except ImportError:
 class Artifacts(object):
 
     def __init__(self, build = BUILD):
-        self.server = None
-        self.win = list()
-        self.mac = list()
-        self.linux = list()
 
         url = urllib.urlopen(build+"api/xml")
         hudson_xml = url.read()
@@ -104,55 +113,40 @@ class Artifacts(object):
         base_url = build+"artifact/"
         if len(artifacts) <= 0:
             raise AttributeError("No artifacts, please check build on Hudson.")
+
+        patterns = self.get_artifacts_list()
         for artifact in artifacts:
             filename = artifact.find("fileName").text
 
-            if filename.startswith("OMERO.server"):
-                self.server = base_url + artifact.find("relativePath").text
-            elif filename.startswith('OMERO.source'):
-                self.source = base_url + artifact.find("relativePath").text
-            elif filename.startswith('OMERO.imagej') or\
-                 filename.startswith('OMERO.java') or\
-                 filename.startswith('OMERO.matlab') or\
-                 filename.startswith('OMERO.py') or\
-                 filename.startswith('OMERO.server'):
-                pass
-            elif filename.startswith("OMERO.importer"):
-                regex = re.compile(r'.*win.zip')
-                regex2 = re.compile(r'.*mac.zip')
-                if not regex.match(filename) and not regex2.match(filename):
-                    self.linux.append(base_url + artifact.find("relativePath").text)
-            else:
-                regex = re.compile(r'.*win.zip')
-                if regex.match(filename):
-                    self.win.append(base_url + artifact.find("relativePath").text)
+            for key, value in patterns.iteritems():
+                if re.compile(value).match(filename):
+                    setattr(self, key, base_url + artifact.find("relativePath").text)
+                    pass
 
-                regex = re.compile(r'.*OSX.zip')
-                if regex.match(filename):
-                    self.mac.append(base_url + artifact.find("relativePath").text)
+    def get_artifacts_list(self):
+      return {
+        'server':r'OMERO\.server.*\.zip',
+        'source':r'OMERO\.source.*\.zip',
+        'win':r'OMERO\.clients.*\.win\.zip',
+        'linux':r'OMERO\.clients.*\.linux\.zip',
+        'mac':r'OMERO\.clients.*\.mac\.zip',
+        }
 
-                regex = re.compile(r'.*mac.zip')
-                if regex.match(filename):
-                    self.mac.append(base_url + artifact.find("relativePath").text)
+    def download(self, component):
 
-                regex = re.compile(r'.*b\d+.zip')
-                if regex.match(filename):
-                    self.linux.append(base_url + artifact.find("relativePath").text)
+        if not hasattr(self, component) or getattr(self, component) is None:
+            raise Exception("No %s found" % component)
 
-    def download_server(self):
-
-        if self.server == None:
-            raise Exception("No server found")
-
-        filename = os.path.basename(self.server)
+        componenturl = getattr(self, component)
+        filename = os.path.basename(componenturl)
         unzipped = filename.replace(".zip", "")
 
         if os.path.exists(unzipped):
             return unzipped
 
         if not os.path.exists(filename):
-            print "Downloading %s..." % self.server
-            urllib.urlretrieve(self.server, filename)
+            print "Downloading %s..." % componenturl
+            urllib.urlretrieve(componenturl, filename)
 
         if "false" == SKIPUNZIP.lower():
             if UNZIPARGS:
@@ -188,8 +182,8 @@ class Email(object):
                     "\n - MAC: \n %s\n " \
                     "\n - Linux: \n %s\n " \
                     "\n - Webclient available on %s. \n \n " %\
-                    (server, "\n".join(artifacts.win), "\n".join(artifacts.mac), "\
-                    \n".join(artifacts.linux), weburl)
+                    (server, artifacts.win, artifacts.mac, artifacts.linux,
+                    weburl)
         BODY = "\r\n".join((
                 "From: %s" % FROM,
                 "To: %s" % TO,
@@ -205,13 +199,16 @@ class Email(object):
 
 class Upgrade(object):
 
-    def __init__(self, dir, cfg = CFG, mem = MEM, sym = SYM, skipweb = SKIPWEB):
+    def __init__(self, dir, cfg = CFG, mem = MEM, sym = SYM, skipweb = SKIPWEB, registry = REGISTRY, tcp = TCP, ssl = SSL):
 
         print "%s: Upgrading %s (%s)..." % (self.__class__.__name__, dir, sym)
 
         self.mem = mem
         self.sym = sym
         self.skipweb = skipweb
+        self.registry = registry
+        self.tcp = tcp
+        self.ssl = ssl
 
         _ = self.set_cli(self.sym)
 
@@ -243,12 +240,13 @@ class Upgrade(object):
         target = self.dir / "etc" / "grid" / "config.xml"
         if target.exists():
             print "Target %s already exists. Skipping..." % target
+            self.configure_ports(_)
             return # Early exit!
 
         if not self.cfg.exists():
             print "%s not found. Copying old files" % self.cfg
             from path import path
-            old_grid = path("OMERO-CURRENT") / "etc" / "grid"
+            old_grid = path(self.sym) / "etc" / "grid"
             old_cfg = old_grid / "config.xml"
             old_cfg.copy(target)
         else:
@@ -257,6 +255,13 @@ class Upgrade(object):
 
         for line in fileinput.input([self.dir / "etc" / "grid" / "templates.xml"], inplace=True):
             print line.replace("Xmx512M", self.mem).replace("Xmx256M", self.mem),
+
+        self.configure_ports(_)
+
+    def configure_ports(self, _):
+        # Set registry, TCP and SSL ports
+        _(["admin", "ports", "--registry", self.registry, "--tcp",
+            self.tcp, "--ssl", self.ssl])
 
     def start(self, _):
         _("admin start")
@@ -313,12 +318,6 @@ class UnixUpgrade(Upgrade):
     def startweb(self, _):
         _("web start")
 
-    def confgure(self, _):
-        super(UnixUpgrade, self).configure(_)
-        var = self.dir / "var"
-        var.mkdir()
-        var.chmod(0755) # For Apache/Nginx
-
     def directories(self, _):
         try:
             os.unlink(self.sym)
@@ -358,12 +357,12 @@ class WindowsUpgrade(Upgrade):
     def rmdir(self):
         """
         """
-        self.call("rmdir OMERO-CURRENT".split())
+        self.call("rmdir %s".split() % self.sym)
 
     def mklink(self, dir):
         """
         """
-        self.call("mklink /d OMERO-CURRENT".split() + ["%s" % dir])
+        self.call("mklink /d %s".split() % self.sym + ["%s" % dir])
 
     def iisreset(self):
         """
@@ -377,7 +376,7 @@ if __name__ == "__main__":
     artifacts = Artifacts()
 
     if len(sys.argv) != 2:
-        dir = artifacts.download_server()
+        dir = artifacts.download('server')
         # Exits if directory does not exist!
     else:
         dir = sys.argv[1]
