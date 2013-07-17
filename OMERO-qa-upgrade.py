@@ -318,12 +318,6 @@ class UnixUpgrade(Upgrade):
     def startweb(self, _):
         _("web start")
 
-    def confgure(self, _):
-        super(UnixUpgrade, self).configure(_)
-        var = self.dir / "var"
-        var.mkdir()
-        var.chmod(0755) # For Apache/Nginx
-
     def directories(self, _):
         try:
             os.unlink(self.sym)
