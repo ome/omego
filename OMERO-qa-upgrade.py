@@ -3,6 +3,7 @@
 
 import os
 import platform
+import shutil
 import subprocess
 
 
@@ -72,6 +73,7 @@ DEFINE("WEBURL", "http://%s/omero/webclient/" % ADDRESS)
 
 DEFINE("SKIPWEB", "false")
 DEFINE("SKIPUNZIP", "false")
+DEFINE("SKIPDELETE", "false")
 
 
 IS_JENKINS_JOB = all([key in os.environ for key in ["JOB_NAME",
@@ -304,13 +306,6 @@ class Upgrade(object):
 
 
 class UnixUpgrade(Upgrade):
-    """
-    def rmtree(self, d):
-        def on_rmtree(self, func, name, exc):
-            print "rmtree error: %s('%s') => %s" % (func.__name__, name, exc[1])
-        d = path.path(d)
-        d.rmtree(onerror = on_rmtree)
-    """
 
     def stopweb(self, _):
         _("web stop")
@@ -319,6 +314,18 @@ class UnixUpgrade(Upgrade):
         _("web start")
 
     def directories(self, _):
+        if os.path.samefile(self.dir, self.sym):
+            print "Upgraded server was the same, not deleting"
+            return
+
+        if "false" == SKIPDELETE.lower():
+            target = os.readlink(self.sym)
+            try:
+                print "Deleting %s" % target
+                shutil.rmtree(target)
+            except:
+                print "Failed to delete %s" % target
+
         try:
             os.unlink(self.sym)
         except:
