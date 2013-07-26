@@ -333,6 +333,7 @@ class Upgrade(object):
     def get_environment(self, filename=None):
         env = os.environ.copy()
         if not filename:
+            print "Using original environment"
             return env
 
         try:
