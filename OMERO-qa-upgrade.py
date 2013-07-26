@@ -246,8 +246,9 @@ class Upgrade(object):
         _ = self.set_omero(self.dir, self.get_environment())
         self.configure(_)
         self.directories(_)
-        self.start(_)
+
         self.save_env_vars(savevarsfile, savevars.split())
+        self.start(_)
 
     def stop(self, _):
         try:
