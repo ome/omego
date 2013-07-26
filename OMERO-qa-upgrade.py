@@ -380,8 +380,12 @@ class UnixUpgrade(Upgrade):
             try:
                 print "Deleting %s" % target
                 shutil.rmtree(target)
+                targetzip = os.path.normpath(target) + '.zip'
+                if os.path.exists(targetzip):
+                    print "Deleting %s" % targetzip
+                    os.unlink(targetzip)
             except:
-                print "Failed to delete %s" % target
+                print "Failed to delete %s and/or %s" % (target, targetzip)
 
         try:
             os.unlink(self.sym)
