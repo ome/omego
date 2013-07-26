@@ -5,11 +5,29 @@ import os
 import platform
 import shutil
 import subprocess
+import sys
 
+
+kvargs = {}
+otherargs = []
+
+for arg in sys.argv[1:]:
+    try:
+        k, v = arg.split('=', 1)
+        kvargs[k] = v
+    except:
+        otherargs.append(arg)
 
 def DEFINE(key, value):
+    """
+    Define a global variable using a value provided at the command line,
+    as an environment variable or a default value
+    """
     m = globals()
-    m[key] = os.environ.get(key, value)
+    if key in kvargs:
+        m[key] = kvargs[key]
+    else:
+        m[key] = os.environ.get(key, value)
     print key, "=>", m[key]
 
 
@@ -417,14 +435,16 @@ class WindowsUpgrade(Upgrade):
 
 
 if __name__ == "__main__":
+    print kvargs
+    print otherargs
 
     artifacts = Artifacts()
 
-    if len(sys.argv) != 2:
+    if len(otherargs) != 1:
         dir = artifacts.download('server')
         # Exits if directory does not exist!
     else:
-        dir = sys.argv[1]
+        dir = otherargs[0]
 
     if platform.system() != "Windows":
         u = UnixUpgrade(dir)
