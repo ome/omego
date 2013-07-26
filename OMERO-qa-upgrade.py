@@ -441,9 +441,6 @@ class WindowsUpgrade(Upgrade):
 
 
 if __name__ == "__main__":
-    print kvargs
-    print otherargs
-
     artifacts = Artifacts()
 
     if len(otherargs) != 1:
