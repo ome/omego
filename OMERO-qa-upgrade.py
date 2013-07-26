@@ -94,7 +94,7 @@ DEFINE("SKIPUNZIP", "false")
 DEFINE("SKIPDELETE", "false")
 
 # Record the values of these environment variables in a file
-DEFINE("SAVEVARS", "ICE_HOME DYLD_LIBRARY_PATH LD_LIBRARY_PATH PYTHONPATH")
+DEFINE("SAVEVARS", "ICE_HOME PATH DYLD_LIBRARY_PATH LD_LIBRARY_PATH PYTHONPATH")
 DEFINE("SAVEVARSFILE", os.path.join(SYM, "omero.envvars"))
 
 
@@ -319,7 +319,7 @@ class Upgrade(object):
         """
         if isinstance(command, str):
             command = command.split()
-        command = [os.path.join(self.dir, 'bin', 'omero')] + command
+        command.insert(0, 'omero')
         print "Running: %s" % command
         r = subprocess.call(command, env=self.env)
         if r != 0:
@@ -349,11 +349,11 @@ class Upgrade(object):
     def save_env_vars(self, filename, varnames):
         try:
             with open(filename, "w") as f:
+                print "Saving environment:"
                 for var in varnames:
-                    value = os.environ.get(var)
-                    if value:
-                        f.write("%s=%s\n" % (var, value))
-                        print "Saved: %s=%s" % (var, value)
+                    value = os.environ.get(var, "")
+                    f.write("%s=%s\n" % (var, value))
+                    print "  %s=%s" % (var, value)
         except Exception as e:
             print "Failed to save environment variables to %s: %s" % (
                 filename, e)
