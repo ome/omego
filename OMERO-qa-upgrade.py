@@ -287,7 +287,7 @@ class Upgrade(object):
 
     def configure_ports(self, _):
         # Set registry, TCP and SSL ports
-        _(["admin", "ports", "--registry", self.registry, "--tcp",
+        _(["admin", "ports", "--skipcheck", "--registry", self.registry, "--tcp",
             self.tcp, "--ssl", self.ssl])
 
     def start(self, _):
