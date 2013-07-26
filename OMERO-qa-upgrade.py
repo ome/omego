@@ -218,11 +218,8 @@ class Upgrade(object):
         self.tcp = tcp
         self.ssl = ssl
 
-
-        # Need lib/python set above
-        import path
-        self.cfg = path.path(cfg)
-        self.dir = path.path(dir)
+        self.cfg = cfg
+        self.dir = dir
         self.env = None
 
         _ = self.set_omero(self.sym, self.get_environment(savevarsfile))
@@ -248,23 +245,23 @@ class Upgrade(object):
 
     def configure(self, _):
 
-        target = self.dir / "etc" / "grid" / "config.xml"
-        if target.exists():
+        target = os.path.join(self.dir, "etc", "grid", "config.xml")
+        if os.path.exists(target):
             print "Target %s already exists. Skipping..." % target
             self.configure_ports(_)
             return # Early exit!
 
-        if not self.cfg.exists():
+        if not os.path.exists(self.cfg):
             print "%s not found. Copying old files" % self.cfg
-            from path import path
-            old_grid = path(self.sym) / "etc" / "grid"
-            old_cfg = old_grid / "config.xml"
-            old_cfg.copy(target)
+            old_grid = os.path.join(self.sym, "etc", "grid")
+            old_cfg = os.path.join(old_grid, "config.xml")
+            shutil.copy(old_cfg, target)
         else:
-            self.cfg.copy(target)
+            shutil.copy(self.cfg, target)
             _(["config", "set", "omero.web.server_list", WEB]) # TODO: Unneeded if copy old?
 
-        for line in fileinput.input([self.dir / "etc" / "grid" / "templates.xml"], inplace=True):
+        templ = os.path.join(self.dir, "etc", "grid", "templates.xml")
+        for line in fileinput.input(templ, inplace=True):
             print line.replace("Xmx512M", self.mem).replace("Xmx256M", self.mem),
 
         self.configure_ports(_)
