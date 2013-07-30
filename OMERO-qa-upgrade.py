@@ -91,7 +91,8 @@ DEFINE("WEBURL", "http://%s/omero/webclient/" % ADDRESS)
 
 DEFINE("SKIPWEB", "false")
 DEFINE("SKIPUNZIP", "false")
-DEFINE("SKIPDELETE", "false")
+DEFINE("SKIPDELETE", "true")
+DEFINE("SKIPDELETEZIP", "false")
 
 # Record the values of these environment variables in a file
 DEFINE("SAVEVARS", "ICE_HOME PATH DYLD_LIBRARY_PATH LD_LIBRARY_PATH PYTHONPATH")
@@ -376,17 +377,23 @@ class UnixUpgrade(Upgrade):
             print "Upgraded server was the same, not deleting"
             return
 
+        target = os.readlink(self.sym)
+
         if "false" == SKIPDELETE.lower():
-            target = os.readlink(self.sym)
             try:
                 print "Deleting %s" % target
                 shutil.rmtree(target)
+            except:
+                print "Failed to delete %s" % target
+
+        if "false" == SKIPDELETEZIP.lower():
+            try:
                 targetzip = os.path.normpath(target) + '.zip'
                 if os.path.exists(targetzip):
                     print "Deleting %s" % targetzip
                     os.unlink(targetzip)
             except:
-                print "Failed to delete %s and/or %s" % (target, targetzip)
+                print "Failed to delete %s" % targetzip
 
         try:
             os.unlink(self.sym)
