@@ -239,7 +239,7 @@ class Upgrade(object):
 
         # setup_script_environment() may cause the creation of a default
         # config.xml, so we must check for it here
-        reconfigure = self.has_config(dir)
+        noconfigure = self.has_config(dir)
 
         cli = self.setup_script_environment(dir)
         bin = self.setup_previous_omero_env(sym, savevarsfile)
@@ -251,7 +251,7 @@ class Upgrade(object):
 
         self.stop(bin)
 
-        self.configure(cli, reconfigure)
+        self.configure(cli, noconfigure)
         self.directories(cli)
 
         self.save_env_vars(savevarsfile, savevars.split())
@@ -273,10 +273,10 @@ class Upgrade(object):
         config = os.path.join(dir, "etc", "grid", "config.xml")
         return os.path.exists(config)
 
-    def configure(self, _, reconfigure):
+    def configure(self, _, noconfigure):
 
         target = self.dir / "etc" / "grid" / "config.xml"
-        if reconfigure:
+        if noconfigure:
             print "Target %s already exists. Skipping..." % target
             self.configure_ports(_)
             return # Early exit!
