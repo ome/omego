@@ -338,29 +338,38 @@ class Upgrade(object):
             return env
 
         try:
-            with open(filename, "r") as f:
-                print "Loading old environment:"
-                for line in f:
-                    key, value = line.strip().split("=", 1)
-                    env[key] = value
-                    print "  %s=%s" % (key, value)
+            f = open(filename, "r")
+            print "Loading old environment:"
+            for line in f:
+                key, value = line.strip().split("=", 1)
+                env[key] = value
+                print "  %s=%s" % (key, value)
         except Exception as e:
-            print "Failed to load environment variables from %s: %s" % (
-                filename, e)
+            print "WARNING: Failed to load environment variables from %s: %s" \
+                % (filename, e)
+
+        try:
+            f.close()
+        except:
+            pass
         return env
 
     def save_env_vars(self, filename, varnames):
         try:
-            with open(filename, "w") as f:
-                print "Saving environment:"
-                for var in varnames:
-                    value = os.environ.get(var, "")
-                    f.write("%s=%s\n" % (var, value))
-                    print "  %s=%s" % (var, value)
+            f = open(filename, "w")
+            print "Saving environment:"
+            for var in varnames:
+                value = os.environ.get(var, "")
+                f.write("%s=%s\n" % (var, value))
+                print "  %s=%s" % (var, value)
         except Exception as e:
             print "Failed to save environment variables to %s: %s" % (
                 filename, e)
 
+        try:
+            f.close()
+        except:
+            pass
 
 
 
