@@ -237,6 +237,10 @@ class Upgrade(object):
         self.tcp = tcp
         self.ssl = ssl
 
+        # setup_script_environment() may cause the creation of a default
+        # config.xml, so we must check for it here
+        reconfigure = self.has_config(dir)
+
         cli = self.setup_script_environment(dir)
         bin = self.setup_previous_omero_env(sym, savevarsfile)
 
@@ -247,7 +251,7 @@ class Upgrade(object):
 
         self.stop(bin)
 
-        self.configure(cli)
+        self.configure(cli, reconfigure)
         self.directories(cli)
 
         self.save_env_vars(savevarsfile, savevars.split())
@@ -265,10 +269,14 @@ class Upgrade(object):
             print "Stopping web..."
             self.stopweb(_)
 
-    def configure(self, _):
+    def has_config(self, dir):
+        config = os.path.join(dir, "etc", "grid", "config.xml")
+        return os.path.exists(config)
+
+    def configure(self, _, reconfigure):
 
         target = self.dir / "etc" / "grid" / "config.xml"
-        if target.exists():
+        if reconfigure:
             print "Target %s already exists. Skipping..." % target
             self.configure_ports(_)
             return # Early exit!
