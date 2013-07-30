@@ -237,22 +237,21 @@ class Upgrade(object):
         self.tcp = tcp
         self.ssl = ssl
 
+        cli = self.setup_script_environment(dir)
+        bin = self.setup_previous_omero_env(sym, savevarsfile)
 
         # Need lib/python set above
         import path
         self.cfg = path.path(cfg)
         self.dir = path.path(dir)
-        self.env = None
 
-        _ = self.set_omero(self.sym, self.get_environment(savevarsfile))
-        self.stop(_)
+        self.stop(bin)
 
-        _ = self.set_omero(self.dir, self.get_environment())
-        self.configure(_)
-        self.directories(_)
+        self.configure(cli)
+        self.directories(cli)
 
         self.save_env_vars(savevarsfile, savevars.split())
-        self.start(_)
+        self.start(cli)
 
     def stop(self, _):
         try:
@@ -300,13 +299,31 @@ class Upgrade(object):
             print "Starting web ..."
             self.startweb(_)
 
-    def set_omero(self, dir, env):
+    def setup_script_environment(self, dir):
+        dir = os.path.abspath(dir)
+        lib = os.path.join(dir, "lib", "python")
+        if not os.path.exists(lib):
+            raise Exception("%s does not exist!" % lib)
+        sys.path.insert(0, lib)
+
+        import omero
+        import omero.cli
+
+        print "Using %s..." % omero.cli.__file__
+
+        self.cli = omero.cli.CLI()
+        self.cli.loadplugins()
+        return self._
+
+    def setup_previous_omero_env(self, dir, savevarsfile):
+        env = self.get_environment(savevarsfile)
+
         def addpath(varname, p):
             if not os.path.exists(p):
                 raise Exception("%s does not exist!" % p)
             current = env.get(varname)
             if current:
-                env[varname] = p + ':' + current
+                env[varname] = p + os.pathsep + current
             else:
                 env[varname] = p
 
@@ -315,18 +332,32 @@ class Upgrade(object):
         addpath("PYTHONPATH", lib)
         bin = os.path.join(dir, "bin")
         addpath("PATH", bin)
-        self.env = env
-        return self._
+        self.old_env = env
+        return self.bin
 
     def _(self, command):
         """
-        Runs the omero command-line client with an array of arguments
+        Runs a command as if from the command-line
+        without the need for using popen or subprocess
+        """
+        if isinstance(command, str):
+            command = command.split()
+        else:
+            for idx, val in enumerate(command):
+                command[idx] = val
+        print "Invoking CLI [current environment]: %s" % " ".join(command)
+        self.cli.invoke(command, strict=True)
+
+    def bin(self, command):
+        """
+        Runs the omero command-line client with an array of arguments using the
+        old environment
         """
         if isinstance(command, str):
             command = command.split()
         command.insert(0, 'omero')
-        print "Running: %s" % command
-        r = subprocess.call(command, env=self.env)
+        print "Running [old environment]: %s" % " ".join(command)
+        r = subprocess.call(command, env=self.old_env)
         if r != 0:
             raise Exception("Non-zero return code: %d" % r)
 
