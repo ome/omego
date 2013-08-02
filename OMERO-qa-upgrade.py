@@ -429,22 +429,16 @@ class UnixUpgrade(Upgrade):
             return
 
         target = os.readlink(self.sym)
+        # normpath in case there's a trailing /
+        targetzip = os.path.normpath(target) + '.zip'
 
-        if "false" == SKIPDELETE.lower():
-            try:
-                print "Deleting %s" % target
-                shutil.rmtree(target)
-            except:
-                print "Failed to delete %s" % target
-
-        if "false" == SKIPDELETEZIP.lower():
-            try:
-                targetzip = os.path.normpath(target) + '.zip'
-                if os.path.exists(targetzip):
-                    print "Deleting %s" % targetzip
-                    os.unlink(targetzip)
-            except:
-                print "Failed to delete %s" % targetzip
+        for delpath, flag in ((target, SKIPDELETE), (targetzip, SKIPDELETEZIP)):
+            if "false" == flag.lower():
+                try:
+                    print "Deleting %s" % delpath
+                    shutil.rmtree(delpath)
+                except:
+                    print "Failed to delete %s" % delpath
 
         try:
             os.unlink(self.sym)
