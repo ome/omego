@@ -1,0 +1,4 @@
+nose
+mox
+coverage
+pep8
