@@ -8,11 +8,23 @@ The omego command provides utilities for installing and managing OME application
 Getting Started
 ---------------
 
-The only requirement is `cliff`_.
+The only requirement for Python 2.7 and above is `cliff`_.
 
 ::
 
     $ pip install cliff
+
+For Python 2.6, you will also need to install `argparse`_
+
+::
+
+    $ pip install argparse
+
+With that, it's possible to execute scc:
+
+::
+
+    $ python scc.py
 
 With that, it's possible to execute omego:
 
