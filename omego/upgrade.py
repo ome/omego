@@ -4,12 +4,18 @@
 import os
 import platform
 import subprocess
+import logging
+
+from framework import Command
+
+
+log = logging.getLogger("omego.upgrade")
 
 
 def DEFINE(key, value):
     m = globals()
     m[key] = os.environ.get(key, value)
-    print key, "=>", m[key]
+    log.debug("%s => %s", key, m[key])
 
 
 ###########################################################################
@@ -372,8 +378,11 @@ class WindowsUpgrade(Upgrade):
 
 
 class UpgradeCommand(Command):
+    """
+    Upgrade an existing OMERO installation.
+    """
 
-    name = "upgrade"
+    NAME = "upgrade"
 
     def __init__(self, sub_parsers):
         super(UpgradeCommand, self).__init__(sub_parsers)
@@ -381,9 +390,6 @@ class UpgradeCommand(Command):
     def __call__(self, args):
         super(UpgradeCommand, self).__call__(args)
         self.configure_logging(args)
-
-        print "yes"
-        return
 
         artifacts = Artifacts()
 
