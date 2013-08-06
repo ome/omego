@@ -371,22 +371,34 @@ class WindowsUpgrade(Upgrade):
         self.call(["iisreset"])
 
 
-if __name__ == "__main__":
+class UpgradeCommand(Command):
 
-    artifacts = Artifacts()
+    name = "upgrade"
 
-    if len(sys.argv) != 2:
-        dir = artifacts.download('server')
-        # Exits if directory does not exist!
-    else:
-        dir = sys.argv[1]
+    def __init__(self, sub_parsers):
+        super(UpgradeCommand, self).__init__(sub_parsers)
 
-    if platform.system() != "Windows":
-        u = UnixUpgrade(dir)
-    else:
-        u = WindowsUpgrade(dir)
+    def __call__(self, args):
+        super(UpgradeCommand, self).__call__(args)
+        self.configure_logging(args)
 
-    if "false" == SKIPEMAIL.lower():
-        e = Email(artifacts)
-    else:
-        print "Skipping email..."
+        print "yes"
+        return
+
+        artifacts = Artifacts()
+
+        if len(sys.argv) != 2:
+            dir = artifacts.download('server')
+            # Exits if directory does not exist!
+        else:
+            dir = sys.argv[1]
+
+        if platform.system() != "Windows":
+            u = UnixUpgrade(dir)
+        else:
+            u = WindowsUpgrade(dir)
+
+        if "false" == SKIPEMAIL.lower():
+            e = Email(artifacts)
+        else:
+            print "Skipping email..."

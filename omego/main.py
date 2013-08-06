@@ -25,35 +25,9 @@ which are present in the globals() of this module
 will be presented to the user.
 """
 
-from omego.framework import Command
+from framework import main, Stop
 
-from omego.framework import Stop
-
-from omego.upgrade import *
-
-
-def main(args=None):
-    """
-    Reusable entry point. Arguments are parsed
-    via the argparse-subcommands configured via
-    each Command class found in globals(). Stop
-    exceptions are propagated to callers.
-    """
-
-    if not argparse_loaded:
-        raise Stop(2, "Missing required module")
-    if args is None: args = sys.argv[1:]
-
-    omego_parser, sub_parsers = parsers()
-
-    for name, MyCommand in sorted(globals().items()):
-        if not isinstance(MyCommand, type): continue
-        if not issubclass(MyCommand, Command): continue
-        if MyCommand.NAME == "abstract": continue
-        MyCommand(sub_parsers)
-
-    ns = omego_parser.parse_args(args)
-    ns.func(ns)
+from upgrade import UpgradeCommand
 
 
 def entry_point():
@@ -62,7 +36,7 @@ def entry_point():
     if Stop is raised, calls sys.exit()
     """
     try:
-        main()
+        main(items=globals().items())
     except Stop, stop:
         print stop,
         sys.exit(stop.rc)

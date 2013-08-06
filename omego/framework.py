@@ -150,3 +150,32 @@ def parsers():
     sub_parsers = omego_parser.add_subparsers(title="Subcommands")
 
     return omego_parser, sub_parsers
+
+
+def main(args=None, items=None):
+    """
+    Reusable entry point. Arguments are parsed
+    via the argparse-subcommands configured via
+    each Command class found in globals(). Stop
+    exceptions are propagated to callers.
+    """
+
+    if not argparse_loaded:
+        raise Stop(2, "Missing required module")
+
+    if args is None: args = sys.argv[1:]
+
+    if items is None: items = globals().items()
+
+    omego_parser, sub_parsers = parsers()
+
+    for name, MyCommand in sorted(items):
+        if not isinstance(MyCommand, type): continue
+        if not issubclass(MyCommand, Command): continue
+        if MyCommand.NAME == "abstract": continue
+        MyCommand(sub_parsers)
+
+    ns = omego_parser.parse_args(args)
+    ns.func(ns)
+
+
