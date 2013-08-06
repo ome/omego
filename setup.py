@@ -34,7 +34,6 @@ LONG_DESCRIPTION = open("README.rst", "r").read()
 CLASSIFIERS = ["Development Status :: 4 - Beta",
                "Environment :: Console",
                "Intended Audience :: Developers",
-               "Intended Audience :: End Users",
                "Intended Audience :: System Administrators",
                "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
                "Operating System :: OS Independent",
