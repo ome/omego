@@ -8,13 +8,7 @@ The omego command provides utilities for installing and managing OME application
 Getting Started
 ---------------
 
-The only requirement for Python 2.7 and above is `cliff`_.
-
-::
-
-    $ pip install cliff
-
-For Python 2.6, you will also need to install `argparse`_
+For Python 2.6, you will need to install `argparse`_
 
 ::
 
@@ -52,6 +46,5 @@ Copyright
 
 2013, The Open Microscopy Environment
 
-.. _cliff: https://cliff.readthedocs.org
 .. |Build Status| image:: https://travis-ci.org/ome/omego.png
    :target: http://travis-ci.org/ome/omego
