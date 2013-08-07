@@ -14,11 +14,11 @@ For Python 2.6, you will need to install `argparse`_
 
     $ pip install argparse
 
-With that, it's possible to execute scc:
+With that, it's possible to execute omego:
 
 ::
 
-    $ python scc.py
+    $ python omego/main.py
 
 With that, it's possible to execute omego:
 
@@ -33,7 +33,7 @@ To install the latest release of omego use pip install:
 
 ::
 
-    $ pip install scc
+    $ pip install omego
     $ omego
 
 License

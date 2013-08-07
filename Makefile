@@ -1,4 +1,7 @@
+release:
+	python setup.py register sdist bdist upload --sign
+
 clean:
 	rm -rf build dist omego.egg-info *.pyc
 
-.PHONY: clean
+.PHONY: register clean

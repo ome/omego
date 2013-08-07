@@ -55,7 +55,7 @@ setup(name='omego',
       # More complex variables
       packages = ['omego'],
       install_requires = [],
-      entry_points = { 'console_scripts': ['scc = omego.main:entry_point'] },
+      entry_points = { 'console_scripts': ['omego = omego.main:entry_point'] },
       data_files = [('.', ['LICENSE.txt', 'RELEASE-VERSION', 'README.rst',
                            'requirements.txt'])],
       zip_safe = False,  # For reading RELEASE-VERSION
