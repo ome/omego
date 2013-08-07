@@ -23,7 +23,7 @@
 OME-GO Management library
 """
 
-from setuptools import setup
+from distutils.core import setup
 from omego.version import get_git_version
 
 
@@ -54,7 +54,7 @@ setup(name='omego',
 
       # More complex variables
       packages = ['omego'],
-      install_requires = [],
+      install_requires = [],  # Skipping argparse for Python 2.7 and greater.
       entry_points = { 'console_scripts': ['omego = omego.main:entry_point'] },
       data_files = [('.', ['LICENSE.txt', 'RELEASE-VERSION', 'README.rst',
                            'requirements.txt'])],

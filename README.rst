@@ -1,5 +1,5 @@
-OME, Go! (omego)
-================
+OME, Go (omego)
+===============
 
 The omego command provides utilities for installing and managing OME applications.
 
