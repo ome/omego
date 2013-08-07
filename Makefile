@@ -1,4 +1,5 @@
 release:
+	git describe --exact
 	python setup.py register sdist bdist upload --sign
 
 clean:
