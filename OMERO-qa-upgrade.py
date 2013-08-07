@@ -3,12 +3,31 @@
 
 import os
 import platform
+import shutil
 import subprocess
+import sys
 
+
+kvargs = {}
+otherargs = []
+
+for arg in sys.argv[1:]:
+    try:
+        k, v = arg.split('=', 1)
+        kvargs[k] = v
+    except:
+        otherargs.append(arg)
 
 def DEFINE(key, value):
+    """
+    Define a global variable using a value provided at the command line,
+    as an environment variable or a default value
+    """
     m = globals()
-    m[key] = os.environ.get(key, value)
+    if key in kvargs:
+        m[key] = kvargs[key]
+    else:
+        m[key] = os.environ.get(key, value)
     print key, "=>", m[key]
 
 
@@ -72,6 +91,12 @@ DEFINE("WEBURL", "http://%s/omero/webclient/" % ADDRESS)
 
 DEFINE("SKIPWEB", "false")
 DEFINE("SKIPUNZIP", "false")
+DEFINE("SKIPDELETE", "true")
+DEFINE("SKIPDELETEZIP", "false")
+
+# Record the values of these environment variables in a file
+DEFINE("SAVEVARS", "ICE_HOME PATH DYLD_LIBRARY_PATH LD_LIBRARY_PATH PYTHONPATH")
+DEFINE("SAVEVARSFILE", os.path.join(SYM, "omero.envvars"))
 
 
 IS_JENKINS_JOB = all([key in os.environ for key in ["JOB_NAME",
@@ -199,7 +224,9 @@ class Email(object):
 
 class Upgrade(object):
 
-    def __init__(self, dir, cfg = CFG, mem = MEM, sym = SYM, skipweb = SKIPWEB, registry = REGISTRY, tcp = TCP, ssl = SSL):
+    def __init__(self, dir, cfg=CFG, mem=MEM, sym=SYM, skipweb=SKIPWEB,
+                 registry=REGISTRY, tcp=TCP, ssl=SSL,
+                 savevars=SAVEVARS, savevarsfile=SAVEVARSFILE):
 
         print "%s: Upgrading %s (%s)..." % (self.__class__.__name__, dir, sym)
 
@@ -210,35 +237,46 @@ class Upgrade(object):
         self.tcp = tcp
         self.ssl = ssl
 
-        _ = self.set_cli(self.sym)
+        # setup_script_environment() may cause the creation of a default
+        # config.xml, so we must check for it here
+        noconfigure = self.has_config(dir)
+
+        cli = self.setup_script_environment(dir)
+        bin = self.setup_previous_omero_env(sym, savevarsfile)
 
         # Need lib/python set above
         import path
         self.cfg = path.path(cfg)
         self.dir = path.path(dir)
 
-        self.stop(_)
-        self.configure(_)
-        self.directories(_)
-        self.start(_)
+        self.stop(bin)
+
+        self.configure(cli, noconfigure)
+        self.directories(cli)
+
+        self.save_env_vars(savevarsfile, savevars.split())
+        self.start(cli)
 
     def stop(self, _):
-        import omero
         try:
             print "Stopping server..."
             _("admin status --nodeonly")
             _("admin stop")
-        except omero.cli.NonZeroReturnCode:
-            pass
+        except Exception as e:
+            print e
 
         if self.web():
             print "Stopping web..."
             self.stopweb(_)
 
-    def configure(self, _):
+    def has_config(self, dir):
+        config = os.path.join(dir, "etc", "grid", "config.xml")
+        return os.path.exists(config)
+
+    def configure(self, _, noconfigure):
 
         target = self.dir / "etc" / "grid" / "config.xml"
-        if target.exists():
+        if noconfigure:
             print "Target %s already exists. Skipping..." % target
             self.configure_ports(_)
             return # Early exit!
@@ -260,7 +298,7 @@ class Upgrade(object):
 
     def configure_ports(self, _):
         # Set registry, TCP and SSL ports
-        _(["admin", "ports", "--registry", self.registry, "--tcp",
+        _(["admin", "ports", "--skipcheck", "--registry", self.registry, "--tcp",
             self.tcp, "--ssl", self.ssl])
 
     def start(self, _):
@@ -269,8 +307,7 @@ class Upgrade(object):
             print "Starting web ..."
             self.startweb(_)
 
-    def set_cli(self, dir):
-
+    def setup_script_environment(self, dir):
         dir = os.path.abspath(dir)
         lib = os.path.join(dir, "lib", "python")
         if not os.path.exists(lib):
@@ -284,8 +321,27 @@ class Upgrade(object):
 
         self.cli = omero.cli.CLI()
         self.cli.loadplugins()
-
         return self._
+
+    def setup_previous_omero_env(self, dir, savevarsfile):
+        env = self.get_environment(savevarsfile)
+
+        def addpath(varname, p):
+            if not os.path.exists(p):
+                raise Exception("%s does not exist!" % p)
+            current = env.get(varname)
+            if current:
+                env[varname] = p + os.pathsep + current
+            else:
+                env[varname] = p
+
+        dir = os.path.abspath(dir)
+        lib = os.path.join(dir, "lib", "python")
+        addpath("PYTHONPATH", lib)
+        bin = os.path.join(dir, "bin")
+        addpath("PATH", bin)
+        self.old_env = env
+        return self.bin
 
     def _(self, command):
         """
@@ -297,20 +353,69 @@ class Upgrade(object):
         else:
             for idx, val in enumerate(command):
                 command[idx] = val
+        print "Invoking CLI [current environment]: %s" % " ".join(command)
         self.cli.invoke(command, strict=True)
+
+    def bin(self, command):
+        """
+        Runs the omero command-line client with an array of arguments using the
+        old environment
+        """
+        if isinstance(command, str):
+            command = command.split()
+        command.insert(0, 'omero')
+        print "Running [old environment]: %s" % " ".join(command)
+        r = subprocess.call(command, env=self.old_env)
+        if r != 0:
+            raise Exception("Non-zero return code: %d" % r)
 
     def web(self):
         return "false" == self.skipweb.lower()
 
 
+    def get_environment(self, filename=None):
+        env = os.environ.copy()
+        if not filename:
+            print "Using original environment"
+            return env
+
+        try:
+            f = open(filename, "r")
+            print "Loading old environment:"
+            for line in f:
+                key, value = line.strip().split("=", 1)
+                env[key] = value
+                print "  %s=%s" % (key, value)
+        except Exception as e:
+            print "WARNING: Failed to load environment variables from %s: %s" \
+                % (filename, e)
+
+        try:
+            f.close()
+        except:
+            pass
+        return env
+
+    def save_env_vars(self, filename, varnames):
+        try:
+            f = open(filename, "w")
+            print "Saving environment:"
+            for var in varnames:
+                value = os.environ.get(var, "")
+                f.write("%s=%s\n" % (var, value))
+                print "  %s=%s" % (var, value)
+        except Exception as e:
+            print "Failed to save environment variables to %s: %s" % (
+                filename, e)
+
+        try:
+            f.close()
+        except:
+            pass
+
+
+
 class UnixUpgrade(Upgrade):
-    """
-    def rmtree(self, d):
-        def on_rmtree(self, func, name, exc):
-            print "rmtree error: %s('%s') => %s" % (func.__name__, name, exc[1])
-        d = path.path(d)
-        d.rmtree(onerror = on_rmtree)
-    """
 
     def stopweb(self, _):
         _("web stop")
@@ -319,6 +424,22 @@ class UnixUpgrade(Upgrade):
         _("web start")
 
     def directories(self, _):
+        if os.path.samefile(self.dir, self.sym):
+            print "Upgraded server was the same, not deleting"
+            return
+
+        target = os.readlink(self.sym)
+        # normpath in case there's a trailing /
+        targetzip = os.path.normpath(target) + '.zip'
+
+        for delpath, flag in ((target, SKIPDELETE), (targetzip, SKIPDELETEZIP)):
+            if "false" == flag.lower():
+                try:
+                    print "Deleting %s" % delpath
+                    shutil.rmtree(delpath)
+                except:
+                    print "Failed to delete %s" % delpath
+
         try:
             os.unlink(self.sym)
         except:
@@ -372,14 +493,13 @@ class WindowsUpgrade(Upgrade):
 
 
 if __name__ == "__main__":
-
     artifacts = Artifacts()
 
-    if len(sys.argv) != 2:
+    if len(otherargs) != 1:
         dir = artifacts.download('server')
         # Exits if directory does not exist!
     else:
-        dir = sys.argv[1]
+        dir = otherargs[0]
 
     if platform.system() != "Windows":
         u = UnixUpgrade(dir)
