@@ -2,96 +2,20 @@
 # -*- coding: utf-8 -*-
 
 import os
-import platform
+import shutil
 import subprocess
 import logging
-
-from framework import Command
-
-
-log = logging.getLogger("omego.upgrade")
-
-
-def DEFINE(key, value):
-    m = globals()
-    m[key] = os.environ.get(key, value)
-    log.debug("%s => %s", key, m[key])
-
-
-###########################################################################
-# DETECTION
-###########################################################################
-WINDOWS = platform.system() == "Windows"
-p = subprocess.Popen(["hostname"], stdout=subprocess.PIPE)
-h = p.communicate()[0].strip()
-DEFINE("HOSTNAME", h)
-
-
-###########################################################################
-# CONFIGURATION
-###########################################################################
-
-# Most likely to be changed
-DEFINE("NAME", HOSTNAME)
-if HOSTNAME == "gretzky":
-    DEFINE("ADDRESS", "gretzky.openmicroscopy.org.uk")
-elif HOSTNAME == "howe":
-    DEFINE("ADDRESS", "howe.openmicroscopy.org.uk")
-elif HOSTNAME == "ome-dev-svr":
-    DEFINE("NAME", "win-2k8")
-    DEFINE("ADDRESS", "bp.openmicroscopy.org.uk")
-else:
-    DEFINE("ADDRESS", HOSTNAME)
-    # Don't send emails if we're not on a known host.
-    DEFINE("SKIPEMAIL", "true")
-if "SKIPEMAIL" not in globals():
-    DEFINE("SKIPEMAIL", "false")
-
-if WINDOWS:
-    DEFINE("UNZIP", "C:\\Program Files (x86)\\7-Zip\\7z.exe")
-    DEFINE("UNZIPARGS", "x")
-else:
-    DEFINE("UNZIP", "unzip")
-    DEFINE("UNZIPARGS", "")
-
-# Ports
-DEFINE("PREFIX", "")
-DEFINE("REGISTRY" ,"%s4061" % PREFIX)
-DEFINE("TCP" ,"%s4063" % PREFIX)
-DEFINE("SSL" ,"%s4064" % PREFIX)
-
-# new_server.py
-DEFINE("MEM", "Xmx1024M")
-DEFINE("SYM", "OMERO-CURRENT")
-DEFINE("CFG", os.path.join(os.path.expanduser("~"), "config.xml"))
-DEFINE("WEB", '[["localhost", %s, "%s"], ["gretzky.openmicroscopy.org.uk", 4064, "gretzky"], ["howe.openmicroscopy.org.uk", 4064, "howe"]]' % (SSL, NAME))
-
-# send_email.py
-DEFINE("SUBJECT", "OMERO - %s was upgraded" % NAME)
-DEFINE("BRANCH", "OMERO-trunk")
-DEFINE("BUILD", "http://hudson.openmicroscopy.org.uk/job/%s/lastSuccessfulBuild/" % BRANCH)
-DEFINE("SENDER", "sysadmin@openmicroscopy.org")
-DEFINE("RECIPIENTS", ["ome-nitpick@lists.openmicroscopy.org.uk"])
-DEFINE("SERVER", "%s (%s)" % (NAME, ADDRESS))
-DEFINE("SMTP_SERVER", "smtp.dundee.ac.uk")
-DEFINE("WEBURL", "http://%s/omero/webclient/" % ADDRESS)
-
-DEFINE("SKIPWEB", "false")
-DEFINE("SKIPUNZIP", "false")
-
-
-IS_JENKINS_JOB = all([key in os.environ for key in ["JOB_NAME",
-    "BUILD_NUMBER", "BUILD_URL"]])
-if IS_JENKINS_JOB:
-    # Set BUILD_ID to DONT_KILL_ME to avoid server shutdown at job termination
-    os.environ["BUILD_ID"] = "DONT_KILL_ME"
-###########################################################################
 
 import fileinput
 import smtplib
 import sys
 import urllib
 import re
+
+from framework import Command
+from env import EnvDefault
+from env import WINDOWS
+from env import HOSTNAME
 
 from email.MIMEMultipart import MIMEMultipart
 from email.MIMEText import MIMEText
@@ -105,9 +29,12 @@ except ImportError:
     from elementtree.ElementTree import XML, ElementTree, tostring
 
 
+log = logging.getLogger("omego.upgrade")
+
+
 class Artifacts(object):
 
-    def __init__(self, build = BUILD):
+    def __init__(self, build):
 
         url = urllib.urlopen(build+"api/xml")
         hudson_xml = url.read()
@@ -172,10 +99,10 @@ class Artifacts(object):
 
 class Email(object):
 
-    def __init__(self, artifacts, server = SERVER,\
-            sender = SENDER, recipients = RECIPIENTS,\
-            weburl = WEBURL, subject = SUBJECT,\
-            smtp_server = SMTP_SERVER):
+    def __init__(self, artifacts, server,\
+            sender, recipients,\
+            weburl, subject,\
+            smtp_server):
 
         TO = ",".join(recipients)
         FROM = sender
@@ -200,12 +127,14 @@ class Email(object):
         server.sendmail(FROM, recipients, BODY)
         server.quit()
 
-        print "Mail was sent to: %s" % ",".join(recipients)
+        print "Mail was sent to: %s" % recipients
 
 
 class Upgrade(object):
 
-    def __init__(self, dir, cfg = CFG, mem = MEM, sym = SYM, skipweb = SKIPWEB, registry = REGISTRY, tcp = TCP, ssl = SSL):
+    def __init__(self, dir, cfg, mem, sym, skipweb,
+                 registry, tcp, ssl,
+                 savevars, savevarsfile):
 
         print "%s: Upgrading %s (%s)..." % (self.__class__.__name__, dir, sym)
 
@@ -216,35 +145,46 @@ class Upgrade(object):
         self.tcp = tcp
         self.ssl = ssl
 
-        _ = self.set_cli(self.sym)
+        # setup_script_environment() may cause the creation of a default
+        # config.xml, so we must check for it here
+        noconfigure = self.has_config(dir)
+
+        cli = self.setup_script_environment(dir)
+        bin = self.setup_previous_omero_env(sym, savevarsfile)
 
         # Need lib/python set above
         import path
         self.cfg = path.path(cfg)
         self.dir = path.path(dir)
 
-        self.stop(_)
-        self.configure(_)
-        self.directories(_)
-        self.start(_)
+        self.stop(bin)
+
+        self.configure(cli, noconfigure)
+        self.directories(cli)
+
+        self.save_env_vars(savevarsfile, savevars.split())
+        self.start(cli)
 
     def stop(self, _):
-        import omero
         try:
             print "Stopping server..."
             _("admin status --nodeonly")
             _("admin stop")
-        except omero.cli.NonZeroReturnCode:
-            pass
+        except Exception as e:
+            print e
 
         if self.web():
             print "Stopping web..."
             self.stopweb(_)
 
-    def configure(self, _):
+    def has_config(self, dir):
+        config = os.path.join(dir, "etc", "grid", "config.xml")
+        return os.path.exists(config)
+
+    def configure(self, _, noconfigure):
 
         target = self.dir / "etc" / "grid" / "config.xml"
-        if target.exists():
+        if noconfigure:
             print "Target %s already exists. Skipping..." % target
             self.configure_ports(_)
             return # Early exit!
@@ -266,7 +206,7 @@ class Upgrade(object):
 
     def configure_ports(self, _):
         # Set registry, TCP and SSL ports
-        _(["admin", "ports", "--registry", self.registry, "--tcp",
+        _(["admin", "ports", "--skipcheck", "--registry", self.registry, "--tcp",
             self.tcp, "--ssl", self.ssl])
 
     def start(self, _):
@@ -275,8 +215,7 @@ class Upgrade(object):
             print "Starting web ..."
             self.startweb(_)
 
-    def set_cli(self, dir):
-
+    def setup_script_environment(self, dir):
         dir = os.path.abspath(dir)
         lib = os.path.join(dir, "lib", "python")
         if not os.path.exists(lib):
@@ -290,8 +229,27 @@ class Upgrade(object):
 
         self.cli = omero.cli.CLI()
         self.cli.loadplugins()
-
         return self._
+
+    def setup_previous_omero_env(self, dir, savevarsfile):
+        env = self.get_environment(savevarsfile)
+
+        def addpath(varname, p):
+            if not os.path.exists(p):
+                raise Exception("%s does not exist!" % p)
+            current = env.get(varname)
+            if current:
+                env[varname] = p + os.pathsep + current
+            else:
+                env[varname] = p
+
+        dir = os.path.abspath(dir)
+        lib = os.path.join(dir, "lib", "python")
+        addpath("PYTHONPATH", lib)
+        bin = os.path.join(dir, "bin")
+        addpath("PATH", bin)
+        self.old_env = env
+        return self.bin
 
     def _(self, command):
         """
@@ -303,20 +261,69 @@ class Upgrade(object):
         else:
             for idx, val in enumerate(command):
                 command[idx] = val
+        print "Invoking CLI [current environment]: %s" % " ".join(command)
         self.cli.invoke(command, strict=True)
+
+    def bin(self, command):
+        """
+        Runs the omero command-line client with an array of arguments using the
+        old environment
+        """
+        if isinstance(command, str):
+            command = command.split()
+        command.insert(0, 'omero')
+        print "Running [old environment]: %s" % " ".join(command)
+        r = subprocess.call(command, env=self.old_env)
+        if r != 0:
+            raise Exception("Non-zero return code: %d" % r)
 
     def web(self):
         return "false" == self.skipweb.lower()
 
 
+    def get_environment(self, filename=None):
+        env = os.environ.copy()
+        if not filename:
+            print "Using original environment"
+            return env
+
+        try:
+            f = open(filename, "r")
+            print "Loading old environment:"
+            for line in f:
+                key, value = line.strip().split("=", 1)
+                env[key] = value
+                print "  %s=%s" % (key, value)
+        except Exception as e:
+            print "WARNING: Failed to load environment variables from %s: %s" \
+                % (filename, e)
+
+        try:
+            f.close()
+        except:
+            pass
+        return env
+
+    def save_env_vars(self, filename, varnames):
+        try:
+            f = open(filename, "w")
+            print "Saving environment:"
+            for var in varnames:
+                value = os.environ.get(var, "")
+                f.write("%s=%s\n" % (var, value))
+                print "  %s=%s" % (var, value)
+        except Exception as e:
+            print "Failed to save environment variables to %s: %s" % (
+                filename, e)
+
+        try:
+            f.close()
+        except:
+            pass
+
+
+
 class UnixUpgrade(Upgrade):
-    """
-    def rmtree(self, d):
-        def on_rmtree(self, func, name, exc):
-            print "rmtree error: %s('%s') => %s" % (func.__name__, name, exc[1])
-        d = path.path(d)
-        d.rmtree(onerror = on_rmtree)
-    """
 
     def stopweb(self, _):
         _("web stop")
@@ -325,6 +332,22 @@ class UnixUpgrade(Upgrade):
         _("web start")
 
     def directories(self, _):
+        if os.path.samefile(self.dir, self.sym):
+            print "Upgraded server was the same, not deleting"
+            return
+
+        target = os.readlink(self.sym)
+        # normpath in case there's a trailing /
+        targetzip = os.path.normpath(target) + '.zip'
+
+        for delpath, flag in ((target, SKIPDELETE), (targetzip, SKIPDELETEZIP)):
+            if "false" == flag.lower():
+                try:
+                    print "Deleting %s" % delpath
+                    shutil.rmtree(delpath)
+                except:
+                    print "Failed to delete %s" % delpath
+
         try:
             os.unlink(self.sym)
         except:
@@ -387,24 +410,114 @@ class UpgradeCommand(Command):
     def __init__(self, sub_parsers):
         super(UpgradeCommand, self).__init__(sub_parsers)
 
+        ## TODO: these are very internal values and should be refactored out
+        ## to a configure file.
+        skipemail = "false"
+        name = HOSTNAME
+        if HOSTNAME == "gretzky":
+            address = "gretzky.openmicroscopy.org.uk"
+        elif HOSTNAME == "howe":
+            address = "howe.openmicroscopy.org.uk"
+        elif HOSTNAME == "ome-dev-svr":
+            name = "win-2k8"
+            address = "bp.openmicroscopy.org.uk"
+        else:
+            address = HOSTNAME
+            # Don't send emails if we're not on a known host.
+            skipemail = "true"
+
+        self.parser.add_argument("server", nargs="?")
+
+        EnvDefault.add(self.parser, "hostname", HOSTNAME)
+        EnvDefault.add(self.parser, "name", name)
+        EnvDefault.add(self.parser, "address", address)
+        EnvDefault.add(self.parser, "skipemail", skipemail)
+
+        # UNZIP TOOLS
+        if WINDOWS:
+            unzip = "C:\\Program Files (x86)\\7-Zip\\7z.exe"
+            unzipargs = "x"
+        else:
+            unzip = "unzip"
+            unzipargs = ""
+
+        EnvDefault.add(self.parser, "unzip", unzip)
+        EnvDefault.add(self.parser, "unzipargs", unzipargs)
+
+        # Ports
+        EnvDefault.add(self.parser, "prefix", "")
+        EnvDefault.add(self.parser, "registry", "%(prefix)s4061")
+        EnvDefault.add(self.parser, "tcp", "%(prefix)s4063")
+        EnvDefault.add(self.parser, "ssl", "%(prefix)s4064")
+
+        # new_server.py
+        cfg = os.path.join(os.path.expanduser("~"), "config.xml")
+        EnvDefault.add(self.parser, "mem", "Xmx1024M")
+        EnvDefault.add(self.parser, "sym", "OMERO-CURRENT")
+        EnvDefault.add(self.parser, "cfg", cfg)
+
+        web = """[["localhost", %(ssl)s, "%(name)s"], ["gretzky.openmicroscopy.org.uk", 4064, "gretzky"], ["howe.openmicroscopy.org.uk", 4064, "howe"]]"""
+        EnvDefault.add(self.parser, "web", web)
+
+        # send_email.py
+        EnvDefault.add(self.parser, "subject", "OMERO - %(name)s was upgraded")
+        EnvDefault.add(self.parser, "branch", "OMERO-trunk")
+        EnvDefault.add(self.parser, "build", "http://hudson.openmicroscopy.org.uk/job/%(branch)s/lastSuccessfulBuild/")
+        EnvDefault.add(self.parser, "sender", "sysadmin@openmicroscopy.org")
+        EnvDefault.add(self.parser, "recipients", "ome-nitpick@lists.openmicroscopy.org.uk", help="Comma-separated list of recipients")
+        EnvDefault.add(self.parser, "server", "%(name)s (%(address)s)")
+        EnvDefault.add(self.parser, "smtp_server", "smtp.dundee.ac.uk")
+        EnvDefault.add(self.parser, "weburl", "http://%(address)s/omero/webclient/")
+
+        EnvDefault.add(self.parser, "skipweb", "false")
+        EnvDefault.add(self.parser, "skipunzip", "false")
+        EnvDefault.add(self.parser, "skipdelete", "true")
+        EnvDefault.add(self.parser, "skipdeletezip", "false")
+
+        # Record the values of these environment variables in a file
+        EnvDefault.add(self.parser, "savevars", "ICE_HOME PATH DYLD_LIBRARY_PATH LD_LIBRARY_PATH PYTHONPATH")
+        EnvDefault.add(self.parser, "savevarsfile", os.path.join("%(sym)s", "omero.envvars"))
+
     def __call__(self, args):
         super(UpgradeCommand, self).__call__(args)
         self.configure_logging(args)
 
-        artifacts = Artifacts()
+        # Since EnvDefault.__action__ is only called if a user actively passes
+        # a variable, there's no way to do the string replacing in the action
+        # itself. Instead, we're post-processing them here, but this could be
+        # improved.
 
-        if len(sys.argv) != 2:
+        names = sorted(x.dest for x in self.parser._actions)
+        for dest in names:
+            if dest in ("help", "verbose", "quiet"): continue
+            value = getattr(args, dest)
+            if value and isinstance(value, (str, unicode)):
+                replacement = value % dict(args._get_kwargs())
+                log.debug("% 20s => %s" % (dest, replacement))
+                setattr(args, dest, replacement)
+
+        artifacts = Artifacts(build=args.build)
+
+        if not args.server:
             dir = artifacts.download('server')
             # Exits if directory does not exist!
         else:
-            dir = sys.argv[1]
+            dir = args.server
 
-        if platform.system() != "Windows":
-            u = UnixUpgrade(dir)
+        if WINDOWS:
+            U = WindowsUpgrade
         else:
-            u = WindowsUpgrade(dir)
+            U = UnixUpgrade
 
-        if "false" == SKIPEMAIL.lower():
-            e = Email(artifacts)
+        u = U(dir, cfg=args.cfg, mem=args.mem, sym=args.sym,
+              skipweb=args.skipweb,
+              registry=args.registry, tcp=args.tcp, ssl=args.ssl,
+              savevars=args.savevars, savevarsfile=args.savevarsfile)
+
+        if "false" == args.skipemail.lower():
+            e = Email(artifacts, server = args.server,\
+            sender = args.sender, recipients = args.recipients,\
+            weburl = args.weburl, subject = args.subject,\
+            smtp_server = args.smtp_server)
         else:
             print "Skipping email..."
