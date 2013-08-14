@@ -426,6 +426,7 @@ class UpgradeCommand(Command):
             # Don't send emails if we're not on a known host.
             skipemail = "true"
 
+        self.parser.add_argument("-n", "--dry-run", action="store_true")
         self.parser.add_argument("server", nargs="?")
 
         EnvDefault.add(self.parser, "hostname", HOSTNAME)
@@ -495,6 +496,9 @@ class UpgradeCommand(Command):
                 replacement = value % dict(args._get_kwargs())
                 log.debug("% 20s => %s" % (dest, replacement))
                 setattr(args, dest, replacement)
+
+        if args.dry_run:
+            return
 
         artifacts = Artifacts(build=args.build)
 
