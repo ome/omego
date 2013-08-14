@@ -161,7 +161,13 @@ class Upgrade(object):
         self.cfg = path.path(cfg)
         self.dir = path.path(dir)
 
-        self.stop(bin)
+        # If the symlink doesn't exist, create
+        # it which simplifies the rest of the logic,
+        # which already checks if OLD === NEW
+        if not os.path.exists(sym):
+            self.mklink(self.dir)
+
+        self.stop(cli)
 
         self.configure(cli, noconfigure)
         self.directories(cli)
@@ -253,7 +259,7 @@ class Upgrade(object):
         bin = os.path.join(dir, "bin")
         addpath("PATH", bin)
         self.old_env = env
-        return self.bin
+        return bin
 
     def _(self, command):
         """
@@ -357,10 +363,13 @@ class UnixUpgrade(Upgrade):
         except:
             print "Failed to delete %s" % self.sym
 
+        self.mklink(self.dir)
+
+    def mklink(self, dir):
         try:
-            os.symlink(self.dir, self.sym)
+            os.symlink(dir, self.sym)
         except:
-            print "Failed to symlink %s to %s" % (self.dir, self.sym)
+            print "Failed to symlink %s to %s" % (dir, self.sym)
 
 
 class WindowsUpgrade(Upgrade):
