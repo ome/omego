@@ -25,6 +25,7 @@ import unittest
 from omego.framework import main
 from omego.upgrade import UpgradeCommand
 
+
 class TestUpgrade(unittest.TestCase):
 
     def assertUpgrade(self, *args):
@@ -42,6 +43,9 @@ class TestUpgrade(unittest.TestCase):
 
     def testUpgradeDryRunVerbose(self):
         self.assertUpgrade("-n", "-v")
+
+    def testUpgrade(self):
+        self.assertUpgrade("--branch=OMERO-trunk-ice34")
 
 
 if __name__ == '__main__':
