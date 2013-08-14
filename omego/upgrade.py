@@ -153,8 +153,8 @@ class Upgrade(object):
         # config.xml, so we must check for it here
         noconfigure = self.has_config(dir)
 
-        cli = self.setup_script_environment(dir)
-        bin = self.setup_previous_omero_env(sym, savevarsfile)
+        self.setup_script_environment(dir)
+        self.setup_previous_omero_env(sym, savevarsfile)
 
         # Need lib/python set above
         import path
@@ -167,36 +167,36 @@ class Upgrade(object):
         if not os.path.exists(sym):
             self.mklink(self.dir)
 
-        self.stop(cli)
+        self.stop()
 
-        self.configure(cli, noconfigure)
-        self.directories(cli)
+        self.configure(noconfigure)
+        self.directories()
 
         self.save_env_vars(savevarsfile, savevars.split())
-        self.start(cli)
+        self.start()
 
-    def stop(self, _):
+    def stop(self):
         try:
             print "Stopping server..."
-            _("admin status --nodeonly")
-            _("admin stop")
+            self.run("admin status --nodeonly")
+            self.run("admin stop")
         except Exception as e:
             print e
 
         if self.web():
             print "Stopping web..."
-            self.stopweb(_)
+            self.stopweb()
 
     def has_config(self, dir):
         config = os.path.join(dir, "etc", "grid", "config.xml")
         return os.path.exists(config)
 
-    def configure(self, _, noconfigure):
+    def configure(self, noconfigure):
 
         target = self.dir / "etc" / "grid" / "config.xml"
         if noconfigure:
             print "Target %s already exists. Skipping..." % target
-            self.configure_ports(_)
+            self.configure_ports()
             return # Early exit!
 
         if not self.cfg.exists():
@@ -207,23 +207,23 @@ class Upgrade(object):
             old_cfg.copy(target)
         else:
             self.cfg.copy(target)
-            _(["config", "set", "omero.web.server_list", WEB]) # TODO: Unneeded if copy old?
+            self.run(["config", "set", "omero.web.server_list", WEB]) # TODO: Unneeded if copy old?
 
         for line in fileinput.input([self.dir / "etc" / "grid" / "templates.xml"], inplace=True):
             print line.replace("Xmx512M", self.mem).replace("Xmx256M", self.mem),
 
-        self.configure_ports(_)
+        self.configure_ports()
 
-    def configure_ports(self, _):
+    def configure_ports(self):
         # Set registry, TCP and SSL ports
-        _(["admin", "ports", "--skipcheck", "--registry", self.registry, "--tcp",
+        self.run(["admin", "ports", "--skipcheck", "--registry", self.registry, "--tcp",
             self.tcp, "--ssl", self.ssl])
 
-    def start(self, _):
-        _("admin start")
+    def start(self):
+        self.run("admin start")
         if self.web():
             print "Starting web ..."
-            self.startweb(_)
+            self.startweb()
 
     def setup_script_environment(self, dir):
         dir = os.path.abspath(dir)
@@ -239,7 +239,6 @@ class Upgrade(object):
 
         self.cli = omero.cli.CLI()
         self.cli.loadplugins()
-        return self._
 
     def setup_previous_omero_env(self, dir, savevarsfile):
         env = self.get_environment(savevarsfile)
@@ -259,9 +258,8 @@ class Upgrade(object):
         bin = os.path.join(dir, "bin")
         addpath("PATH", bin)
         self.old_env = env
-        return bin
 
-    def _(self, command):
+    def run(self, command):
         """
         Runs a command as if from the command-line
         without the need for using popen or subprocess
@@ -335,13 +333,13 @@ class Upgrade(object):
 
 class UnixUpgrade(Upgrade):
 
-    def stopweb(self, _):
-        _("web stop")
+    def stopweb(self):
+        self.run("web stop")
 
-    def startweb(self, _):
-        _("web start")
+    def startweb(self):
+        self.run("web start")
 
-    def directories(self, _):
+    def directories(self):
         if os.path.samefile(self.dir, self.sym):
             print "Upgraded server was the same, not deleting"
             return
@@ -374,17 +372,17 @@ class UnixUpgrade(Upgrade):
 
 class WindowsUpgrade(Upgrade):
 
-    def stopweb(self, _):
+    def stopweb(self):
         print "Removing web from IIS ..."
-        _("web iis --remove")
+        self.run("web iis --remove")
         self.iisreset()
 
-    def startweb(self, _):
+    def startweb(self):
         print "Configuring web in IIS ..."
-        _("web iis")
+        self.run("web iis")
         self.iisreset()
 
-    def directories(self, _):
+    def directories(self):
         self.rmdir()
         print "Should probably move directory to OLD_OMERO and test handles"
         self.mklink(self.dir)
