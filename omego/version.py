@@ -52,6 +52,7 @@ def call_git_describe(abbrev=4):
 def read_release_version():
     try:
         parent = path.dirname(__file__)
+        parent = path.dirname(parent)
         filename = path.join(parent, "RELEASE-VERSION")
         f = open(filename, "r")
 
