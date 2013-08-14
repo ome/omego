@@ -383,7 +383,7 @@ class WindowsUpgrade(Upgrade):
         self.iisreset()
 
     def directories(self):
-        self.rmdir()
+        self.rmdir() # TODO: skipdelete etc?
         print "Should probably move directory to OLD_OMERO and test handles"
         self.mklink(self.dir)
 
