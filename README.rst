@@ -41,5 +41,5 @@ Copyright
 2013, The Open Microscopy Environment
 
 .. _argparse: http://pypi.python.org/pypi/argparse
-.. |Build Status| image:: https://travis-ci.org/ome/omego.png
-   :target: http://travis-ci.org/ome/omego
+.. |Build Status| image:: https://travis-ci.org/ome/omero-setup.png
+   :target: http://travis-ci.org/ome/omero-setup
