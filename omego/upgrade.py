@@ -182,18 +182,18 @@ class Upgrade(object):
         if not self.cfg.exists():
             print "%s not found. Copying old files" % self.cfg
             from path import path
-            old_grid = path(self.sym) / "etc" / "grid"
+            old_grid = path(self.args.sym) / "etc" / "grid"
             old_cfg = old_grid / "config.xml"
             old_cfg.copy(target)
         else:
             self.cfg.copy(target)
             # TODO: Unneeded if copy old?
-            self.run(["config", "set", "omero.web.server_list", self.web])
+            self.run(["config", "set", "omero.web.server_list", self.args.web])
 
         templates = self.dir / "etc" / "grid" / "templates.xml"
         for line in fileinput.input([templates], inplace=True):
-            line = line.replace("Xmx512M", self.mem)
-            line = line.replace("Xmx256M", self.mem)
+            line = line.replace("Xmx512M", self.args.mem)
+            line = line.replace("Xmx256M", self.args.mem)
             print line,
 
         self.configure_ports()
@@ -201,8 +201,8 @@ class Upgrade(object):
     def configure_ports(self):
         # Set registry, TCP and SSL ports
         self.run(["admin", "ports", "--skipcheck", "--registry",
-                 self.registry, "--tcp",
-                 self.tcp, "--ssl", self.ssl])
+                 self.args.registry, "--tcp",
+                 self.args.tcp, "--ssl", self.args.ssl])
 
     def start(self):
         self.run("admin start")
@@ -323,11 +323,11 @@ class UnixUpgrade(Upgrade):
         self.run("web start")
 
     def directories(self):
-        if os.path.samefile(self.dir, self.sym):
+        if os.path.samefile(self.dir, self.args.sym):
             print "Upgraded server was the same, not deleting"
             return
 
-        target = os.readlink(self.sym)
+        target = os.readlink(self.args.sym)
         # normpath in case there's a trailing /
         targetzip = os.path.normpath(target) + '.zip'
 
@@ -341,17 +341,17 @@ class UnixUpgrade(Upgrade):
                     print "Failed to delete %s" % delpath
 
         try:
-            os.unlink(self.sym)
+            os.unlink(self.args.sym)
         except:
-            print "Failed to delete %s" % self.sym
+            print "Failed to delete %s" % self.args.sym
 
         self.mklink(self.dir)
 
     def mklink(self, dir):
         try:
-            os.symlink(dir, self.sym)
+            os.symlink(dir, self.args.sym)
         except:
-            print "Failed to symlink %s to %s" % (dir, self.sym)
+            print "Failed to symlink %s to %s" % (dir, self.args.sym)
 
 
 class WindowsUpgrade(Upgrade):
@@ -382,12 +382,12 @@ class WindowsUpgrade(Upgrade):
     def rmdir(self):
         """
         """
-        self.call("rmdir %s".split() % self.sym)
+        self.call("rmdir %s".split() % self.args.sym)
 
     def mklink(self, dir):
         """
         """
-        self.call("mklink /d %s".split() % self.sym + ["%s" % dir])
+        self.call("mklink /d %s".split() % self.args.sym + ["%s" % dir])
 
     def iisreset(self):
         """
