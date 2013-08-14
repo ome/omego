@@ -27,7 +27,14 @@ from distutils.core import setup
 from omego.version import get_git_version
 
 
-VERSION = get_git_version()
+DATA_FILES = [('.', ['LICENSE.txt', 'README.rst', 'requirements.txt'])]
+ZIP_SAFE = True
+try:
+    VERSION = get_git_version()
+    DATA_FILES[0][1].append("RELEASE-VERSION")
+    ZIP_SAFE = False
+except:
+    VERSION = "0.0.0"  # Non-tagged
 
 LONG_DESCRIPTION = open("README.rst", "r").read()
 
@@ -56,9 +63,8 @@ setup(name='omego',
       packages = ['omego'],
       install_requires = [],  # Skipping argparse for Python 2.7 and greater.
       entry_points = { 'console_scripts': ['omego = omego.main:entry_point'] },
-      data_files = [('.', ['LICENSE.txt', 'RELEASE-VERSION', 'README.rst',
-                           'requirements.txt'])],
-      zip_safe = False,  # For reading RELEASE-VERSION
+      data_files = DATA_FILES,
+      zip_safe = ZIP_SAFE,
 
       # Using global variables
       long_description=LONG_DESCRIPTION,
