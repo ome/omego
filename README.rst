@@ -20,12 +20,6 @@ With that, it's possible to execute omego:
 
     $ python omego/main.py
 
-With that, it's possible to execute omego:
-
-::
-
-    $ python omego/main.py
-
 Pip installation
 -----------------
 
@@ -46,5 +40,6 @@ Copyright
 
 2013, The Open Microscopy Environment
 
+.. _argparse: http://pypi.python.org/pypi/argparse
 .. |Build Status| image:: https://travis-ci.org/ome/omego.png
    :target: http://travis-ci.org/ome/omego
