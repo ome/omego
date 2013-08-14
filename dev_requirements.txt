@@ -2,3 +2,5 @@ nose
 mox
 coverage
 pep8
+tox
+flake8

@@ -48,7 +48,7 @@ if "OMEGO_DEBUG_LEVEL" in os.environ:
     try:
         OMEGO_DEBUG_LEVEL = int(os.environ.get("OMEGO_DEBUG_LEVEL"))
     except:
-        OMEGO_DEBUG_LEVEL = 10 # Assume poorly formatted means "debug"
+        OMEGO_DEBUG_LEVEL = 10  # Assume poorly formatted means "debug"
 
 
 #
@@ -84,18 +84,20 @@ class Command(object):
     NAME = "abstract"
 
     def __init__(self, sub_parsers):
-        self.log = logging.getLogger("omego.%s"%self.NAME)
+        self.log = logging.getLogger("omego.%s" % self.NAME)
         self.log_level = OMEGO_DEBUG_LEVEL
 
         help = self.__doc__.lstrip()
         self.parser = sub_parsers.add_parser(self.NAME,
-            help=help, description=help)
+                                             help=help, description=help)
         self.parser.set_defaults(func=self.__call__)
 
-        self.parser.add_argument("-v", "--verbose", action="count", default=0,
-            help="Increase the logging level by multiples of 10")
-        self.parser.add_argument("-q", "--quiet", action="count", default=0,
-            help="Decrease the logging level by multiples of 10")
+        self.parser.add_argument(
+            "-v", "--verbose", action="count", default=0, help=
+            "Increase the logging level by multiples of 10")
+        self.parser.add_argument(
+            "-q", "--quiet", action="count", default=0, help=
+            "Decrease the logging level by multiples of 10")
 
     def __call__(self, args):
         self.configure_logging(args)
@@ -105,11 +107,11 @@ class Command(object):
         self.log_level += args.quiet * 10
         self.log_level -= args.verbose * 10
 
-        log_format = """%(asctime)s [%(name)12.12s] %(levelname)-5.5s %(message)s"""
-        logging.basicConfig(level=self.log_level, format=log_format)
+        format = "%(asctime)s [%(name)12.12s] %(levelname)-5.5s %(message)s"
+        logging.basicConfig(level=self.log_level, format=format)
         logging.getLogger('github').setLevel(logging.INFO)
 
-        self.log = logging.getLogger('omego.%s'%self.NAME)
+        self.log = logging.getLogger('omego.%s' % self.NAME)
         self.dbg = self.log.debug
 
 
@@ -117,15 +119,19 @@ def parsers():
 
     class HelpFormatter(argparse.RawTextHelpFormatter):
         """
-        argparse.HelpFormatter subclass which cleans up our usage, preventing very long
-        lines in subcommands.
+        argparse.HelpFormatter subclass which cleans up our usage,
+        preventing very long lines in subcommands.
 
         Borrowed from omero/cli.py
         Defined inside of parsers() in case argparse is not installed.
         """
 
-        def __init__(self, prog, indent_increment=2, max_help_position=40, width=None):
-            argparse.RawTextHelpFormatter.__init__(self, prog, indent_increment, max_help_position, width)
+        def __init__(self, prog, indent_increment=2, max_help_position=40,
+                     width=None):
+
+            argparse.RawTextHelpFormatter.__init__(
+                self, prog, indent_increment, max_help_position, width)
+
             self._action_max_length = 20
 
         def _split_lines(self, text, width):
@@ -136,7 +142,8 @@ def parsers():
             def __init__(self, formatter, parent, heading=None):
                 #if heading:
                 #    heading = "\n%s\n%s" % ("=" * 40, heading)
-                argparse.RawTextHelpFormatter._Section.__init__(self, formatter, parent, heading)
+                argparse.RawTextHelpFormatter._Section.__init__(
+                    self, formatter, parent, heading)
 
     omego_parser = argparse.ArgumentParser(
         description='omego - installation and administration tool',
@@ -157,19 +164,22 @@ def main(args=None, items=None):
     if not argparse_loaded:
         raise Stop(2, "Missing required module")
 
-    if args is None: args = sys.argv[1:]
+    if args is None:
+        args = sys.argv[1:]
 
-    if items is None: items = globals().items()
+    if items is None:
+        items = globals().items()
 
     omego_parser, sub_parsers = parsers()
 
     for name, MyCommand in sorted(items):
-        if not isinstance(MyCommand, type): continue
-        if not issubclass(MyCommand, Command): continue
-        if MyCommand.NAME == "abstract": continue
+        if not isinstance(MyCommand, type):
+            continue
+        if not issubclass(MyCommand, Command):
+            continue
+        if MyCommand.NAME == "abstract":
+            continue
         MyCommand(sub_parsers)
 
     ns = omego_parser.parse_args(args)
     ns.func(ns)
-
-
