@@ -17,16 +17,10 @@ from env import EnvDefault
 from env import WINDOWS
 from env import HOSTNAME
 
-from email.MIMEMultipart import MIMEMultipart
-from email.MIMEText import MIMEText
-from email.MIMEImage import MIMEImage
-
-from zipfile import ZipFile
-
 try:
-    from xml.etree.ElementTree import XML, ElementTree, tostring
+    from xml.etree.ElementTree import XML
 except ImportError:
-    from elementtree.ElementTree import XML, ElementTree, tostring
+    from elementtree.ElementTree import XML
 
 
 log = logging.getLogger("omego.upgrade")
@@ -34,20 +28,17 @@ log = logging.getLogger("omego.upgrade")
 
 class Artifacts(object):
 
-    def __init__(self, build, unzip, unzipargs, skipunzip):
+    def __init__(self, args):
 
-        self.unzip = unzip
-        self.unzipargs = unzipargs
-        self.skipunzip = skipunzip
-
-        url = urllib.urlopen(build+"api/xml")
+        self.args = args
+        url = urllib.urlopen(args.build+"api/xml")
         hudson_xml = url.read()
         url.close()
 
         root = XML(hudson_xml)
 
         artifacts = root.findall("./artifact")
-        base_url = build+"artifact/"
+        base_url = args.build+"artifact/"
         if len(artifacts) <= 0:
             raise AttributeError("No artifacts, please check build on Hudson.")
 
@@ -85,11 +76,11 @@ class Artifacts(object):
             print "Downloading %s..." % componenturl
             urllib.urlretrieve(componenturl, filename)
 
-        if "false" == self.skipunzip.lower():
-            if self.unzipargs:
-                command = [self.unzip, self.unzipargs, filename]
+        if "false" == self.args.skipunzip.lower():
+            if self.args.unzipargs:
+                command = [self.args.unzip, self.args.unzipargs, filename]
             else:
-                command = [self.unzip, filename]
+                command = [self.args.unzip, filename]
             p = subprocess.Popen(command)
             rc = p.wait()
             if rc != 0:
@@ -103,13 +94,10 @@ class Artifacts(object):
 
 class Email(object):
 
-    def __init__(self, artifacts, server,\
-            sender, recipients,\
-            weburl, subject,\
-            smtp_server):
+    def __init__(self, artifacts, args):
 
-        TO = ",".join(recipients)
-        FROM = sender
+        TO = args.recipients
+        FROM = args.sender
         text = "The OMERO.server on %s has been upgraded. \n" \
                     "=========================\n" \
                     "THIS SERVER REQUIRES VPN!\n" \
@@ -119,52 +107,45 @@ class Email(object):
                     "\n - MAC: \n %s\n " \
                     "\n - Linux: \n %s\n " \
                     "\n - Webclient available on %s. \n \n " %\
-                    (server, artifacts.win, artifacts.mac, artifacts.linux,
-                    weburl)
+                    (args.server, artifacts.win, artifacts.mac, artifacts.linux,
+                    args.weburl)
         BODY = "\r\n".join((
                 "From: %s" % FROM,
                 "To: %s" % TO,
-                "Subject: %s" % subject,
+                "Subject: %s" % args.subject,
                 "",
                 text))
-        server = smtplib.SMTP(smtp_server)
-        server.sendmail(FROM, recipients, BODY)
+        server = smtplib.SMTP(args.smtp_server)
+        server.sendmail(FROM, args.recipients, BODY)
         server.quit()
 
-        print "Mail was sent to: %s" % recipients
+        print "Mail was sent to: %s" % args.recipients
 
 
 class Upgrade(object):
 
-    def __init__(self, dir, cfg, mem, sym, skipweb,
-                 registry, tcp, ssl,
-                 savevars, savevarsfile):
+    def __init__(self, dir, args):
 
-        print "%s: Upgrading %s (%s)..." % (self.__class__.__name__, dir, sym)
-
-        self.mem = mem
-        self.sym = sym
-        self.skipweb = skipweb
-        self.registry = registry
-        self.tcp = tcp
-        self.ssl = ssl
+        self.dir = dir
+        self.args = args
+        print "%s: Upgrading %s (%s)..." % (self.__class__.__name__, dir, args.sym)
 
         # setup_script_environment() may cause the creation of a default
         # config.xml, so we must check for it here
         noconfigure = self.has_config(dir)
 
         self.setup_script_environment(dir)
-        self.setup_previous_omero_env(sym, savevarsfile)
+        self.setup_previous_omero_env(args.sym, args.savevarsfile)
 
         # Need lib/python set above
         import path
-        self.cfg = path.path(cfg)
+        self.cfg = path.path(args.cfg)
         self.dir = path.path(dir)
 
         # If the symlink doesn't exist, create
         # it which simplifies the rest of the logic,
         # which already checks if OLD === NEW
-        if not os.path.exists(sym):
+        if not os.path.exists(args.sym):
             self.mklink(self.dir)
 
         self.stop()
@@ -172,7 +153,7 @@ class Upgrade(object):
         self.configure(noconfigure)
         self.directories()
 
-        self.save_env_vars(savevarsfile, savevars.split())
+        self.save_env_vars(args.savevarsfile, args.savevars.split())
         self.start()
 
     def stop(self):
@@ -207,7 +188,7 @@ class Upgrade(object):
             old_cfg.copy(target)
         else:
             self.cfg.copy(target)
-            self.run(["config", "set", "omero.web.server_list", WEB]) # TODO: Unneeded if copy old?
+            self.run(["config", "set", "omero.web.server_list", self.web]) # TODO: Unneeded if copy old?
 
         for line in fileinput.input([self.dir / "etc" / "grid" / "templates.xml"], inplace=True):
             print line.replace("Xmx512M", self.mem).replace("Xmx256M", self.mem),
@@ -286,7 +267,7 @@ class Upgrade(object):
             raise Exception("Non-zero return code: %d" % r)
 
     def web(self):
-        return "false" == self.skipweb.lower()
+        return "false" == self.args.skipweb.lower()
 
 
     def get_environment(self, filename=None):
@@ -348,7 +329,8 @@ class UnixUpgrade(Upgrade):
         # normpath in case there's a trailing /
         targetzip = os.path.normpath(target) + '.zip'
 
-        for delpath, flag in ((target, SKIPDELETE), (targetzip, SKIPDELETEZIP)):
+        for delpath, flag in ((target, self.args.skipdelete), \
+                              (targetzip, self.args.skipdeletezip)):
             if "false" == flag.lower():
                 try:
                     print "Deleting %s" % delpath
@@ -511,10 +493,7 @@ class UpgradeCommand(Command):
         if args.dry_run:
             return
 
-        artifacts = Artifacts(args.build,
-                              args.unzip,
-                              args.unzipargs,
-                              args.skipunzip)
+        artifacts = Artifacts(args)
 
         if not args.server:
             dir = artifacts.download('server')
@@ -523,19 +502,11 @@ class UpgradeCommand(Command):
             dir = args.server
 
         if WINDOWS:
-            U = WindowsUpgrade
+            WindowsUpgrade(dir, args)
         else:
-            U = UnixUpgrade
-
-        u = U(dir, cfg=args.cfg, mem=args.mem, sym=args.sym,
-              skipweb=args.skipweb,
-              registry=args.registry, tcp=args.tcp, ssl=args.ssl,
-              savevars=args.savevars, savevarsfile=args.savevarsfile)
+            UnixUpgrade(dir, args)
 
         if "false" == args.skipemail.lower():
-            e = Email(artifacts, server = args.server,\
-            sender = args.sender, recipients = args.recipients,\
-            weburl = args.weburl, subject = args.subject,\
-            smtp_server = args.smtp_server)
+            Email(artifacts, args)
         else:
             print "Skipping email..."

@@ -25,6 +25,8 @@ which are present in the globals() of this module
 will be presented to the user.
 """
 
+import sys
+
 from framework import main, Stop
 
 from upgrade import UpgradeCommand
@@ -36,7 +38,7 @@ def entry_point():
     if Stop is raised, calls sys.exit()
     """
     try:
-        main(items=globals().items())
+        main(items=[("upgrade", UpgradeCommand)])
     except Stop, stop:
         print stop,
         sys.exit(stop.rc)

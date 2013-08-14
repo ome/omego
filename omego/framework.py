@@ -30,15 +30,9 @@ Environment variables:
 
 """
 
-import re
 import os
 import sys
-import time
-import uuid
-import subprocess
 import logging
-import threading
-import difflib
 
 argparse_loaded = True
 try:
