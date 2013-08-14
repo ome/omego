@@ -34,7 +34,11 @@ log = logging.getLogger("omego.upgrade")
 
 class Artifacts(object):
 
-    def __init__(self, build):
+    def __init__(self, build, unzip, unzipargs, skipunzip):
+
+        self.unzip = unzip
+        self.unzipargs = unzipargs
+        self.skipunzip = skipunzip
 
         url = urllib.urlopen(build+"api/xml")
         hudson_xml = url.read()
@@ -81,11 +85,11 @@ class Artifacts(object):
             print "Downloading %s..." % componenturl
             urllib.urlretrieve(componenturl, filename)
 
-        if "false" == SKIPUNZIP.lower():
-            if UNZIPARGS:
-                command = [UNZIP, UNZIPARGS, filename]
+        if "false" == self.skipunzip.lower():
+            if self.unzipargs:
+                command = [self.unzip, self.unzipargs, filename]
             else:
-                command = [UNZIP, filename]
+                command = [self.unzip, filename]
             p = subprocess.Popen(command)
             rc = p.wait()
             if rc != 0:
@@ -500,7 +504,10 @@ class UpgradeCommand(Command):
         if args.dry_run:
             return
 
-        artifacts = Artifacts(build=args.build)
+        artifacts = Artifacts(args.build,
+                              args.unzip,
+                              args.unzipargs,
+                              args.skipunzip)
 
         if not args.server:
             dir = artifacts.download('server')
