@@ -158,8 +158,8 @@ class Upgrade(object):
     def stop(self):
         try:
             print "Stopping server..."
-            self.run("admin status --nodeonly")
-            self.run("admin stop")
+            self.bin("admin status --nodeonly")
+            self.bin("admin stop")
         except Exception as e:
             print e
 
@@ -317,7 +317,7 @@ class Upgrade(object):
 class UnixUpgrade(Upgrade):
 
     def stopweb(self):
-        self.run("web stop")
+        self.bin("web stop")
 
     def startweb(self):
         self.run("web start")
@@ -358,7 +358,7 @@ class WindowsUpgrade(Upgrade):
 
     def stopweb(self):
         print "Removing web from IIS ..."
-        self.run("web iis --remove")
+        self.bin("web iis --remove")
         self.iisreset()
 
     def startweb(self):
