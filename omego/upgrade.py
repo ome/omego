@@ -133,6 +133,12 @@ class Upgrade(object):
         # config.xml, so we must check for it here
         noconfigure = self.has_config(dir)
 
+        # If the symlink doesn't exist, create
+        # it which simplifies the rest of the logic,
+        # which already checks if OLD === NEW
+        if not os.path.exists(args.sym):
+            self.mklink(self.dir)
+
         self.setup_script_environment(dir)
         self.setup_previous_omero_env(args.sym, args.savevarsfile)
 
@@ -140,12 +146,6 @@ class Upgrade(object):
         import path
         self.cfg = path.path(args.cfg)
         self.dir = path.path(dir)
-
-        # If the symlink doesn't exist, create
-        # it which simplifies the rest of the logic,
-        # which already checks if OLD === NEW
-        if not os.path.exists(args.sym):
-            self.mklink(self.dir)
 
         self.stop()
 
@@ -158,8 +158,8 @@ class Upgrade(object):
     def stop(self):
         try:
             print "Stopping server..."
-            self.run("admin status --nodeonly")
-            self.run("admin stop")
+            self.bin("admin status --nodeonly")
+            self.bin("admin stop")
         except Exception as e:
             print e
 
@@ -317,7 +317,7 @@ class Upgrade(object):
 class UnixUpgrade(Upgrade):
 
     def stopweb(self):
-        self.run("web stop")
+        self.bin("web stop")
 
     def startweb(self):
         self.run("web start")
@@ -358,7 +358,7 @@ class WindowsUpgrade(Upgrade):
 
     def stopweb(self):
         print "Removing web from IIS ..."
-        self.run("web iis --remove")
+        self.bin("web iis --remove")
         self.iisreset()
 
     def startweb(self):
