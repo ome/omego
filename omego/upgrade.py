@@ -12,7 +12,7 @@ import sys
 import urllib
 import re
 
-from framework import Command
+from framework import Command, Stop
 from env import EnvDefault
 from env import WINDOWS
 from env import HOSTNAME
@@ -34,11 +34,9 @@ class Artifacts(object):
         url = urllib.urlopen(args.build+"api/xml")
         log.debug('Fetching xml from %s code:%d', url.url, url.code)
         if url.code != 200:
-            log.error(
-                'Failed to get Hudson XML from %s (code %d), '
-                'is the job name correct?',
-                url.url, url.code)
-            sys.exit(2)
+            log.error('Failed to get Hudson XML from %s (code %d)',
+                      url.url, url.code)
+            raise Stop(20, 'Job lookup failed, is the job name correct?')
         hudson_xml = url.read()
         url.close()
 
@@ -90,12 +88,12 @@ class Artifacts(object):
             p = subprocess.Popen(command)
             rc = p.wait()
             if rc != 0:
-                print "Couldn't unzip!"
+                log.error('Unzip failed')
+                raise Stop(rc, 'Unzip failed, unzip manually and run again')
             else:
                 return unzipped
 
-        print "Unzip and run again"
-        sys.exit(rc)
+        raise Stop(0, 'Unzip disabled, exiting')
 
 
 class Email(object):
