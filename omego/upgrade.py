@@ -336,14 +336,19 @@ class UnixUpgrade(Upgrade):
         # normpath in case there's a trailing /
         targetzip = os.path.normpath(target) + '.zip'
 
-        for delpath, flag in ((target, self.args.skipdelete),
-                              (targetzip, self.args.skipdeletezip)):
-            if "false" == flag.lower():
-                try:
-                    print "Deleting %s" % delpath
-                    shutil.rmtree(delpath)
-                except:
-                    print "Failed to delete %s" % delpath
+        if "false" == self.args.skipdelete.lower():
+            try:
+                print "Deleting %s" % target
+                shutil.rmtree(target)
+            except:
+                print "Failed to delete %s" % target
+
+        if "false" == self.args.skipdeletezip.lower():
+            try:
+                print "Deleting %s" % targetzip
+                os.unlink(targetzip)
+            except:
+                print "Failed to delete %s" % targetzip
 
         try:
             os.unlink(self.args.sym)
