@@ -88,7 +88,7 @@ class Artifacts(object):
                 return unzipped
 
         print "Unzip and run again"
-        sys.exit(0)
+        sys.exit(rc)
 
 
 class Email(object):
