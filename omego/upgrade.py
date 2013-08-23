@@ -32,6 +32,13 @@ class Artifacts(object):
 
         self.args = args
         url = urllib.urlopen(args.build+"api/xml")
+        log.debug('Fetching xml from %s code:%d', url.url, url.code)
+        if url.code != 200:
+            log.error(
+                'Failed to get Hudson XML from %s (code %d), '
+                'is the job name correct?',
+                url.url, url.code)
+            sys.exit(2)
         hudson_xml = url.read()
         url.close()
 
