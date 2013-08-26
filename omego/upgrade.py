@@ -12,7 +12,7 @@ import sys
 import urllib
 import re
 
-from framework import Command
+from framework import Command, Stop
 from env import EnvDefault
 from env import WINDOWS
 from env import HOSTNAME
@@ -32,6 +32,11 @@ class Artifacts(object):
 
         self.args = args
         url = urllib.urlopen(args.build+"api/xml")
+        log.debug('Fetching xml from %s code:%d', url.url, url.code)
+        if url.code != 200:
+            log.error('Failed to get Hudson XML from %s (code %d)',
+                      url.url, url.code)
+            raise Stop(20, 'Job lookup failed, is the job name correct?')
         hudson_xml = url.read()
         url.close()
 
@@ -72,7 +77,7 @@ class Artifacts(object):
             return unzipped
 
         if not os.path.exists(filename):
-            print "Downloading %s..." % componenturl
+            log.info("Downloading %s", componenturl)
             urllib.urlretrieve(componenturl, filename)
 
         if "false" == self.args.skipunzip.lower():
@@ -83,12 +88,12 @@ class Artifacts(object):
             p = subprocess.Popen(command)
             rc = p.wait()
             if rc != 0:
-                print "Couldn't unzip!"
+                log.error('Unzip failed')
+                raise Stop(rc, 'Unzip failed, unzip manually and run again')
             else:
                 return unzipped
 
-        print "Unzip and run again"
-        sys.exit(0)
+        raise Stop(0, 'Unzip disabled, exiting')
 
 
 class Email(object):
@@ -117,7 +122,7 @@ class Email(object):
         server.sendmail(FROM, args.recipients, BODY)
         server.quit()
 
-        print "Mail was sent to: %s" % args.recipients
+        log.info("Mail was sent to: %s", args.recipients)
 
 
 class Upgrade(object):
@@ -126,8 +131,8 @@ class Upgrade(object):
 
         self.dir = dir
         self.args = args
-        msg = "%s: Upgrading %s (%s)..."
-        print msg % (self.__class__.__name__, dir, args.sym)
+        log.info("%s: Upgrading %s (%s)...",
+                 self.__class__.__name__, dir, args.sym)
 
         # setup_script_environment() may cause the creation of a default
         # config.xml, so we must check for it here
@@ -157,14 +162,14 @@ class Upgrade(object):
 
     def stop(self):
         try:
-            print "Stopping server..."
+            log.info("Stopping server")
             self.bin("admin status --nodeonly")
             self.bin("admin stop")
         except Exception as e:
-            print e
+            log.error('Error whilst stopping server: %s', e)
 
         if self.web():
-            print "Stopping web..."
+            log.info("Stopping web")
             self.stopweb()
 
     def has_config(self, dir):
@@ -175,12 +180,12 @@ class Upgrade(object):
 
         target = self.dir / "etc" / "grid" / "config.xml"
         if noconfigure:
-            print "Target %s already exists. Skipping..." % target
+            log.warn("Target %s already exists, skipping.", target)
             self.configure_ports()
             return  # Early exit!
 
         if not self.cfg.exists():
-            print "%s not found. Copying old files" % self.cfg
+            log.info("%s not found. Copying old files", self.cfg)
             from path import path
             old_grid = path(self.args.sym) / "etc" / "grid"
             old_cfg = old_grid / "config.xml"
@@ -195,6 +200,7 @@ class Upgrade(object):
             # TODO: Unneeded if copy old?
             self.run(["config", "set", "omero.web.server_list", self.args.web])
 
+        log.debug('Configuring JVM memory')
         templates = self.dir / "etc" / "grid" / "templates.xml"
         for line in fileinput.input([templates], inplace=True):
             line = line.replace("Xmx512M", self.args.mem)
@@ -212,7 +218,7 @@ class Upgrade(object):
     def start(self):
         self.run("admin start")
         if self.web():
-            print "Starting web ..."
+            log.info("Starting web")
             self.startweb()
 
     def setup_script_environment(self, dir):
@@ -225,7 +231,7 @@ class Upgrade(object):
         import omero
         import omero.cli
 
-        print "Using %s..." % omero.cli.__file__
+        log.debug("Using CLI from %s", omero.cli.__file__)
 
         self.cli = omero.cli.CLI()
         self.cli.loadplugins()
@@ -259,7 +265,7 @@ class Upgrade(object):
         else:
             for idx, val in enumerate(command):
                 command[idx] = val
-        print "Invoking CLI [current environment]: %s" % " ".join(command)
+        log.info("Invoking CLI [current environment]: %s", " ".join(command))
         self.cli.invoke(command, strict=True)
 
     def bin(self, command):
@@ -270,7 +276,7 @@ class Upgrade(object):
         if isinstance(command, str):
             command = command.split()
         command.insert(0, 'omero')
-        print "Running [old environment]: %s" % " ".join(command)
+        log.info("Running [old environment]: %s", " ".join(command))
         r = subprocess.call(command, env=self.old_env)
         if r != 0:
             raise Exception("Non-zero return code: %d" % r)
@@ -281,19 +287,19 @@ class Upgrade(object):
     def get_environment(self, filename=None):
         env = os.environ.copy()
         if not filename:
-            print "Using original environment"
+            log.debug("Using original environment")
             return env
 
         try:
             f = open(filename, "r")
-            print "Loading old environment:"
+            log.info("Loading old environment")
             for line in f:
                 key, value = line.strip().split("=", 1)
                 env[key] = value
-                print "  %s=%s" % (key, value)
+                log.debug("%s=%s", key, value)
         except Exception as e:
-            print "WARNING: Failed to load environment variables from %s: %s" \
-                % (filename, e)
+            log.error("Failed to load environment variables from %s: %s",
+                      filename, e)
 
         try:
             f.close()
@@ -304,14 +310,14 @@ class Upgrade(object):
     def save_env_vars(self, filename, varnames):
         try:
             f = open(filename, "w")
-            print "Saving environment:"
+            log.info("Saving environment")
             for var in varnames:
                 value = os.environ.get(var, "")
                 f.write("%s=%s\n" % (var, value))
-                print "  %s=%s" % (var, value)
+                log.debug("%s=%s", var, value)
         except Exception as e:
-            print "Failed to save environment variables to %s: %s" % (
-                filename, e)
+            log.error("Failed to save environment variables to %s: %s",
+                      filename, e)
 
         try:
             f.close()
@@ -329,26 +335,31 @@ class UnixUpgrade(Upgrade):
 
     def directories(self):
         if os.path.samefile(self.dir, self.args.sym):
-            print "Upgraded server was the same, not deleting"
+            log.warn("Upgraded server was the same, not deleting")
             return
 
         target = os.readlink(self.args.sym)
         # normpath in case there's a trailing /
         targetzip = os.path.normpath(target) + '.zip'
 
-        for delpath, flag in ((target, self.args.skipdelete),
-                              (targetzip, self.args.skipdeletezip)):
-            if "false" == flag.lower():
-                try:
-                    print "Deleting %s" % delpath
-                    shutil.rmtree(delpath)
-                except:
-                    print "Failed to delete %s" % delpath
+        if "false" == self.args.skipdelete.lower():
+            try:
+                log.info("Deleting %s", target)
+                shutil.rmtree(target)
+            except:
+                log.error("Failed to delete %s", target)
+
+        if "false" == self.args.skipdeletezip.lower():
+            try:
+                log.info("Deleting %s", targetzip)
+                os.unlink(targetzip)
+            except:
+                log.error("Failed to delete %s", targetzip)
 
         try:
             os.unlink(self.args.sym)
         except:
-            print "Failed to delete %s" % self.args.sym
+            log.error("Failed to unlink %s", self.args.sym)
 
         self.mklink(self.dir)
 
@@ -356,33 +367,30 @@ class UnixUpgrade(Upgrade):
         try:
             os.symlink(dir, self.args.sym)
         except:
-            print "Failed to symlink %s to %s" % (dir, self.args.sym)
+            log.error("Failed to symlink %s to %s", dir, self.args.sym)
 
 
 class WindowsUpgrade(Upgrade):
 
     def stopweb(self):
-        print "Removing web from IIS ..."
+        log.info("Removing web from IIS")
         self.bin("web iis --remove")
         self.iisreset()
 
     def startweb(self):
-        print "Configuring web in IIS ..."
+        log.info("Configuring web in IIS")
         self.run("web iis")
         self.iisreset()
 
     def directories(self):
         self.rmdir()  # TODO: skipdelete etc?
-        print "Should probably move directory to OLD_OMERO and test handles"
+        log.warn("Should probably move directory to OLD_OMERO and test handles")
         self.mklink(self.dir)
 
     def call(self, command):
         rc = subprocess.call(command, shell=True)
         if rc != 0:
-            print "*"*80
-            msg = "Warning: '%s' returned with non-zero value: %s"
-            print msg % (command, rc)
-            print "*"*80
+            log.warn("'%s' returned with non-zero value: %s", command, rc)
 
     def rmdir(self):
         """
@@ -527,4 +535,4 @@ class UpgradeCommand(Command):
         if "false" == args.skipemail.lower():
             Email(artifacts, args)
         else:
-            print "Skipping email..."
+            log.info("Skipping email")
