@@ -56,7 +56,9 @@ class Artifacts(object):
                 'source': r'OMERO\.source.*\.zip',
                 'win': r'OMERO\.clients.*\.win\.zip',
                 'linux': r'OMERO\.clients.*\.linux\.zip',
-                'mac': r'OMERO\.clients.*\.mac\.zip'}
+                'mac': r'OMERO\.clients.*\.mac\.zip',
+                'matlab': r'OMERO\.matlab.*\.zip',
+                }
 
     def download(self, component):
 
