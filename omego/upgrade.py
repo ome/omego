@@ -9,92 +9,14 @@ import logging
 import fileinput
 import smtplib
 import sys
-import urllib
-import re
 
+from artifacts import Artifacts
 from framework import Command, Stop
 from env import EnvDefault
 from env import WINDOWS
 from env import HOSTNAME
 
-try:
-    from xml.etree.ElementTree import XML
-except ImportError:
-    from elementtree.ElementTree import XML
-
-
 log = logging.getLogger("omego.upgrade")
-
-
-class Artifacts(object):
-
-    def __init__(self, args):
-
-        self.args = args
-        url = urllib.urlopen(args.build+"api/xml")
-        log.debug('Fetching xml from %s code:%d', url.url, url.code)
-        if url.code != 200:
-            log.error('Failed to get Hudson XML from %s (code %d)',
-                      url.url, url.code)
-            raise Stop(20, 'Job lookup failed, is the job name correct?')
-        hudson_xml = url.read()
-        url.close()
-
-        root = XML(hudson_xml)
-
-        artifacts = root.findall("./artifact")
-        base_url = args.build+"artifact/"
-        if len(artifacts) <= 0:
-            raise AttributeError("No artifacts, please check build on Hudson.")
-
-        patterns = self.get_artifacts_list()
-        for artifact in artifacts:
-            filename = artifact.find("fileName").text
-
-            for key, value in patterns.iteritems():
-                if re.compile(value).match(filename):
-                    rel_path = base_url + artifact.find("relativePath").text
-                    setattr(self, key, rel_path)
-                    pass
-
-    def get_artifacts_list(self):
-        return {'server': r'OMERO\.server.*\.zip',
-                'source': r'OMERO\.source.*\.zip',
-                'win': r'OMERO\.clients.*\.win\.zip',
-                'linux': r'OMERO\.clients.*\.linux\.zip',
-                'mac': r'OMERO\.clients.*\.mac\.zip'}
-
-    def download(self, component):
-
-        if not hasattr(self, component) or getattr(self, component) is None:
-            raise Exception("No %s found" % component)
-
-        componenturl = getattr(self, component)
-        filename = os.path.basename(componenturl)
-        unzipped = filename.replace(".zip", "")
-
-        if os.path.exists(unzipped):
-            return unzipped
-
-        if not os.path.exists(filename):
-            log.info("Downloading %s", componenturl)
-            urllib.urlretrieve(componenturl, filename)
-
-        if "false" == self.args.skipunzip.lower():
-            if self.args.unzipargs:
-                command = [self.args.unzip, self.args.unzipargs, filename]
-            else:
-                command = [self.args.unzip, filename]
-            p = subprocess.Popen(command)
-            rc = p.wait()
-            if rc != 0:
-                log.error('Unzip failed')
-                raise Stop(rc, 'Unzip failed, unzip manually and run again')
-            else:
-                return unzipped
-
-        raise Stop(0, 'Unzip disabled, exiting')
-
 
 class Email(object):
 
