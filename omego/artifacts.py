@@ -49,6 +49,7 @@ class Artifacts(object):
                     setattr(self, key, rel_path)
                     pass
 
+    @classmethod
     def get_artifacts_list(self):
         return {'server': r'OMERO\.server.*\.zip',
                 'source': r'OMERO\.source.*\.zip',
@@ -89,7 +90,7 @@ class Artifacts(object):
 
 class DownloadCommand(Command):
     """
-    Download an OMERO artifact.
+    Download an OMERO artifact from a CI server.
     """
 
     NAME = "download"
@@ -98,7 +99,9 @@ class DownloadCommand(Command):
         super(DownloadCommand, self).__init__(sub_parsers)
 
         self.parser.add_argument("-n", "--dry-run", action="store_true")
-        self.parser.add_argument("artifact", nargs="?")
+        self.parser.add_argument("artifact", 
+            choices = Artifacts.get_artifacts_list().keys(),
+            help = "The artifact to download from the CI server")
 
         Add = EnvDefault.add
         Add(self.parser, "hudson", "hudson.openmicroscopy.org.uk")
