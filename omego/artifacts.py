@@ -18,6 +18,7 @@ except ImportError:
 
 log = logging.getLogger("omego.artifacts")
 
+
 class Artifacts(object):
 
     def __init__(self, args):
@@ -88,6 +89,7 @@ class Artifacts(object):
 
         raise Stop(0, 'Unzip disabled, exiting')
 
+
 class DownloadCommand(Command):
     """
     Download an OMERO artifact from a CI server.
@@ -99,9 +101,10 @@ class DownloadCommand(Command):
         super(DownloadCommand, self).__init__(sub_parsers)
 
         self.parser.add_argument("-n", "--dry-run", action="store_true")
-        self.parser.add_argument("artifact", 
-            choices = Artifacts.get_artifacts_list().keys(),
-            help = "The artifact to download from the CI server")
+        self.parser.add_argument(
+            "artifact",
+            choices=Artifacts.get_artifacts_list().keys(),
+            help="The artifact to download from the CI server")
 
         Add = EnvDefault.add
         Add(self.parser, "hudson", "hudson.openmicroscopy.org.uk")

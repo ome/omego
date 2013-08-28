@@ -11,12 +11,13 @@ import smtplib
 import sys
 
 from artifacts import Artifacts
-from framework import Command, Stop
+from framework import Command
 from env import EnvDefault
 from env import WINDOWS
 from env import HOSTNAME
 
 log = logging.getLogger("omego.upgrade")
+
 
 class Email(object):
 
@@ -306,7 +307,8 @@ class WindowsUpgrade(Upgrade):
 
     def directories(self):
         self.rmdir()  # TODO: skipdelete etc?
-        log.warn("Should probably move directory to OLD_OMERO and test handles")
+        log.warn(
+            "Should probably move directory to OLD_OMERO and test handles")
         self.mklink(self.dir)
 
     def call(self, command):

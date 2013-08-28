@@ -32,6 +32,7 @@ from framework import main, Stop
 from upgrade import UpgradeCommand
 from artifacts import DownloadCommand
 
+
 def entry_point():
     """
     External entry point which calls main() and
