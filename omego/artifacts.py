@@ -88,8 +88,8 @@ class Artifacts(object):
                 raise Stop(rc, 'Unzip failed, unzip manually and run again')
             else:
                 return unzipped
-
-        raise Stop(0, 'Unzip disabled, exiting')
+        else:
+            return filename
 
 
 class DownloadCommand(Command):

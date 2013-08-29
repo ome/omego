@@ -11,7 +11,7 @@ import smtplib
 import sys
 
 from artifacts import Artifacts
-from framework import Command
+from framework import Command, Stop
 from env import EnvDefault
 from env import WINDOWS
 from env import HOSTNAME
@@ -446,6 +446,9 @@ class UpgradeCommand(Command):
         artifacts = Artifacts(args)
 
         if not args.server:
+            if "false" == self.args.skipunzip.lower():
+                raise Stop(0, 'Unzip disabled, exiting')
+
             dir = artifacts.download('server')
             # Exits if directory does not exist!
         else:
