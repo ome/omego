@@ -22,12 +22,14 @@
 import unittest
 
 from omego.framework import main
+from omego.artifacts import DownloadCommand
 
 
 class TestDownload(unittest.TestCase):
 
     def assertDownload(self):
-        main(["download", self.artifact, '--skipunzip', 'true'])
+        main(["download", self.artifact, '--skipunzip', 'true'],
+             items=[("download", DownloadCommand)])
 
     def testDownloadServer(self):
         self.artifact = 'server'
