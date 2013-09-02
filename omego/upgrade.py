@@ -432,7 +432,7 @@ class UpgradeCommand(Command):
         artifacts = Artifacts(args)
 
         if not args.server:
-            if "false" == self.args.skipunzip.lower():
+            if args.skipunzip:
                 raise Stop(0, 'Unzip disabled, exiting')
 
             dir = artifacts.download('server')
