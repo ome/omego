@@ -28,7 +28,7 @@ from omego.artifacts import DownloadCommand
 class TestDownload(unittest.TestCase):
 
     def assertDownload(self):
-        main(["download", self.artifact, '--skipunzip', 'true'],
+        main(["download", self.artifact, '--skipunzip'],
              items=[("download", DownloadCommand)])
 
     def testDownloadServer(self):
