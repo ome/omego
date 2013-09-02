@@ -71,3 +71,38 @@ class EnvDefault(argparse.Action):
     def add(kls, parser, name, default, **kwargs):
         parser.add_argument("--%s" % name, action=kls, envvar=name.upper(),
                             default=default, **kwargs)
+
+
+class JenkinsParser(argparse.ArgumentParser):
+
+    def __init__(self, parser):
+        self.parser = parser
+        group = self.parser.add_argument_group(
+            'Jenkins arguments',
+            'Arguments related to the Jenkins instance')
+
+        Add = EnvDefault.add
+        Add(group, "hudson", "hudson.openmicroscopy.org.uk",
+            help="Base url of the Jenkins instance")
+        Add(group, "branch", "OMERO-trunk",
+            help="Name of the Jenkins job containing the artifacts")
+        Add(group, "build",
+            "http://%(hudson)s/job/%(branch)s/lastSuccessfulBuild/",
+            help="Full url of the Jenkins build containing the artifacts")
+
+        # UNZIP TOOLS
+        if WINDOWS:
+            unzip = "C:\\Program Files (x86)\\7-Zip\\7z.exe"
+            unzipargs = "x"
+        else:
+            unzip = "unzip"
+            unzipargs = ""
+
+        Add(group, "unzip", unzip,
+            help="Program to use to unzip the Jenkins artifact")
+        Add(group, "unzipargs", unzipargs,
+            help="Arguments to pass while unzipping the Jenkins artifact")
+        Add(group, "skipunzip", "false")
+
+    def __getattr__(self, key):
+        return getattr(self.parser, key)

@@ -9,7 +9,7 @@ import urllib
 import re
 
 from framework import Command, Stop
-from env import EnvDefault, WINDOWS
+from env import JenkinsParser
 
 try:
     from xml.etree.ElementTree import XML
@@ -108,23 +108,7 @@ class DownloadCommand(Command):
             choices=Artifacts.get_artifacts_list().keys(),
             help="The artifact to download from the CI server")
 
-        Add = EnvDefault.add
-        Add(self.parser, "hudson", "hudson.openmicroscopy.org.uk")
-        Add(self.parser, "branch", "OMERO-trunk")
-        Add(self.parser, "build",
-            "http://%(hudson)s/job/%(branch)s/lastSuccessfulBuild/")
-
-        # UNZIP TOOLS
-        if WINDOWS:
-            unzip = "C:\\Program Files (x86)\\7-Zip\\7z.exe"
-            unzipargs = "x"
-        else:
-            unzip = "unzip"
-            unzipargs = ""
-
-        Add(self.parser, "unzip", unzip)
-        Add(self.parser, "unzipargs", unzipargs)
-        Add(self.parser, "skipunzip", "false")
+        self.parser = JenkinsParser(self.parser)
 
     def __call__(self, args):
         super(DownloadCommand, self).__call__(args)

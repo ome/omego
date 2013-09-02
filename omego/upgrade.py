@@ -12,7 +12,7 @@ import sys
 
 from artifacts import Artifacts
 from framework import Command, Stop
-from env import EnvDefault
+from env import EnvDefault, JenkinsParser
 from env import WINDOWS
 from env import HOSTNAME
 
@@ -362,22 +362,13 @@ class UpgradeCommand(Command):
         self.parser.add_argument("-n", "--dry-run", action="store_true")
         self.parser.add_argument("server", nargs="?")
 
+        self.parser = JenkinsParser(self.parser)
+
         Add = EnvDefault.add
         Add(self.parser, "hostname", HOSTNAME)
         Add(self.parser, "name", name)
         Add(self.parser, "address", address)
         Add(self.parser, "skipemail", skipemail)
-
-        # UNZIP TOOLS
-        if WINDOWS:
-            unzip = "C:\\Program Files (x86)\\7-Zip\\7z.exe"
-            unzipargs = "x"
-        else:
-            unzip = "unzip"
-            unzipargs = ""
-
-        Add(self.parser, "unzip", unzip)
-        Add(self.parser, "unzipargs", unzipargs)
 
         # Ports
         Add(self.parser, "prefix", "")
@@ -397,11 +388,7 @@ class UpgradeCommand(Command):
         Add(self.parser, "web", web)
 
         # send_email.py
-        Add(self.parser, "hudson", "hudson.openmicroscopy.org.uk")
         Add(self.parser, "subject", "OMERO - %(name)s was upgraded")
-        Add(self.parser, "branch", "OMERO-trunk")
-        Add(self.parser, "build",
-            "http://%(hudson)s/job/%(branch)s/lastSuccessfulBuild/")
         Add(self.parser, "sender", "sysadmin@openmicroscopy.org")
         Add(self.parser, "recipients",
             "ome-nitpick@lists.openmicroscopy.org.uk",
@@ -411,7 +398,6 @@ class UpgradeCommand(Command):
         Add(self.parser, "weburl", "http://%(address)s/omero/webclient/")
 
         Add(self.parser, "skipweb", "false")
-        Add(self.parser, "skipunzip", "false")
         Add(self.parser, "skipdelete", "true")
         Add(self.parser, "skipdeletezip", "false")
 
