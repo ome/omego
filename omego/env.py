@@ -102,7 +102,8 @@ class JenkinsParser(argparse.ArgumentParser):
             help="Program to use to unzip the Jenkins artifact")
         Add(group, "unzipargs", unzipargs,
             help="Arguments to pass while unzipping the Jenkins artifact")
-        Add(group, "skipunzip", "false")
+        group.add_argument("--skipunzip", action="store_true",
+                           help="Skip the artifact unzipping")
 
     def __getattr__(self, key):
         return getattr(self.parser, key)

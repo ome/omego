@@ -76,7 +76,7 @@ class Artifacts(object):
             log.info("Downloading %s", componenturl)
             urllib.urlretrieve(componenturl, filename)
 
-        if "false" == self.args.skipunzip.lower():
+        if not self.args.skipunzip:
             if self.args.unzipargs:
                 command = [self.args.unzip, self.args.unzipargs, filename]
             else:
