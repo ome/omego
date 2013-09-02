@@ -21,36 +21,39 @@
 
 import unittest
 
-from nose.plugins import skip
-
-from omego.framework import main, Stop
-from omego.upgrade import UpgradeCommand
+from omego.framework import main
+from omego.artifacts import DownloadCommand
 
 
-class TestUpgrade(unittest.TestCase):
+class TestDownload(unittest.TestCase):
 
-    def assertUpgrade(self, *args):
-        args = ["upgrade"] + list(args)
-        main(args=args, items=[("upgrade", UpgradeCommand)])
+    def assertDownload(self):
+        main(["download", self.artifact, '--skipunzip'],
+             items=[("download", DownloadCommand)])
 
-    def testUpgradeHelp(self):
-        try:
-            self.assertUpgrade("-h")
-        except SystemExit, se:
-            self.assertEquals(0, se.code)
+    def testDownloadServer(self):
+        self.artifact = 'server'
+        self.assertDownload()
 
-    def testUpgradeDryRun(self):
-        self.assertUpgrade("-n")
+    def testDownloadSource(self):
+        self.artifact = 'source'
+        self.assertDownload()
 
-    def testUpgradeDryRunVerbose(self):
-        self.assertUpgrade("-n", "-v")
+    def testDownloadWinClients(self):
+        self.artifact = 'win'
+        self.assertDownload()
 
-    def testUpgrade(self):
-        raise skip.SkipTest()
-        self.assertUpgrade("--branch=OMERO-trunk-ice34")
+    def testDownloadLinuxClients(self):
+        self.artifact = 'linux'
+        self.assertDownload()
 
-    def testSkipunzip(self):
-        self.assertRaises(Stop, self.assertUpgrade, "--skipunzip")
+    def testDownloadMacClients(self):
+        self.artifact = 'mac'
+        self.assertDownload()
+
+    def testDownloadMatlab(self):
+        self.artifact = 'matlab'
+        self.assertDownload()
 
 if __name__ == '__main__':
     import logging

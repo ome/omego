@@ -30,6 +30,7 @@ import sys
 from framework import main, Stop
 
 from upgrade import UpgradeCommand
+from artifacts import DownloadCommand
 
 
 def entry_point():
@@ -38,7 +39,8 @@ def entry_point():
     if Stop is raised, calls sys.exit()
     """
     try:
-        main(items=[("upgrade", UpgradeCommand)])
+        main(items=[("upgrade", UpgradeCommand),
+            ("download", DownloadCommand)])
     except Stop, stop:
         print stop,
         sys.exit(stop.rc)
