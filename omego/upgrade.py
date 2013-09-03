@@ -9,91 +9,14 @@ import logging
 import fileinput
 import smtplib
 import sys
-import urllib
-import re
 
+from artifacts import Artifacts
 from framework import Command, Stop
-from env import EnvDefault
+from env import EnvDefault, JenkinsParser
 from env import WINDOWS
 from env import HOSTNAME
 
-try:
-    from xml.etree.ElementTree import XML
-except ImportError:
-    from elementtree.ElementTree import XML
-
-
 log = logging.getLogger("omego.upgrade")
-
-
-class Artifacts(object):
-
-    def __init__(self, args):
-
-        self.args = args
-        url = urllib.urlopen(args.build+"api/xml")
-        log.debug('Fetching xml from %s code:%d', url.url, url.code)
-        if url.code != 200:
-            log.error('Failed to get Hudson XML from %s (code %d)',
-                      url.url, url.code)
-            raise Stop(20, 'Job lookup failed, is the job name correct?')
-        hudson_xml = url.read()
-        url.close()
-
-        root = XML(hudson_xml)
-
-        artifacts = root.findall("./artifact")
-        base_url = args.build+"artifact/"
-        if len(artifacts) <= 0:
-            raise AttributeError("No artifacts, please check build on Hudson.")
-
-        patterns = self.get_artifacts_list()
-        for artifact in artifacts:
-            filename = artifact.find("fileName").text
-
-            for key, value in patterns.iteritems():
-                if re.compile(value).match(filename):
-                    rel_path = base_url + artifact.find("relativePath").text
-                    setattr(self, key, rel_path)
-                    pass
-
-    def get_artifacts_list(self):
-        return {'server': r'OMERO\.server.*\.zip',
-                'source': r'OMERO\.source.*\.zip',
-                'win': r'OMERO\.clients.*\.win\.zip',
-                'linux': r'OMERO\.clients.*\.linux\.zip',
-                'mac': r'OMERO\.clients.*\.mac\.zip'}
-
-    def download(self, component):
-
-        if not hasattr(self, component) or getattr(self, component) is None:
-            raise Exception("No %s found" % component)
-
-        componenturl = getattr(self, component)
-        filename = os.path.basename(componenturl)
-        unzipped = filename.replace(".zip", "")
-
-        if os.path.exists(unzipped):
-            return unzipped
-
-        if not os.path.exists(filename):
-            log.info("Downloading %s", componenturl)
-            urllib.urlretrieve(componenturl, filename)
-
-        if "false" == self.args.skipunzip.lower():
-            if self.args.unzipargs:
-                command = [self.args.unzip, self.args.unzipargs, filename]
-            else:
-                command = [self.args.unzip, filename]
-            p = subprocess.Popen(command)
-            rc = p.wait()
-            if rc != 0:
-                log.error('Unzip failed')
-                raise Stop(rc, 'Unzip failed, unzip manually and run again')
-            else:
-                return unzipped
-
-        raise Stop(0, 'Unzip disabled, exiting')
 
 
 class Email(object):
@@ -384,7 +307,8 @@ class WindowsUpgrade(Upgrade):
 
     def directories(self):
         self.rmdir()  # TODO: skipdelete etc?
-        log.warn("Should probably move directory to OLD_OMERO and test handles")
+        log.warn(
+            "Should probably move directory to OLD_OMERO and test handles")
         self.mklink(self.dir)
 
     def call(self, command):
@@ -438,22 +362,13 @@ class UpgradeCommand(Command):
         self.parser.add_argument("-n", "--dry-run", action="store_true")
         self.parser.add_argument("server", nargs="?")
 
+        self.parser = JenkinsParser(self.parser)
+
         Add = EnvDefault.add
         Add(self.parser, "hostname", HOSTNAME)
         Add(self.parser, "name", name)
         Add(self.parser, "address", address)
         Add(self.parser, "skipemail", skipemail)
-
-        # UNZIP TOOLS
-        if WINDOWS:
-            unzip = "C:\\Program Files (x86)\\7-Zip\\7z.exe"
-            unzipargs = "x"
-        else:
-            unzip = "unzip"
-            unzipargs = ""
-
-        Add(self.parser, "unzip", unzip)
-        Add(self.parser, "unzipargs", unzipargs)
 
         # Ports
         Add(self.parser, "prefix", "")
@@ -473,11 +388,7 @@ class UpgradeCommand(Command):
         Add(self.parser, "web", web)
 
         # send_email.py
-        Add(self.parser, "hudson", "hudson.openmicroscopy.org.uk")
         Add(self.parser, "subject", "OMERO - %(name)s was upgraded")
-        Add(self.parser, "branch", "OMERO-trunk")
-        Add(self.parser, "build",
-            "http://%(hudson)s/job/%(branch)s/lastSuccessfulBuild/")
         Add(self.parser, "sender", "sysadmin@openmicroscopy.org")
         Add(self.parser, "recipients",
             "ome-nitpick@lists.openmicroscopy.org.uk",
@@ -487,7 +398,6 @@ class UpgradeCommand(Command):
         Add(self.parser, "weburl", "http://%(address)s/omero/webclient/")
 
         Add(self.parser, "skipweb", "false")
-        Add(self.parser, "skipunzip", "false")
         Add(self.parser, "skipdelete", "true")
         Add(self.parser, "skipdeletezip", "false")
 
@@ -522,6 +432,9 @@ class UpgradeCommand(Command):
         artifacts = Artifacts(args)
 
         if not args.server:
+            if args.skipunzip:
+                raise Stop(0, 'Unzip disabled, exiting')
+
             dir = artifacts.download('server')
             # Exits if directory does not exist!
         else:
