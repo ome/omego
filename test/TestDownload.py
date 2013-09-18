@@ -20,6 +20,9 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import unittest
+import os
+import shutil
+import tempfile
 
 from omego.framework import main
 from omego.artifacts import DownloadCommand
@@ -27,33 +30,29 @@ from omego.artifacts import DownloadCommand
 
 class TestDownload(unittest.TestCase):
 
-    def assertDownload(self):
+    def setUp(self):
+        unittest.TestCase.setUp(self)
+        self.cwd = os.getcwd()
+        self.path = tempfile.mkdtemp("", "download-", ".")
+        self.path = os.path.abspath(self.path)
+        os.chdir(self.path)
+        self.artifact = 'win'
+
+    def tearDown(self):
+        try:
+            shutil.rmtree(self.path)
+        finally:
+            # Return to cwd regardless.
+            os.chdir(self.cwd)
+        unittest.TestCase.tearDown(self)
+
+    def testDownloadNoUnzip(self):
         main(["download", self.artifact, '--skipunzip'],
              items=[("download", DownloadCommand)])
 
-    def testDownloadServer(self):
-        self.artifact = 'server'
-        self.assertDownload()
-
-    def testDownloadSource(self):
-        self.artifact = 'source'
-        self.assertDownload()
-
-    def testDownloadWinClients(self):
-        self.artifact = 'win'
-        self.assertDownload()
-
-    def testDownloadLinuxClients(self):
-        self.artifact = 'linux'
-        self.assertDownload()
-
-    def testDownloadMacClients(self):
-        self.artifact = 'mac'
-        self.assertDownload()
-
-    def testDownloadMatlab(self):
-        self.artifact = 'matlab'
-        self.assertDownload()
+    def testSimpleDownload(self):
+        main(["download", self.artifact],
+             items=[("download", DownloadCommand)])
 
 if __name__ == '__main__':
     import logging
