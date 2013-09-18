@@ -275,7 +275,7 @@ class UnixUpgrade(Upgrade):
         if "false" == self.args.skipdeletezip.lower():
             try:
                 log.info("Deleting %s", targetzip)
-                os.unlink(targetzip)
+                os.remove(targetzip)
             except:
                 log.error("Failed to delete %s", targetzip)
 
