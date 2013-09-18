@@ -54,6 +54,11 @@ class TestDownload(unittest.TestCase):
         main(["download", self.artifact],
              items=[("download", DownloadCommand)])
 
+    def testDownloadUnzipArgs(self):
+        main(["download", self.artifact, '--unzipargs', '-d OMERO.cpp'],
+             items=[("download", DownloadCommand)])
+        self.assertTrue(os.path.isdir('OMERO.cpp'))
+
 if __name__ == '__main__':
     import logging
     logging.basicConfig()
