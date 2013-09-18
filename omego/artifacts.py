@@ -80,7 +80,9 @@ class Artifacts(object):
         if not self.args.skipunzip:
             command = [self.args.unzip]
             if self.args.unzipargs:
-                command.extend(self.args.unzipargs.split())
+                command.append(self.args.unzipargs)
+            if self.args.unzipdir:
+                command.extend(["-d", self.args.unzipdir])
             command.append(filename)
             log.debug("Calling %s", command)
             p = subprocess.Popen(command)

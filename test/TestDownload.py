@@ -50,12 +50,13 @@ class TestDownload(unittest.TestCase):
         main(["download", self.artifact, '--skipunzip'],
              items=[("download", DownloadCommand)])
 
-    def testSimpleDownload(self):
-        main(["download", self.artifact],
+    def testDownloadUnzip(self):
+        main(["download", self.artifact, "--unzipargs=-q"],
              items=[("download", DownloadCommand)])
 
-    def testDownloadUnzipArgs(self):
-        main(["download", self.artifact, '--unzipargs', '-d OMERO.cpp'],
+    def testDownloadUnzipDir(self):
+        main(["download", self.artifact, "--unzipargs=-q",
+              "--unzipdir", "OMERO.cpp"],
              items=[("download", DownloadCommand)])
         self.assertTrue(os.path.isdir('OMERO.cpp'))
 
