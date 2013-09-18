@@ -78,10 +78,11 @@ class Artifacts(object):
             urllib.urlretrieve(componenturl, filename)
 
         if not self.args.skipunzip:
+            command = [self.args.unzip]
             if self.args.unzipargs:
-                command = [self.args.unzip, self.args.unzipargs, filename]
-            else:
-                command = [self.args.unzip, filename]
+                command.extend(self.args.unzipargs.split())
+            command.append(filename)
+            log.debug("Calling %s", command)
             p = subprocess.Popen(command)
             rc = p.wait()
             if rc != 0:
