@@ -46,18 +46,22 @@ class TestDownload(unittest.TestCase):
             os.chdir(self.cwd)
         unittest.TestCase.tearDown(self)
 
+    def download(self, *args):
+        args = ["download", self.artifact] + list(args)
+        main(args=args, items=[("download", DownloadCommand)])
+
     def testDownloadNoUnzip(self):
-        main(["download", self.artifact, '--skipunzip'],
-             items=[("download", DownloadCommand)])
+        self.download('--skipunzip')
+        files = os.listdir(self.path)
+        self.assertEquals(len(files), 1)
 
     def testDownloadUnzip(self):
-        main(["download", self.artifact, "--unzipargs=-q"],
-             items=[("download", DownloadCommand)])
+        self.download('--unzipargs=-q')
+        files = os.listdir(self.path)
+        self.assertEquals(len(files), 2)
 
     def testDownloadUnzipDir(self):
-        main(["download", self.artifact, "--unzipargs=-q",
-              "--unzipdir", "OMERO.cpp"],
-             items=[("download", DownloadCommand)])
+        self.download('--unzipargs=-q', '--unzipdir', 'OMERO.cpp')
         self.assertTrue(os.path.isdir('OMERO.cpp'))
 
 if __name__ == '__main__':
