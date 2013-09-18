@@ -21,6 +21,10 @@ before_script:
     - psql -c "select 1;" -U omero -h localhost omero
     - sudo mkdir /OMERO
     - sudo chown $USER:$USER /OMERO
+    - wget http://cvs.openmicroscopy.org.uk/snapshots/omero/4.4.8p1/OMERO.server-4.4.8p1-ice34-b304.zip
+    - unzip OMERO.server-4.4.8p1-ice34-b304.zip
+    - ln -s OMERO.server-4.4.8p1-ice34-b304 OMERO-CURRENT
+    - OMERO-CURRENT/bin/omero admin start
 
 script:
     - nosetests -d test
