@@ -36,7 +36,7 @@ class TestDownload(unittest.TestCase):
         self.path = tempfile.mkdtemp("", "download-", ".")
         self.path = os.path.abspath(self.path)
         os.chdir(self.path)
-        self.artifact = 'win'
+        self.artifact = 'cpp'
 
     def tearDown(self):
         try:
