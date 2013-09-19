@@ -23,7 +23,7 @@ before_script:
     - sudo chown $USER:$USER /OMERO
 
 script:
-    - nosetests -d test
+    - nosetests -v -d test
     - flake8 omego test
 
 after_failure:
