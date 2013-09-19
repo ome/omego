@@ -29,28 +29,28 @@ from omego.upgrade import UpgradeCommand
 
 class TestUpgrade(unittest.TestCase):
 
-    def assertUpgrade(self, *args):
+    def upgrade(self, *args):
         args = ["upgrade"] + list(args)
         main(args=args, items=[("upgrade", UpgradeCommand)])
 
     def testUpgradeHelp(self):
         try:
-            self.assertUpgrade("-h")
+            self.upgrade("-h")
         except SystemExit, se:
             self.assertEquals(0, se.code)
 
     def testUpgradeDryRun(self):
-        self.assertUpgrade("-n")
+        self.upgrade("-n")
 
     def testUpgradeDryRunVerbose(self):
-        self.assertUpgrade("-n", "-v")
+        self.upgrade("-n", "-v")
+
+    def testSkipunzip(self):
+        self.assertRaises(Stop, self.upgrade, "--skipunzip")
 
     def testUpgrade(self):
         raise skip.SkipTest()
-        self.assertUpgrade("--branch=OMERO-trunk-ice34")
-
-    def testSkipunzip(self):
-        self.assertRaises(Stop, self.assertUpgrade, "--skipunzip")
+        self.upgrade("--branch=OMERO-trunk-ice34")
 
 if __name__ == '__main__':
     import logging

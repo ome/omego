@@ -58,6 +58,7 @@ class Artifacts(object):
                 'linux': r'OMERO\.clients.*\.linux\.zip',
                 'mac': r'OMERO\.clients.*\.mac\.zip',
                 'matlab': r'OMERO\.matlab.*\.zip',
+                'cpp': r'OMERO\.cpp.*\.zip',
                 }
 
     def download(self, component):
@@ -77,10 +78,13 @@ class Artifacts(object):
             urllib.urlretrieve(componenturl, filename)
 
         if not self.args.skipunzip:
+            command = [self.args.unzip]
             if self.args.unzipargs:
-                command = [self.args.unzip, self.args.unzipargs, filename]
-            else:
-                command = [self.args.unzip, filename]
+                command.append(self.args.unzipargs)
+            if self.args.unzipdir:
+                command.extend(["-d", self.args.unzipdir])
+            command.append(filename)
+            log.debug("Calling %s", command)
             p = subprocess.Popen(command)
             rc = p.wait()
             if rc != 0:
