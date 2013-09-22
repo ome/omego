@@ -20,6 +20,9 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import unittest
+import os
+import shutil
+import tempfile
 
 from omego.framework import main
 from omego.artifacts import DownloadCommand
@@ -27,33 +30,39 @@ from omego.artifacts import DownloadCommand
 
 class TestDownload(unittest.TestCase):
 
-    def assertDownload(self):
-        main(["download", self.artifact, '--skipunzip'],
-             items=[("download", DownloadCommand)])
+    def setUp(self):
+        unittest.TestCase.setUp(self)
+        self.cwd = os.getcwd()
+        self.path = tempfile.mkdtemp("", "download-", ".")
+        self.path = os.path.abspath(self.path)
+        os.chdir(self.path)
+        self.artifact = 'cpp'
 
-    def testDownloadServer(self):
-        self.artifact = 'server'
-        self.assertDownload()
+    def tearDown(self):
+        try:
+            shutil.rmtree(self.path)
+        finally:
+            # Return to cwd regardless.
+            os.chdir(self.cwd)
+        unittest.TestCase.tearDown(self)
 
-    def testDownloadSource(self):
-        self.artifact = 'source'
-        self.assertDownload()
+    def download(self, *args):
+        args = ["download", self.artifact] + list(args)
+        main(args=args, items=[("download", DownloadCommand)])
 
-    def testDownloadWinClients(self):
-        self.artifact = 'win'
-        self.assertDownload()
+    def testDownloadNoUnzip(self):
+        self.download('--skipunzip')
+        files = os.listdir(self.path)
+        self.assertEquals(len(files), 1)
 
-    def testDownloadLinuxClients(self):
-        self.artifact = 'linux'
-        self.assertDownload()
+    def testDownloadUnzip(self):
+        self.download('--unzipargs=-q')
+        files = os.listdir(self.path)
+        self.assertEquals(len(files), 2)
 
-    def testDownloadMacClients(self):
-        self.artifact = 'mac'
-        self.assertDownload()
-
-    def testDownloadMatlab(self):
-        self.artifact = 'matlab'
-        self.assertDownload()
+    def testDownloadUnzipDir(self):
+        self.download('--unzipargs=-q', '--unzipdir', 'OMERO.cpp')
+        self.assertTrue(os.path.isdir('OMERO.cpp'))
 
 if __name__ == '__main__':
     import logging

@@ -102,6 +102,8 @@ class JenkinsParser(argparse.ArgumentParser):
             help="Program to use to unzip the Jenkins artifact")
         Add(group, "unzipargs", unzipargs,
             help="Arguments to pass while unzipping the Jenkins artifact")
+        Add(group, "unzipdir", "",
+            help="Directory to unzip the Jenkins artifact to")
         group.add_argument("--skipunzip", action="store_true",
                            help="Skip the artifact unzipping")
 

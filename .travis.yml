@@ -29,7 +29,7 @@ before_script:
     - OMERO-CURRENT/bin/omero admin start
 
 script:
-    - nosetests -d test
+    - nosetests -v -d test
     - flake8 omego test
 
 after_failure:
