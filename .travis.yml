@@ -25,7 +25,7 @@ before_script:
     - unzip -qq OMERO.server-4.4.8p1-ice34-b304.zip
     - ln -s OMERO.server-4.4.8p1-ice34-b304 OMERO-CURRENT
     - OMERO-CURRENT/bin/omero db script "" "" ome -f OMERO.sql
-    - psql -h localhost -U omero omero < OMERO.sql
+    - psql -q -h localhost -U omero omero < OMERO.sql
     - OMERO-CURRENT/bin/omero admin start
 
 script:
