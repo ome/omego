@@ -22,12 +22,11 @@ before_script:
     - sudo mkdir /OMERO
     - sudo chown $USER:$USER /OMERO
     - wget http://cvs.openmicroscopy.org.uk/snapshots/omero/4.4.8p1/OMERO.server-4.4.8p1-ice34-b304.zip
-    - unzip OMERO.server-4.4.8p1-ice34-b304.zip
+    - unzip -qq OMERO.server-4.4.8p1-ice34-b304.zip
     - ln -s OMERO.server-4.4.8p1-ice34-b304 OMERO-CURRENT
-    - cd OMERO-CURRENT
-    - bin/omero db script "" "" ome -f OMERO.sql
+    - OMERO-CURRENT/bin/omero db script "" "" ome -f OMERO.sql
     - psql -h localhost -U omero omero < OMERO.sql
-    - bin/omero admin start
+    - OMERO-CURRENT/bin/omero admin start
 
 script:
     - nosetests -d test
