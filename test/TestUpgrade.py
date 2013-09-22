@@ -21,8 +21,6 @@
 
 import unittest
 
-from nose.plugins import skip
-
 from omego.framework import main, Stop
 from omego.upgrade import UpgradeCommand
 
@@ -49,8 +47,7 @@ class TestUpgrade(unittest.TestCase):
         self.assertRaises(Stop, self.upgrade, "--skipunzip")
 
     def testUpgrade(self):
-        raise skip.SkipTest()
-        self.upgrade("--branch=OMERO-trunk-ice34")
+        self.upgrade("--branch=OMERO-stable-ice34")
 
 if __name__ == '__main__':
     import logging
