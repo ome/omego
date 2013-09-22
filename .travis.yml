@@ -24,7 +24,10 @@ before_script:
     - wget http://cvs.openmicroscopy.org.uk/snapshots/omero/4.4.8p1/OMERO.server-4.4.8p1-ice34-b304.zip
     - unzip OMERO.server-4.4.8p1-ice34-b304.zip
     - ln -s OMERO.server-4.4.8p1-ice34-b304 OMERO-CURRENT
-    - OMERO-CURRENT/bin/omero admin start
+    - cd OMERO-CURRENT
+    - bin/omero db script "" "" ome -f OMERO.sql
+    - psql -h localhost -U omero omero < OMERO.sql
+    - bin/omero admin start
 
 script:
     - nosetests -d test
