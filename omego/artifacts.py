@@ -5,7 +5,7 @@ import os
 import subprocess
 import logging
 
-import urllib
+from urllib2 import build_opener
 import re
 
 from framework import Command, Stop
@@ -18,13 +18,25 @@ except ImportError:
 
 log = logging.getLogger("omego.artifacts")
 
+# create an opener that will simulate a browser user-agent
+opener = build_opener()
+if 'USER_AGENT' in os.environ:
+    opener.addheaders = [('User-agent', os.environ.get('USER_AGENT'))]
+
+
+def download(url, filename):
+    reponse = opener.open(url)
+    output = open(filename, 'w')
+    output.write(reponse.read())
+    output.close()
+
 
 class Artifacts(object):
 
     def __init__(self, args):
 
         self.args = args
-        url = urllib.urlopen(args.build+"api/xml")
+        url = opener.open(args.build+"api/xml")
         log.debug('Fetching xml from %s code:%d', url.url, url.code)
         if url.code != 200:
             log.error('Failed to get Hudson XML from %s (code %d)',
@@ -75,7 +87,7 @@ class Artifacts(object):
 
         if not os.path.exists(filename):
             log.info("Downloading %s", componenturl)
-            urllib.urlretrieve(componenturl, filename)
+            download(componenturl, filename)
 
         if not self.args.skipunzip:
             command = [self.args.unzip]
