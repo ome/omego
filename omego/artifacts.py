@@ -20,7 +20,6 @@ log = logging.getLogger("omego.artifacts")
 
 # create an opener that will simulate a browser user-agent
 opener = build_opener()
-print os.environ.get('USER_AGENT')
 if 'USER_AGENT' in os.environ:
     opener.addheaders = [('User-agent', os.environ.get('USER_AGENT'))]
 
