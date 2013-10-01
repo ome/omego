@@ -6,6 +6,8 @@ python:
 virtualenv:
   system_site_packages: true
 
+env: USER_AGENT=Travis
+
 before_install:
   - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install --use-mirrors argparse; fi
   - pip install -r requirements.txt --use-mirrors
@@ -21,6 +23,12 @@ before_script:
     - psql -c "select 1;" -U omero -h localhost omero
     - sudo mkdir /OMERO
     - sudo chown $USER:$USER /OMERO
+    - wget --user-agent $USER_AGENT http://cvs.openmicroscopy.org.uk/snapshots/omero/4.4.8p1/OMERO.server-4.4.8p1-ice34-b304.zip
+    - unzip -qq OMERO.server-4.4.8p1-ice34-b304.zip
+    - ln -s OMERO.server-4.4.8p1-ice34-b304 OMERO-CURRENT
+    - OMERO-CURRENT/bin/omero db script "" "" ome -f OMERO.sql
+    - psql -q -h localhost -U omero omero < OMERO.sql
+    - OMERO-CURRENT/bin/omero admin start
 
 script:
     - nosetests -v -d test
