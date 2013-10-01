@@ -23,7 +23,7 @@
 OME-GO Management library
 """
 
-from distutils.core import setup
+from setuptools import setup
 from omego.version import get_git_version
 
 
