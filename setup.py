@@ -23,18 +23,13 @@
 OME-GO Management library
 """
 
-from distutils.core import setup
+from setuptools import setup
 from omego.version import get_git_version
 
 
-DATA_FILES = [('.', ['LICENSE.txt', 'README.rst', 'requirements.txt'])]
-ZIP_SAFE = True
-try:
-    VERSION = get_git_version()
-    DATA_FILES[0][1].append("RELEASE-VERSION")
-    ZIP_SAFE = False
-except:
-    VERSION = "0.0.0"  # Non-tagged
+VERSION = get_git_version()
+ZIP_SAFE = False
+
 
 LONG_DESCRIPTION = open("README.rst", "r").read()
 
@@ -42,7 +37,8 @@ CLASSIFIERS = ["Development Status :: 4 - Beta",
                "Environment :: Console",
                "Intended Audience :: Developers",
                "Intended Audience :: System Administrators",
-               "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+               "License :: OSI Approved :: GNU General Public License v2"
+               " (GPLv2)",
                "Operating System :: OS Independent",
                "Programming Language :: Python",
                "Topic :: Database :: Database Engines/Servers",
@@ -60,11 +56,11 @@ setup(name='omego',
       url='https://github.com/ome/omero-setup',
 
       # More complex variables
-      packages = ['omego'],
-      install_requires = [],  # Skipping argparse for Python 2.7 and greater.
-      entry_points = { 'console_scripts': ['omego = omego.main:entry_point'] },
-      data_files = DATA_FILES,
-      zip_safe = ZIP_SAFE,
+      packages=['omego'],
+      include_package_data=True,
+      install_requires=[],  # Skipping argparse for Python 2.7 and greater.
+      entry_points={'console_scripts': ['omego = omego.main:entry_point']},
+      zip_safe=ZIP_SAFE,
 
       # Using global variables
       long_description=LONG_DESCRIPTION,
