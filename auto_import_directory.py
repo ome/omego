@@ -212,7 +212,8 @@ class AutoImporter:
         else:
             print "No import, just container creation."
 
-    def auto_import(self, paths, no_imports, archive):
+    def auto_import(self, basepath, paths, no_imports, archive):
+
         for filepath in paths:
             parts = filepath.strip().split(os.sep)
 
@@ -220,11 +221,11 @@ class AutoImporter:
             if "#" in parts:
                 continue
 
-            # Ignore paths that do not contain adhere to:
-            # scenario/user/group/project/dataset/something
+            # Ignore relative directory paths that do not adhere to:
+            # user/group/project/dataset
             # This guarantees a target but doesn't process more
             # deeply nested directories and so avoids double imports.
-            if len(parts) != 5:
+            if len(parts) != 4:
                 #print "Ignoring ", filepath # Not that useful in general.
                 continue
 
@@ -232,8 +233,8 @@ class AutoImporter:
             print "Processing ", filepath
 
             # Users must exist and they must be in an already existing group.
-            user = parts[1]
-            group = parts[2]
+            user = parts[0]
+            group = parts[1]
             if not self.group_exists(user, group):
                 continue
 
@@ -243,6 +244,7 @@ class AutoImporter:
                 print "-"*100
                 print "Getting import canditates..."
                 # If separate imports or further logging are required could use import_candidates.
+                filepath = basepath.joinpath(filepath)
                 import_candidates = as_dictionary([filepath])
                 if len(import_candidates) == 0:
                     print "Nothing to import, path contains no import candidates."
@@ -252,7 +254,7 @@ class AutoImporter:
             print "-"*100
 
             # Finally we can import something creating containers as we go.
-            self.do_import(user, group, parts[3], parts[4], archive, filepath)
+            self.do_import(user, group, parts[2], parts[3], archive, filepath)
 
         print "="*100
 
@@ -283,14 +285,18 @@ if __name__ == '__main__':
             f = open(source, "r")
             filepaths = f.read()
             f.close()
-            paths = [source+os.sep+p for p in filepaths.split("\n")]
+            paths = [p for p in filepaths.split("\n")]
+            basepath = None
         except:
             sys.exit('ERROR: Problem accessing file %s' % source)
     else:
         if not os.path.exists(source):
             sys.exit('ERROR: Directory %s was not found!' % source)
-        basePath = path.path(source)
-        paths = basePath.walkdirs()
+        basepath = path.path(source).abspath()
+        paths = list(basepath.walkdirs())
+        for i in range(len(paths)):
+            paths[i] = str(basepath.relpathto(paths[i]))
+
 
     ai = AutoImporter()
-    ai.auto_import(paths, no_imports, archive)
+    ai.auto_import(basepath, paths, no_imports, archive)
