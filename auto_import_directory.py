@@ -11,6 +11,11 @@ from omero.rtypes import wrap
 from omero.model import DatasetI, ProjectI, ScreenI
 from omero.util.import_candidates import as_dictionary
 
+host = "localhost"
+root_user = "root"
+root_passw = "omero"
+user_passw = "ome"
+
 class AutoImporter:
     def __init__(self):
         self.known_users = {}
@@ -19,17 +24,31 @@ class AutoImporter:
         self.no_projs = "no_projects"
         self.no_dats = "no_datasets"
 
+    def new_connection(self, user, passw, host):
+        conn = BlitzGateway(user, passw, host=host)
+        conn.connect()
+        return conn
+
+    def use_connection(self, cli, host):
+        sessionId = cli._event_context.sessionUuid
+        conn = BlitzGateway(host=host)
+        conn.connect(sUuid = sessionId)
+        return conn
+
+    def get_params(self, conn=None):
+        params = omero.sys.Parameters()
+        params.theFilter = omero.sys.Filter()
+        if conn is not None:
+            params.theFilter.ownerId = wrap(conn.getUser().getId())
+        return params
+
     def create_containers(self, cli, project, dataset):
         """
         Creates containers with names provided if they don't exist already.
         Returns Dataset ID.
         """
-        sessionId = cli._event_context.sessionUuid
-        conn = BlitzGateway(host='localhost')
-        conn.connect(sUuid = sessionId)
-        params = omero.sys.Parameters()
-        params.theFilter = omero.sys.Filter()
-        params.theFilter.ownerId = wrap(conn.getUser().getId())
+        conn = self.use_connection(cli, host)
+        params = self.get_params(conn)
 
         d = None
         dsId = None
@@ -101,12 +120,8 @@ class AutoImporter:
         Creates screen with name provided if it doesn't exist already.
         Returns Screen ID.
         """
-        sessionId = cli._event_context.sessionUuid
-        conn = BlitzGateway(host='localhost')
-        conn.connect(sUuid = sessionId)
-        params = omero.sys.Parameters()
-        params.theFilter = omero.sys.Filter()
-        params.theFilter.ownerId = wrap(conn.getUser().getId())
+        conn = self.use_connection(cli, host)
+        params = self.get_params(conn)
 
         slist = list(conn.getObjects("Screen", attributes={'name': screen}, params=params))
         if len(slist) == 0:
@@ -126,12 +141,11 @@ class AutoImporter:
             return True
         try:
             try:
-                conn = BlitzGateway("root", "omero", host='localhost')
-                conn.connect()
-                params = omero.sys.Parameters()
-                params.theFilter = omero.sys.Filter()
+                conn = self.new_connection(root_user, root_passw, host)
+                params = self.get_params()
                 u = conn.getObject("Experimenter", attributes={'omeName': user}, params=params)
-            except:
+            except Exception, e:
+                print e
                 print "Error getting user - ignoring."
                 return False
 
@@ -143,7 +157,10 @@ class AutoImporter:
                 self.known_users[user] = []
                 return True
         finally:
-            conn.seppuku()
+            try:
+                conn.seppuku()
+            except:
+                pass
 
     def group_exists(self, user, group):
         if not self.user_exists(user):
@@ -154,10 +171,10 @@ class AutoImporter:
                 return True
         try:
             try:
-                conn = BlitzGateway(user, "ome", host='localhost')
-                conn.connect()
+                conn = self.new_connection(user, user_passw, host)
                 groups = conn.getGroupsMemberOf()
-            except:
+            except Exception, e:
+                print e
                 return False
 
             if group in [g.name for g in groups]:
@@ -168,7 +185,10 @@ class AutoImporter:
                 print "is not in Group:", group, "- ignoring."
                 return False
         finally:
-            conn.seppuku()
+            try:
+                conn.seppuku()
+            except:
+                pass
 
     def do_import(self, user, group, project, dataset, archive, filename=None):
         cli = omero.cli.CLI()
