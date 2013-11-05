@@ -170,12 +170,14 @@ class AutoImporter:
         finally:
             conn.seppuku()
 
-    def do_import(self, user, group, project, dataset, filename=None):
+    def do_import(self, user, group, project, dataset, archive, filename=None):
         cli = omero.cli.CLI()
         cli.loadplugins()
         cli.invoke(["login", "%s@localhost" % user, "-w", "ome", "-C"], strict=True)
         cli.invoke(["sessions", "group", group], strict=True)
         import_args = ["import"]
+        if archive:
+            import_args.extend(["-a"])
 
         if project == self.screens:
             if dataset != self.orphans:
@@ -210,7 +212,7 @@ class AutoImporter:
         else:
             print "No import, just container creation."
 
-    def auto_import(self, paths, no_imports):
+    def auto_import(self, paths, no_imports, archive):
         for filepath in paths:
             parts = filepath.strip().split(os.sep)
 
@@ -250,25 +252,28 @@ class AutoImporter:
             print "-"*100
 
             # Finally we can import something creating containers as we go.
-            self.do_import(user, group, parts[3], parts[4], filepath)
+            self.do_import(user, group, parts[3], parts[4], archive, filepath)
 
         print "="*100
 
 if __name__ == '__main__':
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "fn", ["file", "no_import"])
+        opts, args = getopt.getopt(sys.argv[1:], "fna", ["file", "no_import", "archive"])
     except getopt.GetoptError as err:
         sys.exit(str(err))
 
     source = args[0]
     use_file = False
     no_imports = False
+    archive = False
     for o, a in opts:
         if o in ("-f", "--file"):
             use_file = True
         elif o in ("-n", "--no_import"):
             no_imports = True
+        elif o in ("-a", "--archive"):
+            archive = True
 
     if use_file:
         if not os.path.exists(source):
@@ -288,4 +293,4 @@ if __name__ == '__main__':
         paths = basePath.walkdirs()
 
     ai = AutoImporter()
-    ai.auto_import(paths, no_imports)
+    ai.auto_import(paths, no_imports, archive)
