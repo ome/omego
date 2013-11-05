@@ -17,6 +17,7 @@ class AutoImporter:
         self.orphans = "orphans"
         self.screens = "screens"
         self.no_projs = "no_projects"
+        self.no_dats = "no_datasets"
 
     def create_containers(self, cli, project, dataset):
         """
@@ -188,6 +189,9 @@ class AutoImporter:
                 targetId = self.create_containers(cli, None, dataset)
                 import_args.extend(["-d", str(targetId)])
                 output = "Importing image(s) into Dataset:" + dataset
+            elif dataset == self.no_dats:
+                self.create_containers(cli, project, None)
+                targetId = None
             elif project != self.orphans and dataset != self.orphans:
                 targetId = self.create_containers(cli, project, dataset)
                 import_args.extend(["-d", str(targetId)])
