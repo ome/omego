@@ -11,6 +11,8 @@ from omero.rtypes import wrap
 from omero.model import DatasetI, ProjectI, ScreenI
 from omero.util.import_candidates import as_dictionary
 
+# This script is essentially for use in a very controlled situation
+# ie standard omero passwords for a test situation.
 host = "localhost"
 root_user = "root"
 root_passw = "omero"
