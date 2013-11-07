@@ -1,6 +1,9 @@
 Usage:
 
-auto_import_directory.py [-f | --file] [-n | --no-imports] target
+auto_import_directory.py [-a | --archive] [-f | --file] [-n | --no-imports] target
+
+ -a, -archive
+	archive any actual imports
 
  -f, --file
 	specified target is a text file used for P/D and S creation only,
@@ -54,7 +57,7 @@ Then something like:
 
 create_users
 auto_import_directory.py import-scenario-1
-auto_import_directory.py import-scenario-2
+auto_import_directory.py -a import-scenario-2
 
 will import the images and plates creating containers as necessary.
 

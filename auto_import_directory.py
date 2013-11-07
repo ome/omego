@@ -11,24 +11,46 @@ from omero.rtypes import wrap
 from omero.model import DatasetI, ProjectI, ScreenI
 from omero.util.import_candidates import as_dictionary
 
+# This script is essentially for use in a very controlled situation
+# ie standard omero passwords for a test situation.
+host = "localhost"
+root_user = "root"
+root_passw = "omero"
+user_passw = "ome"
+
 class AutoImporter:
     def __init__(self):
         self.known_users = {}
         self.orphans = "orphans"
         self.screens = "screens"
         self.no_projs = "no_projects"
+        self.no_dats = "no_datasets"
+
+    def new_connection(self, user, passw, host):
+        conn = BlitzGateway(user, passw, host=host)
+        conn.connect()
+        return conn
+
+    def use_connection(self, cli, host):
+        sessionId = cli._event_context.sessionUuid
+        conn = BlitzGateway(host=host)
+        conn.connect(sUuid = sessionId)
+        return conn
+
+    def get_params(self, conn=None):
+        params = omero.sys.Parameters()
+        params.theFilter = omero.sys.Filter()
+        if conn is not None:
+            params.theFilter.ownerId = wrap(conn.getUser().getId())
+        return params
 
     def create_containers(self, cli, project, dataset):
         """
         Creates containers with names provided if they don't exist already.
         Returns Dataset ID.
         """
-        sessionId = cli._event_context.sessionUuid
-        conn = BlitzGateway(host='localhost')
-        conn.connect(sUuid = sessionId)
-        params = omero.sys.Parameters()
-        params.theFilter = omero.sys.Filter()
-        params.theFilter.ownerId = wrap(conn.getUser().getId())
+        conn = self.use_connection(cli, host)
+        params = self.get_params(conn)
 
         d = None
         dsId = None
@@ -100,12 +122,8 @@ class AutoImporter:
         Creates screen with name provided if it doesn't exist already.
         Returns Screen ID.
         """
-        sessionId = cli._event_context.sessionUuid
-        conn = BlitzGateway(host='localhost')
-        conn.connect(sUuid = sessionId)
-        params = omero.sys.Parameters()
-        params.theFilter = omero.sys.Filter()
-        params.theFilter.ownerId = wrap(conn.getUser().getId())
+        conn = self.use_connection(cli, host)
+        params = self.get_params(conn)
 
         slist = list(conn.getObjects("Screen", attributes={'name': screen}, params=params))
         if len(slist) == 0:
@@ -125,12 +143,11 @@ class AutoImporter:
             return True
         try:
             try:
-                conn = BlitzGateway("root", "omero", host='localhost')
-                conn.connect()
-                params = omero.sys.Parameters()
-                params.theFilter = omero.sys.Filter()
+                conn = self.new_connection(root_user, root_passw, host)
+                params = self.get_params()
                 u = conn.getObject("Experimenter", attributes={'omeName': user}, params=params)
-            except:
+            except Exception, e:
+                print e
                 print "Error getting user - ignoring."
                 return False
 
@@ -142,7 +159,10 @@ class AutoImporter:
                 self.known_users[user] = []
                 return True
         finally:
-            conn.seppuku()
+            try:
+                conn.seppuku()
+            except:
+                pass
 
     def group_exists(self, user, group):
         if not self.user_exists(user):
@@ -153,10 +173,10 @@ class AutoImporter:
                 return True
         try:
             try:
-                conn = BlitzGateway(user, "ome", host='localhost')
-                conn.connect()
+                conn = self.new_connection(user, user_passw, host)
                 groups = conn.getGroupsMemberOf()
-            except:
+            except Exception, e:
+                print e
                 return False
 
             if group in [g.name for g in groups]:
@@ -167,14 +187,19 @@ class AutoImporter:
                 print "is not in Group:", group, "- ignoring."
                 return False
         finally:
-            conn.seppuku()
+            try:
+                conn.seppuku()
+            except:
+                pass
 
-    def do_import(self, user, group, project, dataset, filename=None):
+    def do_import(self, user, group, project, dataset, archive, filename=None):
         cli = omero.cli.CLI()
         cli.loadplugins()
         cli.invoke(["login", "%s@localhost" % user, "-w", "ome", "-C"], strict=True)
         cli.invoke(["sessions", "group", group], strict=True)
         import_args = ["import"]
+        if archive:
+            import_args.extend(["-a"])
 
         if project == self.screens:
             if dataset != self.orphans:
@@ -188,6 +213,9 @@ class AutoImporter:
                 targetId = self.create_containers(cli, None, dataset)
                 import_args.extend(["-d", str(targetId)])
                 output = "Importing image(s) into Dataset:" + dataset
+            elif dataset == self.no_dats:
+                self.create_containers(cli, project, None)
+                targetId = None
             elif project != self.orphans and dataset != self.orphans:
                 targetId = self.create_containers(cli, project, dataset)
                 import_args.extend(["-d", str(targetId)])
@@ -206,7 +234,8 @@ class AutoImporter:
         else:
             print "No import, just container creation."
 
-    def auto_import(self, paths, no_imports):
+    def auto_import(self, basepath, paths, no_imports, archive):
+
         for filepath in paths:
             parts = filepath.strip().split(os.sep)
 
@@ -214,11 +243,11 @@ class AutoImporter:
             if "#" in parts:
                 continue
 
-            # Ignore paths that do not contain adhere to:
-            # scenario/user/group/project/dataset/something
+            # Ignore relative directory paths that do not adhere to:
+            # user/group/project/dataset
             # This guarantees a target but doesn't process more
             # deeply nested directories and so avoids double imports.
-            if len(parts) != 5:
+            if len(parts) != 4:
                 #print "Ignoring ", filepath # Not that useful in general.
                 continue
 
@@ -226,8 +255,8 @@ class AutoImporter:
             print "Processing ", filepath
 
             # Users must exist and they must be in an already existing group.
-            user = parts[1]
-            group = parts[2]
+            user = parts[0]
+            group = parts[1]
             if not self.group_exists(user, group):
                 continue
 
@@ -237,6 +266,7 @@ class AutoImporter:
                 print "-"*100
                 print "Getting import canditates..."
                 # If separate imports or further logging are required could use import_candidates.
+                filepath = basepath.joinpath(filepath)
                 import_candidates = as_dictionary([filepath])
                 if len(import_candidates) == 0:
                     print "Nothing to import, path contains no import candidates."
@@ -246,25 +276,28 @@ class AutoImporter:
             print "-"*100
 
             # Finally we can import something creating containers as we go.
-            self.do_import(user, group, parts[3], parts[4], filepath)
+            self.do_import(user, group, parts[2], parts[3], archive, filepath)
 
         print "="*100
 
 if __name__ == '__main__':
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "fn", ["file", "no_import"])
+        opts, args = getopt.getopt(sys.argv[1:], "fna", ["file", "no_import", "archive"])
     except getopt.GetoptError as err:
         sys.exit(str(err))
 
     source = args[0]
     use_file = False
     no_imports = False
+    archive = False
     for o, a in opts:
         if o in ("-f", "--file"):
             use_file = True
         elif o in ("-n", "--no_import"):
             no_imports = True
+        elif o in ("-a", "--archive"):
+            archive = True
 
     if use_file:
         if not os.path.exists(source):
@@ -274,14 +307,18 @@ if __name__ == '__main__':
             f = open(source, "r")
             filepaths = f.read()
             f.close()
-            paths = [source+os.sep+p for p in filepaths.split("\n")]
+            paths = [p for p in filepaths.split("\n")]
+            basepath = None
         except:
             sys.exit('ERROR: Problem accessing file %s' % source)
     else:
         if not os.path.exists(source):
             sys.exit('ERROR: Directory %s was not found!' % source)
-        basePath = path.path(source)
-        paths = basePath.walkdirs()
+        basepath = path.path(source).abspath()
+        paths = list(basepath.walkdirs())
+        for i in range(len(paths)):
+            paths[i] = str(basepath.relpathto(paths[i]))
+
 
     ai = AutoImporter()
-    ai.auto_import(paths, no_imports)
+    ai.auto_import(basepath, paths, no_imports, archive)
