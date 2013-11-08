@@ -1,0 +1,10 @@
+[General]
+Type=ProbeCycle
+Version=7.00
+Probes=1
+[SamplingRate]
+Mode=0
+Seconds=0.000000
+[Probe1]
+Name=DsRed - Confocal
+Type=1

@@ -1,0 +1,26 @@
+[General]
+Type=LightPathAAAS
+Version=7.00
+[Excitation]
+A=-1
+B=-1
+[Dichroic]
+Ex=0
+Epi=3
+DescriptionEpiDichroic=595LP
+DescriptionExDichroic=Mirror
+[Emission]
+A=6
+DescriptionA=645/75
+[Sliders]
+Confocal=0
+Objective=-1
+Binoc=1
+[Shutters]
+A=0
+B=0
+Trans=1
+SpinDisk=0
+[FlatField]
+On=0
+Setting=Transmitted Reference

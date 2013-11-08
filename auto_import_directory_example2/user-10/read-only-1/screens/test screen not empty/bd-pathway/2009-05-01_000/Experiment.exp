@@ -1,0 +1,133 @@
+[General]
+Type=Experiment
+Version=7.00
+Dyes=2
+ThumbNailDisplay=GRAPH
+[Dyes]
+1=Transmitted Light
+2=DsRed - Confocal
+[Transmitted Light]
+DynRng_Auto=0
+DynRng_Min=600
+DynRng_Max=1300
+[DsRed - Confocal]
+DynRng_Auto=0
+DynRng_Min=144
+DynRng_Max=500
+[ADC]
+Active=0
+Original=transmitted & DsRed Confocal Z-stack (96 Well).adc
+Latest=transmitted & DsRed Confocal Z-stack (96 Well).adc
+[AAAS_ExA]
+1=470/40
+2=488/10
+3=555/28
+4=340
+5=380/10ND
+6=360/10
+7=380/10
+8=440/10
+[AAAS_ExB]
+1=335
+2=548/20
+3=460/10
+4=560/55
+5=635/20
+6=488/10B
+7=open
+8=open
+[AAAS_DiEx]
+1=Mirror
+2=370DCLP
+3=Open
+4=50%A/10%B
+5=10%A/40%B
+[AAAS_DiEpi]
+1=Fura/FITC
+2=Fura/TRITC
+3=400DCLP
+4=595LP
+5=84000
+[AAAS_EmA]
+1=FURA/FITC
+2=FURA/TRITC
+3=435LP
+4=84101
+5=515LP
+6=570LP
+7=645/75
+8=open
+[Geometry]
+Name=20X NA 075 Olympus Confocal
+[Camera]
+ChipOriginX=0
+ChipOriginY=0
+ChipWidthUsed=1344
+ChipHeightUsed=1024
+BinX=2
+BinY=2
+Bitdepth=16
+BitdepthUsed=12
+[Image]
+Montaged=1
+TilesX=2
+TilesY=2
+TilePixelsX=672
+TilePixelsY=512
+BitdepthStored=16
+[Version]
+ATTOIMAGE.EXE=1, 6, 1, 05
+ATTOCAMERASERVER.EXE= 1, 6, 0, 39 (RC4)
+ATTO3DSURFACE.OCX= 1, 6, 0, 39
+ATTO3DVOLUME.OCX=1,6,0,39
+ATTOCOLORSLIDER.OCX= 1, 6, 0, 39
+ATTOGRAPH.OCX= 1, 6, 0, 39
+ATTOHISTOGRAM.OCX= 1, 6, 0, 39
+ATTOHISTOGRAM2.OCX= 1, 6, 0, 39
+ATTOMULTISLIDER.OCX=1,6,0,39
+ATTOMULTIWELL.OCX=1,6,0,39 (1,6,0,39)
+ATTOPSEUDOCOLORLIST.OCX=1,6,0,39
+ATTOSTACKBUTTON.OCX=1,6,0,39
+ATTOWASHSETUP.OCX=1,6,0,39
+ATTOAUTOMATION.DLL=1, 6, 0, 0 (RC4)
+ATTOCOMUTILS.DLL=1, 6, 0, 39
+ATTODATACLASSES.DLL=1, 6, 0, 39 (SP1)
+ATTODATAUTILITES.DLL=1, 6, 0, 39 (1, 6, 0, 39)
+ATTOWORKFLOW.DLL= 1, 6, 0, 39 (RC4)
+ATTODIO.DLL= 1, 6, 0, 39
+ATTOBMPBUTTON.OCX= 1, 6, 0, 39 (RC4)
+ATTODAQ.DLL= 1, 6, 0, 39 (SP2a)
+ATTODAQDEMO.DLL= 1, 6, 0, 39 (SP2a)
+NEURITEANALYSISSVR.DLL= 1, 6, 0, 39 (RC4)
+PLC=5.04.18
+PLC Fluidics=Ver. 5.03.00
+[Automation]
+SystemName=Pathway
+[MeanCameraBias]
+Set=0
+Enabled=1
+Q11=0.000000
+Q12=0.000000
+Q21=0.000000
+Q22=0.000000
+x1=0.000000
+x2=0.000000
+y1=0.000000
+y2=0.000000
+[Lamps]
+Number=4
+[Lamps_1]
+Name=
+Time=19:00 Dec. 31, 1969
+[Lamps_2]
+Name=A
+Time=19:00 Dec. 31, 1969
+[Lamps_3]
+Name=B
+Time=19:00 Dec. 31, 1969
+[Lamps_4]
+Name=Trans
+Time=19:00 Dec. 31, 1969
+[TimeOut]
+Enabled=1
+Segment=60.000000

@@ -1,0 +1,428 @@
+[Experiment.exp global]
+reader = BDReader
+test = true
+series_count = 12
+mem_mb = 10
+header = Experiment.exp global
+access_ms = 102
+
+[Experiment.exp series_0]
+Detector_1 = Detector:0:1
+Indexed = false
+ChannelName_0 = Transmitted Light
+SizeC = 2
+Interleaved = false
+ThumbSizeY = 97
+ThumbSizeX = 128
+RGB = false
+LittleEndian = true
+Detector_0 = Detector:0:0
+PixelType = uint16
+SizeX = 672
+Date = 2009-05-05T12:56:18
+SizeT = 1
+channel_count = 2
+SizeZ = 3
+FalseColor = true
+SizeY = 512
+DimensionOrder = XYZTC
+EmissionWavelength_0 = 520
+MD5 = 94138a3e6a785bcf4d2a49c6f9418e42
+EmissionWavelength_1 = 520
+ExcitationWavelength_0 = 334
+ExcitationWavelength_1 = 334
+header = Experiment.exp series_0
+Name = D03 Field #1
+Tile_MD5 = f9f1ff149080ae696cbfe5fb8040a2e2
+ChannelName_1 = DsRed - Confocal
+
+[Experiment.exp series_1]
+Detector_1 = Detector:0:1
+Indexed = false
+ChannelName_0 = Transmitted Light
+SizeC = 2
+Interleaved = false
+ThumbSizeY = 97
+ThumbSizeX = 128
+RGB = false
+LittleEndian = true
+Detector_0 = Detector:0:0
+PixelType = uint16
+SizeX = 672
+Date = 2009-05-05T12:56:18
+SizeT = 1
+channel_count = 2
+SizeZ = 3
+FalseColor = true
+SizeY = 512
+DimensionOrder = XYZTC
+EmissionWavelength_0 = 520
+MD5 = 565e9f9a7ebaf016be84644befb31fa1
+EmissionWavelength_1 = 520
+ExcitationWavelength_0 = 334
+ExcitationWavelength_1 = 334
+header = Experiment.exp series_1
+Name = D03 Field #2
+Tile_MD5 = 80f79a73956357013f6d2dacc5bef1fc
+ChannelName_1 = DsRed - Confocal
+
+[Experiment.exp series_2]
+Detector_1 = Detector:0:1
+Indexed = false
+ChannelName_0 = Transmitted Light
+SizeC = 2
+Interleaved = false
+ThumbSizeY = 97
+ThumbSizeX = 128
+RGB = false
+LittleEndian = true
+Detector_0 = Detector:0:0
+PixelType = uint16
+SizeX = 672
+Date = 2009-05-05T12:56:18
+SizeT = 1
+channel_count = 2
+SizeZ = 3
+FalseColor = true
+SizeY = 512
+DimensionOrder = XYZTC
+EmissionWavelength_0 = 520
+MD5 = b895cc12bf8b2e6cb7d2a21dd275d9cf
+EmissionWavelength_1 = 520
+ExcitationWavelength_0 = 334
+ExcitationWavelength_1 = 334
+header = Experiment.exp series_2
+Name = D03 Field #3
+Tile_MD5 = 4a6ee851f4e6d92994e147e473046bf5
+ChannelName_1 = DsRed - Confocal
+
+[Experiment.exp series_3]
+Detector_1 = Detector:0:1
+Indexed = false
+ChannelName_0 = Transmitted Light
+SizeC = 2
+Interleaved = false
+ThumbSizeY = 97
+ThumbSizeX = 128
+RGB = false
+LittleEndian = true
+Detector_0 = Detector:0:0
+PixelType = uint16
+SizeX = 672
+Date = 2009-05-05T12:56:18
+SizeT = 1
+channel_count = 2
+SizeZ = 3
+FalseColor = true
+SizeY = 512
+DimensionOrder = XYZTC
+EmissionWavelength_0 = 520
+MD5 = c995cc90b7ebf5fa7f0635498af5f09b
+EmissionWavelength_1 = 520
+ExcitationWavelength_0 = 334
+ExcitationWavelength_1 = 334
+header = Experiment.exp series_3
+Name = D03 Field #4
+Tile_MD5 = 13584a968f14ea32aa18c6dd528d27a6
+ChannelName_1 = DsRed - Confocal
+
+[Experiment.exp series_4]
+Detector_1 = Detector:0:1
+Indexed = false
+ChannelName_0 = Transmitted Light
+SizeC = 2
+Interleaved = false
+ThumbSizeY = 97
+ThumbSizeX = 128
+RGB = false
+LittleEndian = true
+Detector_0 = Detector:0:0
+PixelType = uint16
+SizeX = 672
+Date = 2009-05-05T13:00:54
+SizeT = 1
+channel_count = 2
+SizeZ = 3
+FalseColor = true
+SizeY = 512
+DimensionOrder = XYZTC
+EmissionWavelength_0 = 520
+MD5 = af0d69d3e4a31d81ac7ba50bfd353f98
+EmissionWavelength_1 = 520
+ExcitationWavelength_0 = 334
+ExcitationWavelength_1 = 334
+header = Experiment.exp series_4
+Name = D07 Field #1
+Tile_MD5 = f05ab3a14c94a57fafe26683a6c11314
+ChannelName_1 = DsRed - Confocal
+
+[Experiment.exp series_5]
+Detector_1 = Detector:0:1
+Indexed = false
+ChannelName_0 = Transmitted Light
+SizeC = 2
+Interleaved = false
+ThumbSizeY = 97
+ThumbSizeX = 128
+RGB = false
+LittleEndian = true
+Detector_0 = Detector:0:0
+PixelType = uint16
+SizeX = 672
+Date = 2009-05-05T13:00:54
+SizeT = 1
+channel_count = 2
+SizeZ = 3
+FalseColor = true
+SizeY = 512
+DimensionOrder = XYZTC
+EmissionWavelength_0 = 520
+MD5 = d463995cbf6d66dadec36ddbbd703554
+EmissionWavelength_1 = 520
+ExcitationWavelength_0 = 334
+ExcitationWavelength_1 = 334
+header = Experiment.exp series_5
+Name = D07 Field #2
+Tile_MD5 = a2c0d7ec35a70791aa2087fe3cc102d8
+ChannelName_1 = DsRed - Confocal
+
+[Experiment.exp series_6]
+Detector_1 = Detector:0:1
+Indexed = false
+ChannelName_0 = Transmitted Light
+SizeC = 2
+Interleaved = false
+ThumbSizeY = 97
+ThumbSizeX = 128
+RGB = false
+LittleEndian = true
+Detector_0 = Detector:0:0
+PixelType = uint16
+SizeX = 672
+Date = 2009-05-05T13:00:54
+SizeT = 1
+channel_count = 2
+SizeZ = 3
+FalseColor = true
+SizeY = 512
+DimensionOrder = XYZTC
+EmissionWavelength_0 = 520
+MD5 = 2d77d42b9aa469824e67c7fbc14efe24
+EmissionWavelength_1 = 520
+ExcitationWavelength_0 = 334
+ExcitationWavelength_1 = 334
+header = Experiment.exp series_6
+Name = D07 Field #3
+Tile_MD5 = f44a7566a9d9e9b95a5345e60243252a
+ChannelName_1 = DsRed - Confocal
+
+[Experiment.exp series_7]
+Detector_1 = Detector:0:1
+Indexed = false
+ChannelName_0 = Transmitted Light
+SizeC = 2
+Interleaved = false
+ThumbSizeY = 97
+ThumbSizeX = 128
+RGB = false
+LittleEndian = true
+Detector_0 = Detector:0:0
+PixelType = uint16
+SizeX = 672
+Date = 2009-05-05T13:00:54
+SizeT = 1
+channel_count = 2
+SizeZ = 3
+FalseColor = true
+SizeY = 512
+DimensionOrder = XYZTC
+EmissionWavelength_0 = 520
+MD5 = 05bcb4134cd349ae6ce7735d368a56e1
+EmissionWavelength_1 = 520
+ExcitationWavelength_0 = 334
+ExcitationWavelength_1 = 334
+header = Experiment.exp series_7
+Name = D07 Field #4
+Tile_MD5 = af0b08e41e1476f7c6fa241aeffacaae
+ChannelName_1 = DsRed - Confocal
+
+[Experiment.exp series_8]
+Detector_1 = Detector:0:1
+Indexed = false
+ChannelName_0 = Transmitted Light
+SizeC = 2
+Interleaved = false
+ThumbSizeY = 97
+ThumbSizeX = 128
+RGB = false
+LittleEndian = true
+Detector_0 = Detector:0:0
+PixelType = uint16
+SizeX = 672
+Date = 2009-05-05T13:05:28
+SizeT = 1
+channel_count = 2
+SizeZ = 3
+FalseColor = true
+SizeY = 512
+DimensionOrder = XYZTC
+EmissionWavelength_0 = 520
+MD5 = 1c475eb863b051981f5c252f02f1f2c9
+EmissionWavelength_1 = 520
+ExcitationWavelength_0 = 334
+ExcitationWavelength_1 = 334
+header = Experiment.exp series_8
+Name = D11 Field #1
+Tile_MD5 = 452095d1e9807e5623167d09a630e0f7
+ChannelName_1 = DsRed - Confocal
+
+[Experiment.exp series_9]
+Detector_1 = Detector:0:1
+Indexed = false
+ChannelName_0 = Transmitted Light
+SizeC = 2
+Interleaved = false
+ThumbSizeY = 97
+ThumbSizeX = 128
+RGB = false
+LittleEndian = true
+Detector_0 = Detector:0:0
+PixelType = uint16
+SizeX = 672
+Date = 2009-05-05T13:05:28
+SizeT = 1
+channel_count = 2
+SizeZ = 3
+FalseColor = true
+SizeY = 512
+DimensionOrder = XYZTC
+EmissionWavelength_0 = 520
+MD5 = f6a79718b7f505e537e82e8ddd7f2675
+EmissionWavelength_1 = 520
+ExcitationWavelength_0 = 334
+ExcitationWavelength_1 = 334
+header = Experiment.exp series_9
+Name = D11 Field #2
+Tile_MD5 = 74af47d725840934e1c8da8cf6f990b9
+ChannelName_1 = DsRed - Confocal
+
+[Experiment.exp series_10]
+Detector_1 = Detector:0:1
+Indexed = false
+ChannelName_0 = Transmitted Light
+SizeC = 2
+Interleaved = false
+ThumbSizeY = 97
+ThumbSizeX = 128
+RGB = false
+LittleEndian = true
+Detector_0 = Detector:0:0
+PixelType = uint16
+SizeX = 672
+Date = 2009-05-05T13:05:28
+SizeT = 1
+channel_count = 2
+SizeZ = 3
+FalseColor = true
+SizeY = 512
+DimensionOrder = XYZTC
+EmissionWavelength_0 = 520
+MD5 = 0204d7805866b52ee2dec2ae13b07319
+EmissionWavelength_1 = 520
+ExcitationWavelength_0 = 334
+ExcitationWavelength_1 = 334
+header = Experiment.exp series_10
+Name = D11 Field #3
+Tile_MD5 = 499abe115682423f8d8e721608782011
+ChannelName_1 = DsRed - Confocal
+
+[Experiment.exp series_11]
+Detector_1 = Detector:0:1
+Indexed = false
+ChannelName_0 = Transmitted Light
+SizeC = 2
+Interleaved = false
+ThumbSizeY = 97
+ThumbSizeX = 128
+RGB = false
+LittleEndian = true
+Detector_0 = Detector:0:0
+PixelType = uint16
+SizeX = 672
+Date = 2009-05-05T13:05:28
+SizeT = 1
+channel_count = 2
+SizeZ = 3
+FalseColor = true
+SizeY = 512
+DimensionOrder = XYZTC
+EmissionWavelength_0 = 520
+MD5 = 4f34e0b0ec8665271390ec61e3ee4e30
+EmissionWavelength_1 = 520
+ExcitationWavelength_0 = 334
+ExcitationWavelength_1 = 334
+header = Experiment.exp series_11
+Name = D11 Field #4
+Tile_MD5 = 651849cf18e4a21aafa4c6fa81aafba3
+ChannelName_1 = DsRed - Confocal
+
+[Well D03 global]
+test = false
+
+[Well D07 global]
+test = false
+
+[Well D11 global]
+test = false
+
+[20X NA 075 Olympus Confocal.geo global]
+test = false
+
+[96 Well BD Falcon Imaging [353219].plt global]
+test = false
+
+[DsRed - Confocal.drt global]
+test = false
+
+[DsRed - Confocal.dye global]
+test = false
+
+[DsRed - Confocal.ltp global]
+test = false
+
+[FocusMap.txt global]
+test = false
+
+[InstructionDurations.txt global]
+test = false
+
+[Lamp A Reference.ffc global]
+test = false
+
+[Laser AutoFocus.afc global]
+test = false
+
+[Montage 2 x 2.mon global]
+test = false
+
+[Relative Z (Z Stack).xyz global]
+test = false
+
+[RoiSummary.txt global]
+test = false
+
+[transmitted & DsRed Confocal Z-stack (96 Well).mac global]
+test = false
+
+[Transmitted light.drt global]
+test = false
+
+[Transmitted Light.dye global]
+test = false
+
+[Transmitted.ltp global]
+test = false
+
+[Transmitted Reference.ffc global]
+test = false
+
