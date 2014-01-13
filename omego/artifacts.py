@@ -26,9 +26,14 @@ if 'USER_AGENT' in os.environ:
 
 def download(url, filename):
     reponse = opener.open(url)
-    output = open(filename, 'w')
-    output.write(reponse.read())
-    output.close()
+    try:
+        output = open(filename, 'w')
+        try:
+            output.write(reponse.read())
+        finally:
+            output.close()
+    finally:
+        response.close()
 
 
 class Artifacts(object):
@@ -37,13 +42,15 @@ class Artifacts(object):
 
         self.args = args
         url = opener.open(args.build+"api/xml")
-        log.debug('Fetching xml from %s code:%d', url.url, url.code)
-        if url.code != 200:
-            log.error('Failed to get Hudson XML from %s (code %d)',
-                      url.url, url.code)
-            raise Stop(20, 'Job lookup failed, is the job name correct?')
-        hudson_xml = url.read()
-        url.close()
+        try:
+            log.debug('Fetching xml from %s code:%d', url.url, url.code)
+            if url.code != 200:
+                log.error('Failed to get Hudson XML from %s (code %d)',
+                        url.url, url.code)
+                raise Stop(20, 'Job lookup failed, is the job name correct?')
+            hudson_xml = url.read()
+        finally:
+            url.close()
 
         root = XML(hudson_xml)
 
