@@ -25,11 +25,11 @@ if 'USER_AGENT' in os.environ:
 
 
 def download(url, filename):
-    reponse = opener.open(url)
+    response = opener.open(url)
     try:
         output = open(filename, 'w')
         try:
-            output.write(reponse.read())
+            output.write(response.read())
         finally:
             output.close()
     finally:
@@ -46,7 +46,7 @@ class Artifacts(object):
             log.debug('Fetching xml from %s code:%d', url.url, url.code)
             if url.code != 200:
                 log.error('Failed to get Hudson XML from %s (code %d)',
-                        url.url, url.code)
+                          url.url, url.code)
                 raise Stop(20, 'Job lookup failed, is the job name correct?')
             hudson_xml = url.read()
         finally:
