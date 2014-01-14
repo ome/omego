@@ -82,7 +82,7 @@ class JenkinsParser(argparse.ArgumentParser):
             'Arguments related to the Jenkins instance')
 
         Add = EnvDefault.add
-        Add(group, "hudson", "hudson.openmicroscopy.org.uk",
+        Add(group, "hudson", "ci.openmicroscopy.org",
             help="Base url of the Jenkins instance")
         Add(group, "branch", "OMERO-trunk",
             help="Name of the Jenkins job containing the artifacts")
