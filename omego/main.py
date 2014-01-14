@@ -31,6 +31,7 @@ from framework import main, Stop
 
 from upgrade import UpgradeCommand
 from artifacts import DownloadCommand
+from db import DbCommand
 from version import Version
 
 
@@ -43,6 +44,7 @@ def entry_point():
         main(items=[
             (UpgradeCommand.NAME, UpgradeCommand),
             (DownloadCommand.NAME, DownloadCommand),
+            (DbCommand.NAME, DbCommand),
             (Version.NAME, Version)])
     except Stop, stop:
         print stop,
