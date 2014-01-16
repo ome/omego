@@ -89,7 +89,7 @@ class JenkinsParser(argparse.ArgumentParser):
         Add(group, "build",
             "http://%(ci)s/job/%(branch)s/lastSuccessfulBuild/",
             help="Full url of the Jenkins build containing the artifacts")
-        Add(group, "labels", "",
+        Add(group, "labels", "ICE=3.5",
             help="Comma separated list of labels for matrix builds")
 
         # UNZIP TOOLS
