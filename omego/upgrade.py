@@ -10,9 +10,10 @@ import fileinput
 import smtplib
 
 from artifacts import Artifacts
+from db import DbAdmin
 from external import External
 from framework import Command, Stop
-from env import EnvDefault, JenkinsParser
+from env import EnvDefault, DbParser, JenkinsParser
 from env import WINDOWS
 from env import HOSTNAME
 
@@ -81,6 +82,8 @@ class Upgrade(object):
         self.configure(noconfigure)
         self.directories()
 
+        self.upgrade_db()
+
         self.external.save_env_vars(args.savevarsfile, args.savevars.split())
         self.start()
 
@@ -138,6 +141,11 @@ class Upgrade(object):
         self.run(["admin", "ports", "--skipcheck", "--registry",
                  self.args.registry, "--tcp",
                  self.args.tcp, "--ssl", self.args.ssl])
+
+    def upgrade_db(self):
+        if self.args.upgradedb:
+            log.debug('Upgrading database')
+            DbAdmin(self.dir, 'upgrade', self.args)
 
     def start(self):
         self.run("admin start")
@@ -284,6 +292,7 @@ class UpgradeCommand(Command):
         self.parser.add_argument("server", nargs="?")
 
         self.parser = JenkinsParser(self.parser)
+        self.parser = DbParser(self.parser)
 
         Add = EnvDefault.add
         Add(self.parser, "hostname", HOSTNAME)
@@ -327,6 +336,8 @@ class UpgradeCommand(Command):
         envvarsfile = os.path.join("%(sym)s", "omero.envvars")
         Add(self.parser, "savevars", envvars)
         Add(self.parser, "savevarsfile", envvarsfile)
+
+        self.parser.add_argument("--upgradedb", action="store_true")
 
     def __call__(self, args):
         super(UpgradeCommand, self).__call__(args)
