@@ -46,8 +46,7 @@ class Artifacts(object):
         root = self.read_xml(buildurl)
         if root.tag == "matrixBuild":
             runs = root.findall("./run/url")
-            # TODO: match against matrix labels
-            buildurl = runs[0].text
+            buildurl = self.find_label_matches(r.text for r in runs)
             root = self.read_xml(buildurl)
 
         artifacts = root.findall("./artifact")
@@ -80,6 +79,30 @@ class Artifacts(object):
 
         root = XML(ci_xml)
         return root
+
+    def find_label_matches(self, urls):
+        required = set(self.args.labels.split(','))
+        log.debug('Searching for matrix runs matching: %s', required)
+        matches = []
+        for url in urls:
+            url_labels = self.label_list_parser(url)
+            if len(required.intersection(url_labels)) == len(required):
+                matches.append(url)
+
+        if len(matches) > 1:
+            raise Stop(
+                30, 'Too many matching runs in a matrix build: %s' % matches)
+        if len(matches) < 1:
+            raise Stop(30, 'No matching runs in a matrix build: %s' % matches)
+        return matches[0]
+
+    def label_list_parser(self, url):
+        """
+        Extracts comma separate tag=value pairs from a string
+        Assumes all characters other than / and , are valid
+        """
+        labels = re.findall('([^/,]+=[^/,]+)', url)
+        return set(labels)
 
     @classmethod
     def get_artifacts_list(self):
