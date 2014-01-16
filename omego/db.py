@@ -7,6 +7,7 @@ import logging
 
 from glob import glob
 import psycopg2
+import re
 import sys
 
 from framework import Command, Stop
@@ -18,7 +19,7 @@ log = logging.getLogger("omego.db")
 
 class DbAdmin(object):
 
-    def __init__(self, dir, args):
+    def __init__(self, dir, command, args):
 
         self.dir = dir
         self.args = args
@@ -41,10 +42,12 @@ class DbAdmin(object):
         import path
         self.dir = path.path(dir)
 
-        if args.dbcommand == 'init':
+        if command == 'init':
             self.initialise()
-        if args.dbcommand == 'upgrade':
+        elif command == 'upgrade':
             self.upgrade()
+        else:
+            raise Stop('Invalid db command: %s', command)
 
     def connect(self):
         conn = psycopg2.connect(
@@ -67,11 +70,21 @@ class DbAdmin(object):
             if not self.args.dry_run:
                 cursor.execute(open(self.args.omerosql, "r").read())
 
+    def sort_schema(self, versions):
+        # E.g. OMERO3__0 OMERO3A__10 OMERO4__0 OMERO4.4__0
+        def keyfun(v):
+            x = re.match('.*/OMERO(\d+)(\.|A)?(\d*)__(\d+)', v).groups()
+            return int(x[0]), x[1], int(x[2]) if x[2] else None, x[3]
+
+        sortedver = sorted(versions, key=keyfun)
+        #log.debug(sortedver)
+        return sortedver
+
     def upgrade(self):
         conn = self.connect()
         currentsqlv = '%s__%d' % self.get_current_db_version()
         # TODO: Is there a nicer way to get the new server DB version?
-        latestsql = sorted(glob(os.path.join(
+        latestsql = self.sort_schema(glob(os.path.join(
                     self.dir, 'sql', 'psql', 'OMERO*')))[-1]
         latestsqlv = os.path.basename(latestsql)
 
@@ -79,7 +92,6 @@ class DbAdmin(object):
             log.info('Database is already at %s', latestsqlv)
         else:
             upgradesql = os.path.join(latestsql, currentsqlv) + '.sql'
-
             with conn.cursor() as cursor:
                 log.info('Upgrading database using %s', upgradesql)
                 if not self.args.dry_run:
@@ -180,4 +192,4 @@ class DbCommand(Command):
             d = args.serverdir
         else:
             raise Stop(1, 'OMERO server directory required')
-        DbAdmin(d, args)
+        DbAdmin(d, args.dbcommand, args)
