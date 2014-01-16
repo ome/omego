@@ -41,21 +41,17 @@ class Artifacts(object):
     def __init__(self, args):
 
         self.args = args
-        url = opener.open(args.build+"api/xml")
-        try:
-            log.debug('Fetching xml from %s code:%d', url.url, url.code)
-            if url.code != 200:
-                log.error('Failed to get CI XML from %s (code %d)',
-                          url.url, url.code)
-                raise Stop(20, 'Job lookup failed, is the job name correct?')
-            ci_xml = url.read()
-        finally:
-            url.close()
+        buildurl = args.build
 
-        root = XML(ci_xml)
+        root = self.read_xml(buildurl)
+        if root.tag == "matrixBuild":
+            runs = root.findall("./run/url")
+            # TODO: match against matrix labels
+            buildurl = runs[0].text
+            root = self.read_xml(buildurl)
 
         artifacts = root.findall("./artifact")
-        base_url = args.build+"artifact/"
+        base_url = buildurl + "artifact/"
         if len(artifacts) <= 0:
             raise AttributeError(
                 "No artifacts, please check build on the CI server.")
@@ -69,6 +65,21 @@ class Artifacts(object):
                     rel_path = base_url + artifact.find("relativePath").text
                     setattr(self, key, rel_path)
                     pass
+
+    def read_xml(self, buildurl):
+        url = opener.open(buildurl + 'api/xml')
+        try:
+            log.debug('Fetching xml from %s code:%d', url.url, url.code)
+            if url.code != 200:
+                log.error('Failed to get CI XML from %s (code %d)',
+                          url.url, url.code)
+                raise Stop(20, 'Job lookup failed, is the job name correct?')
+            ci_xml = url.read()
+        finally:
+            url.close()
+
+        root = XML(ci_xml)
+        return root
 
     @classmethod
     def get_artifacts_list(self):
