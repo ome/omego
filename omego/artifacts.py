@@ -87,6 +87,8 @@ class Artifacts(object):
 
     def find_label_matches(self, urls):
         required = set(self.args.labels.split(','))
+        if '' in required:
+            required.remove('')
         log.debug('Searching for matrix runs matching: %s', required)
         matches = []
         for url in urls:
@@ -107,7 +109,10 @@ class Artifacts(object):
         Assumes all characters other than / and , are valid
         """
         labels = re.findall('([^/,]+=[^/,]+)', url)
-        return set(labels)
+        slabels = set(labels)
+        if '' in slabels:
+            slabels.remove('')
+        return slabels
 
     @classmethod
     def get_artifacts_list(self):
