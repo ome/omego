@@ -23,9 +23,9 @@ before_script:
     - psql -c "select 1;" -U omero -h localhost omero
     - sudo mkdir /OMERO
     - sudo chown $USER:$USER /OMERO
-    - wget --user-agent $USER_AGENT http://cvs.openmicroscopy.org.uk/snapshots/omero/4.4.8p1/OMERO.server-4.4.8p1-ice34-b304.zip
-    - unzip -qq OMERO.server-4.4.8p1-ice34-b304.zip
-    - ln -s OMERO.server-4.4.8p1-ice34-b304 OMERO-CURRENT
+    - wget --user-agent $USER_AGENT http://downloads.openmicroscopy.org/omero/5.0.0-rc1/artifacts/OMERO.server-5.0.0-rc1-ice34-b10.zip
+    - unzip -qq OMERO.server-5.0.0-rc1-ice34-b10.zip
+    - ln -s OMERO.server-5.0.0-rc1-ice34-b10 OMERO-CURRENT
     - OMERO-CURRENT/bin/omero db script "" "" ome -f OMERO.sql
     - psql -q -h localhost -U omero omero < OMERO.sql
     - OMERO-CURRENT/bin/omero admin start
