@@ -133,6 +133,9 @@ class Artifacts(object):
         filename = os.path.basename(componenturl)
         unzipped = filename.replace(".zip", "")
 
+        if self.args.dry_run:
+            return
+
         if os.path.exists(unzipped):
             return unzipped
 
@@ -195,9 +198,6 @@ class DownloadCommand(Command):
                 replacement = value % dict(args._get_kwargs())
                 log.debug("% 20s => %s" % (dest, replacement))
                 setattr(args, dest, replacement)
-
-        if args.dry_run:
-            return
 
         artifacts = Artifacts(args)
         artifacts.download(args.artifact)
