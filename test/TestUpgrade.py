@@ -49,6 +49,10 @@ class TestUpgrade(unittest.TestCase):
     def testUpgrade(self):
         self.upgrade("--unzipargs=-q", "--branch=OMERO-5.0-latest-ice34")
 
+    def testUpgradeMatrixBuild(self):
+        self.upgrade(
+            "--unzipargs=-q", "--branch=OMERO-5.1-latest", "--labels=ICE=3.4")
+
 if __name__ == '__main__':
     import logging
     logging.basicConfig()
