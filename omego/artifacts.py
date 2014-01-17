@@ -96,11 +96,10 @@ class Artifacts(object):
             if len(required.intersection(url_labels)) == len(required):
                 matches.append(url)
 
-        if len(matches) > 1:
-            raise Stop(
-                30, 'Too many matching runs in a matrix build: %s' % matches)
-        if len(matches) < 1:
-            raise Stop(30, 'No matching runs in a matrix build: %s' % matches)
+        if len(matches) != 1:
+            log.error('Found %d matching matrix build runs: %s',
+                      len(matches), matches)
+            raise Stop(30, 'Expected one matching run, found %d' % len(matches))
         return matches[0]
 
     def label_list_parser(self, url):
