@@ -45,19 +45,20 @@ class Artifacts(object):
         try:
             log.debug('Fetching xml from %s code:%d', url.url, url.code)
             if url.code != 200:
-                log.error('Failed to get Hudson XML from %s (code %d)',
+                log.error('Failed to get CI XML from %s (code %d)',
                           url.url, url.code)
                 raise Stop(20, 'Job lookup failed, is the job name correct?')
-            hudson_xml = url.read()
+            ci_xml = url.read()
         finally:
             url.close()
 
-        root = XML(hudson_xml)
+        root = XML(ci_xml)
 
         artifacts = root.findall("./artifact")
         base_url = args.build+"artifact/"
         if len(artifacts) <= 0:
-            raise AttributeError("No artifacts, please check build on Hudson.")
+            raise AttributeError(
+                "No artifacts, please check build on the CI server.")
 
         patterns = self.get_artifacts_list()
         for artifact in artifacts:

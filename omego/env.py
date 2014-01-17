@@ -82,12 +82,12 @@ class JenkinsParser(argparse.ArgumentParser):
             'Arguments related to the Jenkins instance')
 
         Add = EnvDefault.add
-        Add(group, "hudson", "hudson.openmicroscopy.org.uk",
-            help="Base url of the Jenkins instance")
+        Add(group, "ci", "ci.openmicroscopy.org",
+            help="Base url of the continuous integration server")
         Add(group, "branch", "OMERO-trunk",
             help="Name of the Jenkins job containing the artifacts")
         Add(group, "build",
-            "http://%(hudson)s/job/%(branch)s/lastSuccessfulBuild/",
+            "http://%(ci)s/job/%(branch)s/lastSuccessfulBuild/",
             help="Full url of the Jenkins build containing the artifacts")
 
         # UNZIP TOOLS
