@@ -5,7 +5,7 @@ import os
 import subprocess
 import logging
 
-from urllib2 import build_opener
+from urllib2 import build_opener, HTTPError
 import re
 
 from framework import Command, Stop
@@ -66,16 +66,21 @@ class Artifacts(object):
                     pass
 
     def read_xml(self, buildurl):
-        url = opener.open(buildurl + 'api/xml')
+        url = None
         try:
+            url = opener.open(buildurl + 'api/xml')
             log.debug('Fetching xml from %s code:%d', url.url, url.code)
             if url.code != 200:
                 log.error('Failed to get CI XML from %s (code %d)',
                           url.url, url.code)
                 raise Stop(20, 'Job lookup failed, is the job name correct?')
             ci_xml = url.read()
+        except HTTPError as e:
+            log.error('Failed to get CI XML (%s)', e)
+            raise Stop(20, 'Job lookup failed, is the job name correct?')
         finally:
-            url.close()
+            if url:
+                url.close()
 
         root = XML(ci_xml)
         return root
