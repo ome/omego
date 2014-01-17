@@ -47,7 +47,7 @@ class TestUpgrade(unittest.TestCase):
         self.assertRaises(Stop, self.upgrade, "--skipunzip")
 
     def testUpgrade(self):
-        self.upgrade("--unzipargs=-q", "--branch=OMERO-stable-ice34")
+        self.upgrade("--unzipargs=-q", "--branch=OMERO-5.0-latest-ice34")
 
 if __name__ == '__main__':
     import logging
