@@ -99,7 +99,8 @@ class Artifacts(object):
         if len(matches) != 1:
             log.error('Found %d matching matrix build runs: %s',
                       len(matches), matches)
-            raise Stop(30, 'Expected one matching run, found %d' % len(matches))
+            raise Stop(
+                30, 'Expected one matching run, found %d' % len(matches))
         return matches[0]
 
     def label_list_parser(self, url):
