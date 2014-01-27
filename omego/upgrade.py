@@ -112,7 +112,7 @@ class Upgrade(object):
             from path import path
             old_grid = path(self.args.sym) / "etc" / "grid"
             old_cfg = old_grid / "config.xml"
-            if os.path.samefile(old_cfg, target):
+            if target.exists() and os.path.samefile(old_cfg, target):
                 # This likely is caused by the symlink being
                 # created early on an initial install.
                 pass

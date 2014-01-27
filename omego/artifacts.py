@@ -5,7 +5,7 @@ import os
 import subprocess
 import logging
 
-from urllib2 import build_opener
+from urllib2 import build_opener, HTTPError
 import re
 
 from framework import Command, Stop
@@ -41,21 +41,16 @@ class Artifacts(object):
     def __init__(self, args):
 
         self.args = args
-        url = opener.open(args.build+"api/xml")
-        try:
-            log.debug('Fetching xml from %s code:%d', url.url, url.code)
-            if url.code != 200:
-                log.error('Failed to get CI XML from %s (code %d)',
-                          url.url, url.code)
-                raise Stop(20, 'Job lookup failed, is the job name correct?')
-            ci_xml = url.read()
-        finally:
-            url.close()
+        buildurl = args.build
 
-        root = XML(ci_xml)
+        root = self.read_xml(buildurl)
+        if root.tag == "matrixBuild":
+            runs = root.findall("./run/url")
+            buildurl = self.find_label_matches(r.text for r in runs)
+            root = self.read_xml(buildurl)
 
         artifacts = root.findall("./artifact")
-        base_url = args.build+"artifact/"
+        base_url = buildurl + "artifact/"
         if len(artifacts) <= 0:
             raise AttributeError(
                 "No artifacts, please check build on the CI server.")
@@ -69,6 +64,55 @@ class Artifacts(object):
                     rel_path = base_url + artifact.find("relativePath").text
                     setattr(self, key, rel_path)
                     pass
+
+    def read_xml(self, buildurl):
+        url = None
+        try:
+            url = opener.open(buildurl + 'api/xml')
+            log.debug('Fetching xml from %s code:%d', url.url, url.code)
+            if url.code != 200:
+                log.error('Failed to get CI XML from %s (code %d)',
+                          url.url, url.code)
+                raise Stop(20, 'Job lookup failed, is the job name correct?')
+            ci_xml = url.read()
+        except HTTPError as e:
+            log.error('Failed to get CI XML (%s)', e)
+            raise Stop(20, 'Job lookup failed, is the job name correct?')
+        finally:
+            if url:
+                url.close()
+
+        root = XML(ci_xml)
+        return root
+
+    def find_label_matches(self, urls):
+        required = set(self.args.labels.split(','))
+        if '' in required:
+            required.remove('')
+        log.debug('Searching for matrix runs matching: %s', required)
+        matches = []
+        for url in urls:
+            url_labels = self.label_list_parser(url)
+            if len(required.intersection(url_labels)) == len(required):
+                matches.append(url)
+
+        if len(matches) != 1:
+            log.error('Found %d matching matrix build runs: %s',
+                      len(matches), matches)
+            raise Stop(
+                30, 'Expected one matching run, found %d' % len(matches))
+        return matches[0]
+
+    def label_list_parser(self, url):
+        """
+        Extracts comma separate tag=value pairs from a string
+        Assumes all characters other than / and , are valid
+        """
+        labels = re.findall('([^/,]+=[^/,]+)', url)
+        slabels = set(labels)
+        if '' in slabels:
+            slabels.remove('')
+        return slabels
 
     @classmethod
     def get_artifacts_list(self):
@@ -89,6 +133,9 @@ class Artifacts(object):
         componenturl = getattr(self, component)
         filename = os.path.basename(componenturl)
         unzipped = filename.replace(".zip", "")
+
+        if self.args.dry_run:
+            return
 
         if os.path.exists(unzipped):
             return unzipped
@@ -152,9 +199,6 @@ class DownloadCommand(Command):
                 replacement = value % dict(args._get_kwargs())
                 log.debug("% 20s => %s" % (dest, replacement))
                 setattr(args, dest, replacement)
-
-        if args.dry_run:
-            return
 
         artifacts = Artifacts(args)
         artifacts.download(args.artifact)
