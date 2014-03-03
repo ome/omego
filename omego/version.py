@@ -34,16 +34,18 @@
 __all__ = ("get_git_version")
 
 from subprocess import Popen, PIPE
-from os import path
+from os import path, getcwd, chdir
 from framework import Command
+import re
 
-version_file = path.join(path.dirname(__file__), "RELEASE-VERSION")
+version_dir = path.abspath(path.dirname(__file__))
+version_file = path.join(version_dir, "RELEASE-VERSION")
 
 
 def call_git_describe(abbrev=4):
     try:
-        p = Popen(['git', 'describe', '--abbrev=%d' % abbrev],
-                  stdout=PIPE, stderr=PIPE)
+        p = Popen(['git', 'describe', '--match=[v0-9][.0-9]*',
+                   '--abbrev=%d' % abbrev], stdout=PIPE, stderr=PIPE)
         p.stderr.close()
         line = p.stdout.readlines()[0]
         return line.strip()
@@ -54,33 +56,40 @@ def call_git_describe(abbrev=4):
 
 def read_release_version():
     try:
-        f = open(version_file, "r")
-
-        try:
+        with open(version_file, "r") as f:
             version = f.readlines()[0]
             return version.strip()
-
-        finally:
-            f.close()
-
     except:
         return None
 
 
 def write_release_version(version):
-    f = open(version_file, "w")
-    f.write("%s\n" % version)
-    f.close()
+    with open(version_file, "w") as f:
+        f.write("%s\n" % version)
+
+version_pattern = '^(v)?(?P<version>[0-9]+[\.][0-9]+[\.][0-9]+(\-.+)*)$'
+version_pattern = re.compile(version_pattern)
 
 
 def get_git_version(abbrev=4):
     # Read in the version that's currently in RELEASE-VERSION.
-
     release_version = read_release_version()
 
     # First try to get the current version using “git describe”.
+    cwd = getcwd()
+    git_version = None
+    try:
+        chdir(version_dir)
+        git_version = call_git_describe(abbrev)
+    finally:
+        chdir(cwd)
 
-    version = call_git_describe(abbrev)
+    # Extract version number
+    version = None
+    if git_version:
+        m = version_pattern.match(git_version)
+        if m:
+            version = m.group('version')
 
     # If that doesn't work, fall back on the value that's in
     # RELEASE-VERSION.

@@ -14,8 +14,7 @@ before_install:
   - pip install -r dev_requirements.txt
   - sudo apt-get update -qq
   - sudo apt-get install -qq ice34-services python-zeroc-ice
-
-install: python omego/main.py -h
+  - flake8 -v omego test
 
 before_script:
     - psql -c "create user omero with password 'omero';" -U postgres
@@ -32,7 +31,9 @@ before_script:
 
 script:
     - nosetests -v -d test
-    - flake8 omego test
+    - python setup.py sdist install
+    - pip install dist/*.tar.gz
+    - omego -h
 
 after_failure:
     - tail -n 1000 OMERO-CURRENT/var/log/Blitz-0.log
