@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import subprocess
 import logging
 
 from glob import glob
@@ -11,7 +10,6 @@ import sys
 
 from framework import Command, Stop
 from env import EnvDefault, DbParser
-from env import HOSTNAME
 import external
 
 log = logging.getLogger("omego.db")
@@ -30,17 +28,20 @@ class DbAdmin(object):
 
         # setup_script_environment() may cause the creation of a default
         # config.xml, so we must check for it here
-        noconfigure = self.has_config(dir)
+        #noconfigure = self.has_config(dir)
 
         # Server directory
         if not os.path.exists(dir):
             raise Exception("%s does not exist!" % dir)
 
-        self.setup_script_environment(dir)
+        #self.setup_script_environment(dir)
 
         # Need lib/python set above
-        import path
-        self.dir = path.path(dir)
+        #import path
+        #self.dir = path.path(dir)
+
+        psqlv = self.psql('--version')
+        log.info('psql version: %s', psqlv)
 
         if command == 'init':
             self.initialise()
@@ -48,9 +49,6 @@ class DbAdmin(object):
             self.upgrade()
         else:
             raise Stop('Invalid db command: %s', command)
-
-        psqlv = self.psql('--version')
-        log.info('psql version: %s', psqlv)
 
     def initialise(self):
         if not os.path.exists(self.args.omerosql):
@@ -63,12 +61,13 @@ class DbAdmin(object):
 
         log.info('Creating database using %s', self.args.omerosql)
         if not self.args.dry_run:
-            out = self.psql('-f', self.args.omerosql)
+            self.psql('-f', self.args.omerosql)
 
     def sort_schema(self, versions):
         # E.g. OMERO3__0 OMERO3A__10 OMERO4__0 OMERO4.4__0 OMERO5.1DEV__0
         def keyfun(v):
-            x = re.match('.*/OMERO(\d+)(\.|A)?(\d*)([A-Z]*)__(\d+)', v).groups()
+            x = re.match(
+                '.*/OMERO(\d+)(\.|A)?(\d*)([A-Z]*)__(\d+)', v).groups()
             return (int(x[0]), x[1], int(x[2]) if x[2] else None, x[3], x[4])
 
         sortedver = sorted(versions, key=keyfun)
@@ -78,8 +77,8 @@ class DbAdmin(object):
     def upgrade(self):
         currentsqlv = '%s__%s' % self.get_current_db_version()
         # TODO: Is there a nicer way to get the new server DB version?
-        latestsql = self.sort_schema(glob(os.path.join(
-                    self.dir, 'sql', 'psql', 'OMERO*')))[-1]
+        latestsql = self.sort_schema(
+            glob(os.path.join(self.dir, 'sql', 'psql', 'OMERO*')))[-1]
         latestsqlv = os.path.basename(latestsql)
 
         if latestsqlv == currentsqlv:
@@ -88,7 +87,7 @@ class DbAdmin(object):
             upgradesql = os.path.join(latestsql, currentsqlv) + '.sql'
             log.info('Upgrading database using %s', upgradesql)
             if not self.args.dry_run:
-                out = self.psql('-f', upgradesql)
+                self.psql('-f', upgradesql)
 
     def get_current_db_version(self):
         q = ('SELECT currentversion, currentpatch FROM dbpatch '
@@ -153,6 +152,7 @@ class DbAdmin(object):
             log.warn('stderr: %s', stderr)
         log.debug('stdout: %s', stdout)
         return stdout
+
 
 class DbCommand(Command):
     """
