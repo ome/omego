@@ -6,13 +6,13 @@ import subprocess
 import logging
 
 from glob import glob
-import psycopg2
 import re
 import sys
 
 from framework import Command, Stop
 from env import EnvDefault, DbParser
 from env import HOSTNAME
+import external
 
 log = logging.getLogger("omego.db")
 
@@ -49,11 +49,8 @@ class DbAdmin(object):
         else:
             raise Stop('Invalid db command: %s', command)
 
-    def connect(self):
-        conn = psycopg2.connect(
-            host=self.args.dbhost, database=self.args.dbname,
-            user=self.args.dbuser, password=self.args.dbpass)
-        return conn
+        psqlv = self.psql('--version')
+        log.info('psql version: %s', psqlv)
 
     def initialise(self):
         if not os.path.exists(self.args.omerosql):
@@ -64,11 +61,9 @@ class DbAdmin(object):
         else:
             log.info('Using existing SQL: %s', self.args.omerosql)
 
-        conn = self.connect()
-        with conn.cursor() as cursor:
-            log.info('Creating database using %s', self.args.omerosql)
-            if not self.args.dry_run:
-                cursor.execute(open(self.args.omerosql, "r").read())
+        log.info('Creating database using %s', self.args.omerosql)
+        if not self.args.dry_run:
+            out = self.psql('-f', self.args.omerosql)
 
     def sort_schema(self, versions):
         # E.g. OMERO3__0 OMERO3A__10 OMERO4__0 OMERO4.4__0 OMERO5.1DEV__0
@@ -81,8 +76,7 @@ class DbAdmin(object):
         return sortedver
 
     def upgrade(self):
-        conn = self.connect()
-        currentsqlv = '%s__%d' % self.get_current_db_version()
+        currentsqlv = '%s__%s' % self.get_current_db_version()
         # TODO: Is there a nicer way to get the new server DB version?
         latestsql = self.sort_schema(glob(os.path.join(
                     self.dir, 'sql', 'psql', 'OMERO*')))[-1]
@@ -92,23 +86,22 @@ class DbAdmin(object):
             log.info('Database is already at %s', latestsqlv)
         else:
             upgradesql = os.path.join(latestsql, currentsqlv) + '.sql'
-            with conn.cursor() as cursor:
-                log.info('Upgrading database using %s', upgradesql)
-                if not self.args.dry_run:
-                    cursor.execute(open(upgradesql, "r").read())
+            log.info('Upgrading database using %s', upgradesql)
+            if not self.args.dry_run:
+                out = self.psql('-f', upgradesql)
 
     def get_current_db_version(self):
-        conn = self.connect()
-        with conn.cursor() as cursor:
-            q = ('SELECT currentversion, currentpatch FROM dbpatch '
-                 'ORDER BY id DESC LIMIT 1')
-            log.debug('Executing query: %s', q)
-            cursor.execute(q)
-            if cursor.rowcount != 1:
-                raise Exception('Got %d rows, expected 1', cursor.rowcount)
-            v = cursor.fetchone()
-            log.info('Current omero db version: %s', v)
-            return v
+        q = ('SELECT currentversion, currentpatch FROM dbpatch '
+             'ORDER BY id DESC LIMIT 1')
+        log.debug('Executing query: %s', q)
+        result = self.psql('-c', q)
+        # Ignore empty string
+        result = [r for r in result.split('\n') if r]
+        if len(result) != 1:
+            raise Exception('Got %d rows, expected 1', len(result))
+        v = tuple(result[0].split('|'))
+        log.info('Current omero db version: %s', v)
+        return v
 
     # TODO: Move this into a common class (c.f. Upgrade.run)
     def has_config(self, dir):
@@ -147,6 +140,19 @@ class DbAdmin(object):
         if not self.args.dry_run:
             self.cli.invoke(command, strict=True)
 
+    def psql(self, *psqlargs):
+        """
+        Run a psql command
+        """
+        env = os.environ.copy()
+        env['PGPASSWORD'] = self.args.dbpass
+        args = ['-d', self.args.dbname, '-h', self.args.dbhost, '-U',
+                self.args.dbuser, '-A', '-t'] + list(psqlargs)
+        stdout, stderr = external.run('psql', args, env)
+        if stderr:
+            log.warn('stderr: %s', stderr)
+        log.debug('stdout: %s', stdout)
+        return stdout
 
 class DbCommand(Command):
     """
