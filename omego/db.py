@@ -43,12 +43,21 @@ class DbAdmin(object):
         psqlv = self.psql('--version')
         log.info('psql version: %s', psqlv)
 
+        self.check_connection()
+
         if command == 'init':
             self.initialise()
         elif command == 'upgrade':
             self.upgrade()
         else:
             raise Stop('Invalid db command: %s', command)
+
+    def check_connection(self):
+        try:
+            self.psql('-c', '\conninfo')
+        except Exception as e:
+            log.error(e)
+            raise Stop(30, 'Database connection check failed')
 
     def initialise(self):
         if not os.path.exists(self.args.omerosql):
