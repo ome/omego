@@ -19,7 +19,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import unittest
+import pytest
+
 import os
 import shutil
 import tempfile
@@ -28,23 +29,21 @@ from omego.framework import main
 from omego.artifacts import DownloadCommand
 
 
-class TestDownload(unittest.TestCase):
+class TestDownload(object):
 
-    def setUp(self):
-        unittest.TestCase.setUp(self)
+    def setup_method(self, method):
         self.cwd = os.getcwd()
         self.path = tempfile.mkdtemp("", "download-", ".")
         self.path = os.path.abspath(self.path)
         os.chdir(self.path)
         self.artifact = 'cpp'
 
-    def tearDown(self):
+    def teardown_method(self, method):
         try:
             shutil.rmtree(self.path)
         finally:
             # Return to cwd regardless.
             os.chdir(self.cwd)
-        unittest.TestCase.tearDown(self)
 
     def download(self, *args):
         args = ["download", self.artifact] + list(args)
@@ -53,18 +52,13 @@ class TestDownload(unittest.TestCase):
     def testDownloadNoUnzip(self):
         self.download('--skipunzip')
         files = os.listdir(self.path)
-        self.assertEquals(len(files), 1)
+        assert len(files) == 1
 
     def testDownloadUnzip(self):
         self.download('--unzipargs=-q')
         files = os.listdir(self.path)
-        self.assertEquals(len(files), 2)
+        assert len(files) == 2
 
     def testDownloadUnzipDir(self):
         self.download('--unzipargs=-q', '--unzipdir', 'OMERO.cpp')
-        self.assertTrue(os.path.isdir('OMERO.cpp'))
-
-if __name__ == '__main__':
-    import logging
-    logging.basicConfig()
-    unittest.main()
+        assert os.path.isdir('OMERO.cpp')
