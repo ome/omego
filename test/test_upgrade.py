@@ -19,7 +19,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import pytest
+import pytest  # noqa
 
 from omego.framework import main, Stop
 from omego.upgrade import UpgradeCommand
