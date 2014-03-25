@@ -32,7 +32,7 @@ class TestArtifacts(object):
     class Args(object):
         def __init__(self):
             self.build = 'http://example.org/jenkins/'
-            self.labels='label=foo,ICE=3.5'
+            self.labels = 'label=foo,ICE=3.5'
 
     class MockUrl(object):
         def __init__(self):
@@ -64,7 +64,6 @@ class TestArtifacts(object):
         omego.artifacts.opener.open(url.url).AndReturn(self.MockUrl())
         self.mox.ReplayAll()
         return Artifacts(self.Args())
-
 
     def test_init(self):
         # Also tests read_xml
