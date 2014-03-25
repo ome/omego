@@ -29,48 +29,70 @@ from omego.artifacts import Artifacts
 
 class TestArtifacts(object):
 
-    class Args(object):
-        def __init__(self):
-            self.build = 'http://example.org/jenkins/'
-            self.labels = 'label=foo,ICE=3.5'
-
     class MockUrl(object):
-        def __init__(self):
+        labelledurl = 'http://example.org/jenkins/ICE=3.5,label=foo/'
+        unlabelledurl = 'http://example.org/jenkins/'
+        artifactname = 'OMERO.server-0.0.0-ice35-b0.zip'
+        artifactpath = 'a/OMERO.server-0.0.0-ice35-b0.zip'
+
+        def __init__(self, matrix):
             self.code = 200
-            self.url = 'http://example.org/jenkins/api/xml'
+            self.matrix = matrix
+            self.url = self.unlabelledurl if matrix else self.labelledurl
 
         def read(self):
+            if self.matrix:
+                return (
+                    '<matrixBuild><run><url>%s</url></run></matrixBuild>' %
+                    self.labelledurl)
             return (
-                '<root>'
-                '<artifact><fileName>OMERO.server-0.0.0-ice35-b0.zip'
-                '</fileName><relativePath>OMERO.server-0.0.0-ice35-b0.zip'
-                '</relativePath></artifact></root>')
+                '<root><artifact><fileName>%s</fileName><relativePath>'
+                '%s</relativePath></artifact></root>' %
+                (self.artifactname, self.artifactpath))
 
         def close(self):
             pass
+
+    class Args(object):
+        def __init__(self, matrix):
+            if matrix:
+                self.labels = 'label=foo,ICE=3.5'
+                self.build = TestArtifacts.MockUrl.unlabelledurl
+            else:
+                self.labels = ''
+                self.build = TestArtifacts.MockUrl.labelledurl
 
     def setup_method(self, method):
         self.mox = mox.Mox()
 
     def teardown_method(self, method):
-        self.mox.VerifyAll()
         self.mox.UnsetStubs()
 
-    def partial_mock_artifacts(self):
+    def partial_mock_artifacts(self, matrix):
         # Artifacts.__init__ does a lot of work, so we can't just
         # stubout methods after constructing it
-        url = self.MockUrl()
         self.mox.StubOutWithMock(omego.artifacts.opener, 'open')
-        omego.artifacts.opener.open(url.url).AndReturn(self.MockUrl())
+        if matrix:
+            omego.artifacts.opener.open(
+                self.MockUrl.unlabelledurl + 'api/xml').AndReturn(
+                self.MockUrl(True))
+        omego.artifacts.opener.open(
+            self.MockUrl.labelledurl + 'api/xml').AndReturn(
+            self.MockUrl(False))
         self.mox.ReplayAll()
-        return Artifacts(self.Args())
+        return Artifacts(self.Args(matrix))
 
-    def test_init(self):
+    @pytest.mark.parametrize('matrix', [True, False])
+    def test_init(self, matrix):
         # Also tests read_xml
-        self.partial_mock_artifacts()
+        a = self.partial_mock_artifacts(matrix)
+        assert hasattr(a, 'server')
+        assert a.server == '%sartifact/%s' % (
+            self.MockUrl.labelledurl, self.MockUrl.artifactpath)
+        self.mox.VerifyAll()
 
     def test_find_label_matches(self):
-        a = self.partial_mock_artifacts()
+        a = self.partial_mock_artifacts(True)
 
         urls = [
             'http://example.org/x/ICE=3.4,label=foo/y',
@@ -92,12 +114,14 @@ class TestArtifacts(object):
             ]
         with pytest.raises(Stop):
             m = a.find_label_matches(urls)
+        self.mox.VerifyAll()
 
     def test_label_list_parser(self):
-        a = self.partial_mock_artifacts()
+        a = self.partial_mock_artifacts(True)
         labels = a.label_list_parser(
             'http://example.org/x/ICE=3.5,label=foo/y')
         assert labels == set(['ICE=3.5', 'label=foo'])
+        self.mox.VerifyAll()
 
     # TODO
     #def test_download(self):
