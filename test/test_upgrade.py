@@ -50,6 +50,7 @@ class TestUpgrade(object):
     def testUpgrade(self):
         self.upgrade("--unzipargs=-q", "--branch=OMERO-5.0-latest-ice34")
 
+    @pytest.mark.skipif(True, reason='Broken due to multiple CLI import')
     def testUpgradeMatrixBuild(self):
         self.upgrade(
             "--unzipargs=-q", "--branch=OMERO-5.1-latest", "--labels=ICE=3.4")
