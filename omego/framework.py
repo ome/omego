@@ -140,7 +140,7 @@ def parsers():
         class _Section(argparse.RawTextHelpFormatter._Section):
 
             def __init__(self, formatter, parent, heading=None):
-                #if heading:
+                # if heading:
                 #    heading = "\n%s\n%s" % ("=" * 40, heading)
                 argparse.RawTextHelpFormatter._Section.__init__(
                     self, formatter, parent, heading)

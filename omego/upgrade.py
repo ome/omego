@@ -343,8 +343,8 @@ class UpgradeCommand(Command):
     def __init__(self, sub_parsers):
         super(UpgradeCommand, self).__init__(sub_parsers)
 
-        ## TODO: these are very internal values and should be refactored out
-        ## to a configure file.
+        # TODO: these are very internal values and should be refactored out
+        # to a configure file.
         skipemail = "false"
         name = HOSTNAME
         if HOSTNAME == "gretzky":
