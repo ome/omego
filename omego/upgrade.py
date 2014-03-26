@@ -190,28 +190,28 @@ class UnixUpgrade(Upgrade):
             try:
                 log.info("Deleting %s", target)
                 shutil.rmtree(target)
-            except:
-                log.error("Failed to delete %s", target)
+            except OSError as e:
+                log.error("Failed to delete %s: %s", target, e)
 
         if "false" == self.args.skipdeletezip.lower():
             try:
                 log.info("Deleting %s", targetzip)
                 os.unlink(targetzip)
-            except:
-                log.error("Failed to delete %s", targetzip)
+            except OSError as e:
+                log.error("Failed to delete %s: %s", targetzip, e)
 
         try:
             os.unlink(self.args.sym)
-        except:
-            log.error("Failed to unlink %s", self.args.sym)
+        except OSError as e:
+            log.error("Failed to unlink %s: %s", self.args.sym, e)
 
         self.mklink(self.dir)
 
     def mklink(self, dir):
         try:
             os.symlink(dir, self.args.sym)
-        except:
-            log.error("Failed to symlink %s to %s", dir, self.args.sym)
+        except OSError as e:
+            log.error("Failed to symlink %s to %s: %s", dir, self.args.sym, e)
 
 
 class WindowsUpgrade(Upgrade):
