@@ -8,9 +8,9 @@ import logging
 
 import fileinput
 import smtplib
-import sys
 
 from artifacts import Artifacts
+from external import External
 from framework import Command, Stop
 from env import EnvDefault, JenkinsParser
 from env import WINDOWS
@@ -67,8 +67,9 @@ class Upgrade(object):
         if not os.path.exists(args.sym):
             self.mklink(self.dir)
 
-        self.setup_script_environment(dir)
-        self.setup_previous_omero_env(args.sym, args.savevarsfile)
+        self.external = External()
+        self.external.setup_omero_cli(dir)
+        self.external.setup_previous_omero_env(args.sym, args.savevarsfile)
 
         # Need lib/python set above
         import path
@@ -80,7 +81,7 @@ class Upgrade(object):
         self.configure(noconfigure)
         self.directories()
 
-        self.save_env_vars(args.savevarsfile, args.savevars.split())
+        self.external.save_env_vars(args.savevarsfile, args.savevars.split())
         self.start()
 
     def stop(self):
@@ -144,40 +145,6 @@ class Upgrade(object):
             log.info("Starting web")
             self.startweb()
 
-    def setup_script_environment(self, dir):
-        dir = os.path.abspath(dir)
-        lib = os.path.join(dir, "lib", "python")
-        if not os.path.exists(lib):
-            raise Exception("%s does not exist!" % lib)
-        sys.path.insert(0, lib)
-
-        import omero
-        import omero.cli
-
-        log.debug("Using CLI from %s", omero.cli.__file__)
-
-        self.cli = omero.cli.CLI()
-        self.cli.loadplugins()
-
-    def setup_previous_omero_env(self, dir, savevarsfile):
-        env = self.get_environment(savevarsfile)
-
-        def addpath(varname, p):
-            if not os.path.exists(p):
-                raise Exception("%s does not exist!" % p)
-            current = env.get(varname)
-            if current:
-                env[varname] = p + os.pathsep + current
-            else:
-                env[varname] = p
-
-        dir = os.path.abspath(dir)
-        lib = os.path.join(dir, "lib", "python")
-        addpath("PYTHONPATH", lib)
-        bin = os.path.join(dir, "bin")
-        addpath("PATH", bin)
-        self.old_env = env
-
     def run(self, command):
         """
         Runs a command as if from the command-line
@@ -186,10 +153,8 @@ class Upgrade(object):
         if isinstance(command, str):
             command = command.split()
         else:
-            for idx, val in enumerate(command):
-                command[idx] = val
-        log.info("Invoking CLI [current environment]: %s", " ".join(command))
-        self.cli.invoke(command, strict=True)
+            command = list(command)
+        self.external.omero_cli(command)
 
     def bin(self, command):
         """
@@ -198,54 +163,10 @@ class Upgrade(object):
         """
         if isinstance(command, str):
             command = command.split()
-        command.insert(0, 'omero')
-        log.info("Running [old environment]: %s", " ".join(command))
-        r = subprocess.call(command, env=self.old_env)
-        if r != 0:
-            raise Exception("Non-zero return code: %d" % r)
+        self.external.omero_bin(command)
 
     def web(self):
         return "false" == self.args.skipweb.lower()
-
-    def get_environment(self, filename=None):
-        env = os.environ.copy()
-        if not filename:
-            log.debug("Using original environment")
-            return env
-
-        try:
-            f = open(filename, "r")
-            log.info("Loading old environment")
-            for line in f:
-                key, value = line.strip().split("=", 1)
-                env[key] = value
-                log.debug("%s=%s", key, value)
-        except Exception as e:
-            log.error("Failed to load environment variables from %s: %s",
-                      filename, e)
-
-        try:
-            f.close()
-        except:
-            pass
-        return env
-
-    def save_env_vars(self, filename, varnames):
-        try:
-            f = open(filename, "w")
-            log.info("Saving environment")
-            for var in varnames:
-                value = os.environ.get(var, "")
-                f.write("%s=%s\n" % (var, value))
-                log.debug("%s=%s", var, value)
-        except Exception as e:
-            log.error("Failed to save environment variables to %s: %s",
-                      filename, e)
-
-        try:
-            f.close()
-        except:
-            pass
 
 
 class UnixUpgrade(Upgrade):
