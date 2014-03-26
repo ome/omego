@@ -124,5 +124,5 @@ class TestArtifacts(object):
         self.mox.VerifyAll()
 
     # TODO
-    #def test_download(self):
+    # def test_download(self):
     #    pass
