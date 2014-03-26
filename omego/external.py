@@ -146,10 +146,10 @@ class External(object):
                     key, value = line.strip().split("=", 1)
                     env[key] = value
                     log.debug("  %s=%s", key, value)
-        except Exception as e:
+        except IOError as e:
             log.error("Failed to load environment variables from %s: %s",
                       filename, e)
-            raise e
+
         # TODO: Throw a catchable exception
         return env
 
@@ -161,6 +161,6 @@ class External(object):
                     value = os.environ.get(var, "")
                     f.write("%s=%s\n" % (var, value))
                     log.debug("  %s=%s", var, value)
-        except Exception as e:
+        except IOError as e:
             log.error("Failed to save environment variables to %s: %s",
                       filename, e)
