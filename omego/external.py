@@ -88,7 +88,7 @@ class External(object):
         addpath("PATH", bin)
         self.old_env = env
 
-    def new_omero(self, command):
+    def omero_cli(self, command):
         """
         Runs a command as if from the OMERO command-line without the need
         for using popen or subprocess.
@@ -99,7 +99,7 @@ class External(object):
         log.info("Invoking CLI [current environment]: %s", " ".join(command))
         self.cli.invoke(command, strict=True)
 
-    def old_omero(self, command):
+    def omero_bin(self, command):
         """
         Runs the omero command-line client with an array of arguments using the
         old environment

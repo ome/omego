@@ -77,23 +77,23 @@ class TestExternal(object):
         assert env['TEST_ENVVAR1'] == 'abcde'
         assert env['TEST_ENVVAR2'] == '1=2=3=4=5'
 
-    def test_new_omero(self):
+    def test_omero_cli(self):
         class MockCli:
             def invoke(*args, **kwargs):
                 assert args[1:] == (['arg1', 'arg2'], )
                 assert kwargs == {'strict': True}
 
         self.ext.cli = MockCli()
-        self.ext.new_omero(['arg1', 'arg2'])
+        self.ext.omero_cli(['arg1', 'arg2'])
 
-    def test_old_omero(self):
+    def test_omero_bin(self):
         env = {'TEST': 'test'}
         self.ext.old_env = env
         self.mox.StubOutWithMock(self.ext, 'run')
         self.ext.run('omero', ['arg1', 'arg2'], env).AndReturn(0)
         self.mox.ReplayAll()
 
-        self.ext.old_omero(['arg1', 'arg2'])
+        self.ext.omero_bin(['arg1', 'arg2'])
         self.mox.VerifyAll()
 
     def test_run(self):
