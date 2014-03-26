@@ -11,16 +11,22 @@ log = logging.getLogger("omego.external")
 
 class RunException(Exception):
 
-    def __init__(self, msg, r, stdout, stderr):
+    def __init__(self, msg, exe, exeargs, r, stdout, stderr):
         super(RunException, self).__init__(msg)
+        self.exe = exe
+        self.exeargs = exeargs
         self.r = r
         self.stdout = stdout
         self.stderr = stderr
 
+    def fullstr(self):
+        return '%s\nstdout: %s\nstderr: %s' % (
+            self.__str__(), self.stdout, self.stderr)
+
     def __str__(self):
-        return '%s\nreturn code:%d\nstdout:%s\nstderr:%s' % (
-            super(RunException, self).__str__(), self.r,
-            self.stdout, self.stderr)
+        return '%s\ncommand: %s %s\nreturn code: %d' % (
+            super(RunException, self).__str__(), self.exe,
+            ' '.join(self.exeargs), self.r)
 
 
 class External(object):
@@ -123,7 +129,8 @@ class External(object):
         r = proc.returncode
 
         if r != 0:
-            raise RunException("Non-zero return code", r, stdout, stderr)
+            raise RunException(
+                "Non-zero return code", exe, args, r, stdout, stderr)
         return stdout, stderr
 
     def get_environment(self, filename=None):

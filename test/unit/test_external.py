@@ -28,6 +28,22 @@ import subprocess
 from omego.external import External, RunException
 
 
+class TestRunException(object):
+
+    def setup_method(self, method):
+        self.ex = RunException(
+            'Message', 'exe', ['arg1', 'arg2'], 1, 'out', 'err')
+
+    def test_str(self):
+        s = 'Message\ncommand: exe arg1 arg2\nreturn code: 1'
+        assert str(self.ex) == s
+
+    def test_fullstr(self):
+        s = ('Message\ncommand: exe arg1 arg2\nreturn code: 1\n'
+             'stdout: out\nstderr: err')
+        assert self.ex.fullstr() == s
+
+
 class TestExternal(object):
 
     def setup_method(self, method):
@@ -96,7 +112,7 @@ class TestExternal(object):
         subprocess.Popen(
             ['fail', 'arg1', 'arg2'], env=env, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE).AndRaise(RunException(
-                'Message', 2, 'ret1', 'ret2'))
+                'Message', 'fail', ['arg1', 'arg2'], 2, 'ret1', 'ret2'))
         self.mox.ReplayAll()
 
         self.ext.run('test', ['arg1', 'arg2'], env)
