@@ -47,9 +47,11 @@ class TestUpgrade(object):
         with pytest.raises(Stop):
             self.upgrade("--skipunzip")
 
+    @pytest.mark.slowtest
     def testUpgrade(self):
         self.upgrade("--unzipargs=-q", "--branch=OMERO-5.0-latest-ice34")
 
+    @pytest.mark.slowtest
     @pytest.mark.skipif(True, reason='Broken due to multiple CLI import')
     def testUpgradeMatrixBuild(self):
         self.upgrade(

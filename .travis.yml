@@ -31,7 +31,7 @@ before_script:
 
 script:
     - python setup.py test -s test/unit -v
-    - python setup.py test -s test/integration -v
+    - python setup.py test -s test/integration -v -m "not slowtest"
     - python setup.py sdist install
     - pip install dist/*.tar.gz
     - omego -h
