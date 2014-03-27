@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import os
-import subprocess
 import logging
 
 from urllib2 import build_opener, HTTPError
 import re
 
+from external import External, RunException
 from framework import Command, Stop
 from env import JenkinsParser
 
@@ -145,18 +145,22 @@ class Artifacts(object):
             download(componenturl, filename)
 
         if not self.args.skipunzip:
-            command = [self.args.unzip]
+            command = self.args.unzip
+            commandargs = []
             if self.args.unzipargs:
-                command.append(self.args.unzipargs)
+                commandargs.append(self.args.unzipargs)
             if self.args.unzipdir:
-                command.extend(["-d", self.args.unzipdir])
-            command.append(filename)
-            log.debug("Calling %s", command)
-            p = subprocess.Popen(command)
-            rc = p.wait()
-            if rc != 0:
-                log.error('Unzip failed')
-                raise Stop(rc, 'Unzip failed, unzip manually and run again')
+                commandargs.extend(["-d", self.args.unzipdir])
+            commandargs.append(filename)
+
+            try:
+                out, err = External.run(command, commandargs)
+                log.debug(out)
+                log.debug(err)
+            except RunException as e:
+                log.error('Unzip failed: %s' % e.fullstr())
+                print 'RunException: %s' % e.fullstr()
+                raise Stop(e.r, 'Unzip failed, unzip manually and run again')
             else:
                 return unzipped
         else:
