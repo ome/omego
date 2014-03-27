@@ -3,7 +3,6 @@
 
 import os
 import logging
-import math
 
 from urllib2 import build_opener, HTTPError
 import re
@@ -40,6 +39,7 @@ class ProgressBar(object):
             if self.pad:
                 p = ' ' * (self.ndots - self.n * len(self.marker))
             print '%s%s (%d/%d bytes)' % ('*' * self.n, p, current, self.total)
+
 
 def download(url, filename, print_progress=0):
     blocksize = 1024 * 1024
