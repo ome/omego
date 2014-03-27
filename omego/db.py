@@ -108,6 +108,9 @@ class DbAdmin(object):
         """
         Run a psql command
         """
+        if not self.args.dbname:
+            raise Exception('Database name required')
+
         env = os.environ.copy()
         env['PGPASSWORD'] = self.args.dbpass
         args = ['-d', self.args.dbname, '-h', self.args.dbhost, '-U',

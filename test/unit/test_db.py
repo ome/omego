@@ -143,20 +143,28 @@ class TestDb(object):
         assert db.get_current_db_version() == ('OMERO4.4', '0')
         self.mox.VerifyAll()
 
-    def test_psql(self):
-        args = self.Args({'dbhost': 'host', 'dbname': 'name',
+    @pytest.mark.parametrize('dbname', ['name', ''])
+    def test_psql(self, dbname):
+        args = self.Args({'dbhost': 'host', 'dbname': dbname,
                           'dbuser': 'user', 'dbpass': 'pass'})
 
         self.mox.StubOutWithMock(os.environ, 'copy')
         self.mox.StubOutWithMock(External, 'run')
 
-        os.environ.copy().AndReturn({'PGPASSWORD': 'incorrect'})
-
-        External.run('psql', [
-            '-d', 'name', '-h', 'host', '-U', 'user', '-w', '-A', '-t',
-            'arg1', 'arg2'], {'PGPASSWORD': 'pass'}).AndReturn(('', ''))
+        if dbname:
+            os.environ.copy().AndReturn({'PGPASSWORD': 'incorrect'})
+            psqlargs = ['-d', dbname, '-h', 'host', '-U', 'user',
+                        '-w', '-A', '-t', 'arg1', 'arg2']
+            External.run('psql', psqlargs, {'PGPASSWORD': 'pass'}
+                         ).AndReturn(('', ''))
         self.mox.ReplayAll()
 
         db = self.PartialMockDb(args, None)
-        db.psql('arg1', 'arg2')
+        if dbname:
+            db.psql('arg1', 'arg2')
+        else:
+            with pytest.raises(Exception) as excinfo:
+                db.psql('arg1', 'arg2')
+            assert str(excinfo.value) == 'Database name required'
+
         self.mox.VerifyAll()

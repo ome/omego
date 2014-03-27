@@ -84,7 +84,8 @@ class DbParser(argparse.ArgumentParser):
         Add = EnvDefault.add
         Add(group, "dbhost", HOSTNAME,
             help="Hostname of the OMERO database server")
-        Add(group, "dbname", "omero",
+        # No default dbname to prevent inadvertent upgrading of databases
+        Add(group, "dbname", None,
             help="Name of the OMERO database")
         Add(group, "dbuser", "omero",
             help="Username for connecting to the OMERO database")
