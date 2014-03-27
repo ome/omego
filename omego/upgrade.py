@@ -64,11 +64,8 @@ class Upgrade(object):
         if not os.path.exists(args.sym):
             self.mklink(self.dir)
 
-        self.external = External()
-        self.external.set_server_dir(dir)
-        noconfigure = self.has_config(dir)
-
-        self.external.setup_omero_cli(dir)
+        self.external = External(dir)
+        self.external.setup_omero_cli()
         self.external.setup_previous_omero_env(args.sym, args.savevarsfile)
 
         # Need lib/python set above
@@ -78,7 +75,7 @@ class Upgrade(object):
 
         self.stop()
 
-        self.configure(noconfigure)
+        self.configure(self.external.has_config())
         self.directories()
 
         self.upgrade_db()
@@ -140,7 +137,7 @@ class Upgrade(object):
     def upgrade_db(self):
         if self.args.upgradedb:
             log.debug('Upgrading database')
-            DbAdmin(self.dir, 'upgrade', self.args)
+            DbAdmin(self.dir, 'upgrade', self.args, self.external)
 
     def start(self):
         self.run("admin start")

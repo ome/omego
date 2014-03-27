@@ -37,11 +37,14 @@ class External(object):
     Manages the execution of shell and OMERO CLI commands
     """
 
-    def __init__(self):
+    def __init__(self, dir=None):
         self.old_env = None
         self.cli = None
         self.configured = None
+
         self.dir = None
+        if dir:
+            self.set_server_dir(dir)
 
     def set_server_dir(self, dir):
         """

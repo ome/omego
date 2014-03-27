@@ -25,10 +25,6 @@ class DbAdmin(object):
         # TODO: If the server has already been configured we should use the
         # OMERO db credentials if not explicitly provided in args
 
-        # setup_script_environment() may cause the creation of a default
-        # config.xml, so we must check for it here
-        # noconfigure = self.has_config(dir)
-
         # Server directory
         if not os.path.exists(dir):
             raise Exception("%s does not exist!" % dir)
@@ -108,12 +104,6 @@ class DbAdmin(object):
         log.info('Current omero db version: %s', v)
         return v
 
-    # TODO: Move this into a common class (c.f. Upgrade.run)
-    def has_config(self, dir):
-        log.debug(dir)
-        config = os.path.join(dir, "etc", "grid", "config.xml")
-        return os.path.exists(config)
-
     def psql(self, *psqlargs):
         """
         Run a psql command
@@ -173,4 +163,6 @@ class DbCommand(Command):
             d = args.serverdir
         else:
             raise Stop(1, 'OMERO server directory required')
-        DbAdmin(d, args.dbcommand, args)
+        ext = External(d)
+        ext.setup_omero_cli()
+        DbAdmin(d, args.dbcommand, args, ext)
