@@ -65,9 +65,9 @@ class TestDb(object):
         if connected:
             db.check_connection()
         else:
-            with pytest.raises(Stop) as exc:
+            with pytest.raises(Stop) as excinfo:
                 db.check_connection()
-                assert str(exc) == 'Database connection check failed'
+                assert str(excinfo.value) == 'Database connection check failed'
 
         self.mox.VerifyAll()
 
