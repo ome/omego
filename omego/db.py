@@ -6,18 +6,17 @@ import logging
 
 from glob import glob
 import re
-import sys
 
+from external import External, RunException
 from framework import Command, Stop
 from env import EnvDefault, DbParser
-import external
 
 log = logging.getLogger("omego.db")
 
 
 class DbAdmin(object):
 
-    def __init__(self, dir, command, args):
+    def __init__(self, dir, command, args, external):
 
         self.dir = dir
         self.args = args
@@ -28,20 +27,16 @@ class DbAdmin(object):
 
         # setup_script_environment() may cause the creation of a default
         # config.xml, so we must check for it here
-        #noconfigure = self.has_config(dir)
+        # noconfigure = self.has_config(dir)
 
         # Server directory
         if not os.path.exists(dir):
             raise Exception("%s does not exist!" % dir)
 
-        #self.setup_script_environment(dir)
-
-        # Need lib/python set above
-        #import path
-        #self.dir = path.path(dir)
-
         psqlv = self.psql('--version')
         log.info('psql version: %s', psqlv)
+
+        self.external = external
 
         self.check_connection()
 
@@ -55,16 +50,17 @@ class DbAdmin(object):
     def check_connection(self):
         try:
             self.psql('-c', '\conninfo')
-        except Exception as e:
+        except RunException as e:
             log.error(e)
             raise Stop(30, 'Database connection check failed')
 
     def initialise(self):
         if not os.path.exists(self.args.omerosql):
             log.info('Creating SQL: %s', self.args.omerosql)
-            self.run(
-                ["db", "script", "-f", self.args.omerosql, "", "",
-                 self.args.rootpass])
+            if not self.args.dry_run:
+                self.external.omero_cli(
+                    ["db", "script", "-f", self.args.omerosql, "", "",
+                     self.args.rootpass])
         else:
             log.info('Using existing SQL: %s', self.args.omerosql)
 
@@ -116,37 +112,6 @@ class DbAdmin(object):
         log.debug(dir)
         config = os.path.join(dir, "etc", "grid", "config.xml")
         return os.path.exists(config)
-
-    # TODO: Move this into a common class (c.f. Upgrade.run)
-    def setup_script_environment(self, dir):
-        dir = os.path.abspath(dir)
-        lib = os.path.join(dir, "lib", "python")
-        if not os.path.exists(lib):
-            raise Exception("%s does not exist!" % lib)
-        sys.path.insert(0, lib)
-
-        import omero
-        import omero.cli
-
-        log.debug("Using CLI from %s", omero.cli.__file__)
-
-        self.cli = omero.cli.CLI()
-        self.cli.loadplugins()
-
-    # TODO: Move this into a common class (c.f. Upgrade.run)
-    def run(self, command):
-        """
-        Runs a command as if from the command-line
-        without the need for using popen or subprocess
-        """
-        if isinstance(command, str):
-            command = command.split()
-        else:
-            for idx, val in enumerate(command):
-                command[idx] = val
-        log.info("Invoking CLI [current environment]: %s", " ".join(command))
-        if not self.args.dry_run:
-            self.cli.invoke(command, strict=True)
 
     def psql(self, *psqlargs):
         """
