@@ -34,9 +34,9 @@ class TestRunException(object):
         self.ex = RunException(
             'Message', 'exe', ['arg1', 'arg2'], 1, 'out', 'err')
 
-    def test_str(self):
+    def test_shortstr(self):
         s = 'Message\ncommand: exe arg1 arg2\nreturn code: 1'
-        assert str(self.ex) == s
+        assert self.ex.shortstr() == s
 
     def test_fullstr(self):
         s = ('Message\ncommand: exe arg1 arg2\nreturn code: 1\n'

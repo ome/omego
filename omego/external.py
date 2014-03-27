@@ -21,12 +21,15 @@ class RunException(Exception):
 
     def fullstr(self):
         return '%s\nstdout: %s\nstderr: %s' % (
-            self.__str__(), self.stdout, self.stderr)
+            self.shortstr(), self.stdout, self.stderr)
 
-    def __str__(self):
+    def shortstr(self):
         return '%s\ncommand: %s %s\nreturn code: %d' % (
             super(RunException, self).__str__(), self.exe,
             ' '.join(self.exeargs), self.r)
+
+    def __str__(self):
+        return self.fullstr()
 
 
 class External(object):
