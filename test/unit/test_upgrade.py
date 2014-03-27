@@ -72,13 +72,6 @@ class TestUpgrade(object):
         upgrade.stop()
         self.mox.VerifyAll()
 
-    def test_has_config(self, tmpdir):
-        upgrade = self.PartialMockUnixUpgrade(None, None)
-
-        assert not upgrade.has_config(str(tmpdir))
-        tmpdir.ensure('etc', 'grid', 'config.xml')
-        assert upgrade.has_config(str(tmpdir))
-
     @pytest.mark.skipif(True, reason='Untestable: dynamic module import')
     def test_configure(self):
         pass

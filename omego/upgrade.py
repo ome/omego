@@ -58,10 +58,6 @@ class Upgrade(object):
         log.info("%s: Upgrading %s (%s)...",
                  self.__class__.__name__, dir, args.sym)
 
-        # setup_script_environment() may cause the creation of a default
-        # config.xml, so we must check for it here
-        noconfigure = self.has_config(dir)
-
         # If the symlink doesn't exist, create
         # it which simplifies the rest of the logic,
         # which already checks if OLD === NEW
@@ -69,6 +65,9 @@ class Upgrade(object):
             self.mklink(self.dir)
 
         self.external = External()
+        self.external.set_server_dir(dir)
+        noconfigure = self.has_config(dir)
+
         self.external.setup_omero_cli(dir)
         self.external.setup_previous_omero_env(args.sym, args.savevarsfile)
 
@@ -98,10 +97,6 @@ class Upgrade(object):
         if self.web():
             log.info("Stopping web")
             self.stopweb()
-
-    def has_config(self, dir):
-        config = os.path.join(dir, "etc", "grid", "config.xml")
-        return os.path.exists(config)
 
     def configure(self, noconfigure):
 
