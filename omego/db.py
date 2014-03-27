@@ -72,11 +72,12 @@ class DbAdmin(object):
         # E.g. OMERO3__0 OMERO3A__10 OMERO4__0 OMERO4.4__0 OMERO5.1DEV__0
         def keyfun(v):
             x = re.match(
-                '.*/OMERO(\d+)(\.|A)?(\d*)([A-Z]*)__(\d+)', v).groups()
-            return (int(x[0]), x[1], int(x[2]) if x[2] else None, x[3], x[4])
+                '.*OMERO(\d+)(\.|A)?(\d*)([A-Z]*)__(\d+)$', v).groups()
+            # x3: 'DEV' should come before ''
+            return (int(x[0]), x[1], int(x[2]) if x[2] else None,
+                    x[3] if x[3] else 'zzz', x[4])
 
         sortedver = sorted(versions, key=keyfun)
-        #log.debug(sortedver)
         return sortedver
 
     def upgrade(self):
@@ -120,8 +121,8 @@ class DbAdmin(object):
         env = os.environ.copy()
         env['PGPASSWORD'] = self.args.dbpass
         args = ['-d', self.args.dbname, '-h', self.args.dbhost, '-U',
-                self.args.dbuser, '-A', '-t'] + list(psqlargs)
-        stdout, stderr = external.run('psql', args, env)
+                self.args.dbuser, '-w', '-A', '-t'] + list(psqlargs)
+        stdout, stderr = External.run('psql', args, env)
         if stderr:
             log.warn('stderr: %s', stderr)
         log.debug('stdout: %s', stdout)
