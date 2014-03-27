@@ -3,6 +3,7 @@
 
 import os
 import logging
+import math
 
 from urllib2 import build_opener, HTTPError
 import re
@@ -24,12 +25,42 @@ if 'USER_AGENT' in os.environ:
     opener.addheaders = [('User-agent', os.environ.get('USER_AGENT'))]
 
 
-def download(url, filename):
+class ProgressBar(object):
+    def __init__(self, ndots, total):
+        self.ndots = ndots
+        self.total = total
+        self.n = 0
+        self.marker = '*'
+        self.pad = True
+
+    def update(self, current):
+        if int(float(current) / self.total * self.ndots) > self.n:
+            self.n += 1
+            p = ''
+            if self.pad:
+                p = ' ' * (self.ndots - self.n * len(self.marker))
+            print '%s%s (%d/%d bytes)' % ('*' * self.n, p, current, self.total)
+
+def download(url, filename, print_progress=0):
+    blocksize = 1024 * 1024
+    downloaded = 0
+    progress = None
+
     response = opener.open(url)
     try:
-        output = open(filename, 'w')
+        total = int(response.headers['Content-Length'])
+
+        if print_progress:
+            progress = ProgressBar(print_progress, total)
+
+        output = open(filename, 'wb')
         try:
-            output.write(response.read())
+            while downloaded < total:
+                block = response.read(blocksize)
+                output.write(block)
+                downloaded += len(block)
+                if progress:
+                    progress.update(downloaded)
         finally:
             output.close()
     finally:
@@ -142,7 +173,10 @@ class Artifacts(object):
 
         if not os.path.exists(filename):
             log.info("Downloading %s", componenturl)
-            download(componenturl, filename)
+            progress = 0
+            if self.args.verbose:
+                progress = 20
+            download(componenturl, filename, progress)
 
         if not self.args.skipunzip:
             command = self.args.unzip
