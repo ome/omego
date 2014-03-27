@@ -57,10 +57,31 @@ class TestExternal(object):
     def create_dummy_server_dir(self, d):
         # d must be a pytest tmpdir object
         d.ensure('lib', 'python', 'omero', 'cli', dir=True)
+        d.ensure('etc', 'grid', dir=True)
         d.ensure('bin', dir=True)
 
         f = d.join(self.envfilename)
         f.write('TEST_ENVVAR1=abcde\nTEST_ENVVAR2=1=2=3=4=5\n')
+
+    @pytest.mark.parametrize('configured', [True, False])
+    def test_set_server_dir_and_has_config(self, tmpdir, configured):
+        self.create_dummy_server_dir(tmpdir)
+        if configured:
+            tmpdir.ensure('etc', 'grid', 'config.xml')
+
+        with pytest.raises(Exception) as excinfo:
+            self.ext.has_config()
+        assert str(excinfo.value) == 'No server directory set'
+
+        with tmpdir.as_cwd():
+            self.ext.set_server_dir('.')
+
+        assert self.ext.dir == str(tmpdir)
+        assert self.ext.has_config() == configured
+
+        # Creating a config file should not change the original state
+        tmpdir.ensure('etc', 'grid', 'config.xml')
+        assert self.ext.has_config() == configured
 
     # def test_setup_omero_cli(self):
     # Not easily testable since it does a direct import

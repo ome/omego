@@ -37,8 +37,29 @@ class External(object):
     def __init__(self):
         self.old_env = None
         self.cli = None
+        self.configured = None
+        self.dir = None
 
-    def setup_omero_cli(self, dir):
+    def set_server_dir(self, dir):
+        """
+        Set the directory of the server to be controlled
+        """
+        self.dir = os.path.abspath(dir)
+        config = os.path.join(self.dir, 'etc', 'grid', 'config.xml')
+        self.configured = os.path.exists(config)
+
+    def has_config(self):
+        """
+        Checks whether a config.xml file existed in the new server when the
+        directory was first set by set_server_dir(). Importing omero.cli
+        may automatically create an empty file, so we have to use the saved
+        state.
+        """
+        if not self.dir:
+            raise Exception('No server directory set')
+        return self.configured
+
+    def setup_omero_cli(self):
         """
         Imports the omero CLI module so that commands can be run directly.
         Note Python does not allow a module to be imported multiple times,
@@ -47,12 +68,14 @@ class External(object):
         This can have several surprisingly effects, so setup_omero_cli()
         must be explcitly called.
         """
+        if not self.dir:
+            raise Exception('No server directory set')
+
         if 'omero.cli' in sys.modules:
             raise Exception('omero.cli can only be imported once')
 
         log.debug("Setting up omero CLI")
-        dir = os.path.abspath(dir)
-        lib = os.path.join(dir, "lib", "python")
+        lib = os.path.join(self.dir, "lib", "python")
         if not os.path.exists(lib):
             raise Exception("%s does not exist!" % lib)
         sys.path.insert(0, lib)
