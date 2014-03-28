@@ -33,12 +33,14 @@ class ProgressBar(object):
         self.pad = True
 
     def update(self, current):
-        if int(float(current) / self.total * self.ndots) > self.n:
-            self.n += 1
+        nextn = int(current * self.ndots / self.total)
+        if nextn > self.n:
+            self.n = nextn
             p = ''
             if self.pad:
-                p = ' ' * (self.ndots - self.n * len(self.marker))
-            print '%s%s (%d/%d bytes)' % ('*' * self.n, p, current, self.total)
+                p = ' ' * (self.ndots - self.n) * len(self.marker)
+            print '%s%s (%d/%d bytes)' % (
+                self.marker * self.n, p, current, self.total)
 
 
 def download(url, filename, print_progress=0):
