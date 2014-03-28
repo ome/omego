@@ -76,20 +76,60 @@ class DbAdmin(object):
         sortedver = sorted(versions, key=keyfun)
         return sortedver
 
+    def sql_version_matrix(self):
+        def version_pair(f):
+            vto, vfrom = os.path.split(os.path.splitext(f)[0])
+            vto = os.path.split(vto)[1]
+            return vfrom, vto
+
+        files = glob(os.path.join(
+            self.dir, 'sql', 'psql', 'OMERO*', 'OMERO*.sql'))
+        versions = set()
+        for f in files:
+            versions.update(version_pair(f))
+        versions = self.sort_schema(versions)
+        n = len(versions)
+        versionsrev = dict(vi for vi in zip(versions, xrange(n)))
+
+        # M(from,to) = upgrade script for this pair or None
+        M = [[None for b in xrange(n)] for a in xrange(n)]
+        for f in files:
+            vfrom, vto = version_pair(f)
+            M[versionsrev[vfrom]][versionsrev[vto]] = f
+
+        return M, versions
+
+    def sql_version_resolve(self, M, versions, vfrom):
+        def resolve_index(M, ifrom, ito):
+            n = len(M)
+            for p in xrange(n - 1, 0, -1):
+                if M[ifrom][p]:
+                    if p == ito:
+                        return [M[ifrom][p]]
+                    try:
+                        p2 = resolve_index(M, p, ito)
+                        return [M[ifrom][p]] + p2
+                    except:
+                        continue
+            raise Exception('No upgrade path found from %s to %s' % (
+                versions[ifrom], versions[ito]))
+
+        ugpath = resolve_index(M, versions.index(vfrom), len(versions) - 1)
+        return ugpath
+
     def upgrade(self):
         currentsqlv = '%s__%s' % self.get_current_db_version()
-        # TODO: Is there a nicer way to get the new server DB version?
-        latestsql = self.sort_schema(
-            glob(os.path.join(self.dir, 'sql', 'psql', 'OMERO*')))[-1]
-        latestsqlv = os.path.basename(latestsql)
+        M, versions = self.sql_version_matrix()
+        latestsqlv = versions[-1]
 
         if latestsqlv == currentsqlv:
             log.info('Database is already at %s', latestsqlv)
         else:
-            upgradesql = os.path.join(latestsql, currentsqlv) + '.sql'
-            log.info('Upgrading database using %s', upgradesql)
-            if not self.args.dry_run:
-                self.psql('-f', upgradesql)
+            ugpath = self.sql_version_resolve(M, versions, currentsqlv)
+            for upgradesql in ugpath:
+                log.info('Upgrading database using %s', upgradesql)
+                if not self.args.dry_run:
+                    self.psql('-f', upgradesql)
 
     def get_current_db_version(self):
         q = ('SELECT currentversion, currentpatch FROM dbpatch '

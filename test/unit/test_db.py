@@ -97,35 +97,74 @@ class TestDb(object):
 
     def test_sort_schema(self):
         ordered = ['OMERO3__0', 'OMERO3A__10', 'OMERO4__0', 'OMERO4.4__0',
-                   'OMERO5.0__0', 'OMERO5.1DEV__0', 'OMERO5.1__0']
+                   'OMERO5.0__0', 'OMERO5.1DEV__0', 'OMERO5.1DEV__1',
+                   'OMERO5.1__0']
 
-        ps = [5, 3, 2, 6, 0, 1, 4]
+        ps = [5, 3, 7, 2, 6, 0, 1, 4]
         permuted = [ordered[p] for p in ps]
 
         db = self.PartialMockDb(None, None)
         assert db.sort_schema(permuted) == ordered
         self.mox.VerifyAll()
 
+    def test_sql_version_matrix(self):
+        self.mox.StubOutWithMock(omego.db, 'glob')
+        omego.db.glob(
+            os.path.join('.', 'sql', 'psql', 'OMERO*', 'OMERO*.sql')
+            ).AndReturn(['./sql/psql/OMERO5.0__0/OMERO4.4__0.sql',
+                         './sql/psql/OMERO5.1__0/OMERO5.0__0.sql'])
+        self.mox.ReplayAll()
+
+        db = self.PartialMockDb(None, None)
+        M, versions = db.sql_version_matrix()
+        assert versions == ['OMERO4.4__0', 'OMERO5.0__0', 'OMERO5.1__0']
+        assert M == [[None, './sql/psql/OMERO5.0__0/OMERO4.4__0.sql', None],
+                     [None, None, './sql/psql/OMERO5.1__0/OMERO5.0__0.sql'],
+                     [None, None, None]]
+        self.mox.VerifyAll()
+
+    @pytest.mark.parametrize('vfrom', ['', '', ''])
+    def test_sql_version_resolve(self, vfrom):
+        db = self.PartialMockDb(None, None)
+
+        versions = ['3.0', '4.0', '4.4', '5.0', '5.1']
+        M = [[None, '4.0/3.0', '4.4/3.0', None, None],
+             [None, None, '4.4/4.0', '5.0/4.0', None],
+             [None, None, None, '5.0/4.4', None],
+             [None, None, None, None, '5.1/5.0'],
+             [None, None, None, None, None]]
+
+        assert db.sql_version_resolve(M, versions, '5.0') == ['5.1/5.0']
+        assert db.sql_version_resolve(M, versions, '4.0') == [
+            '5.0/4.0', '5.1/5.0']
+        assert db.sql_version_resolve(M, versions, '3.0') == [
+            '4.4/3.0', '5.0/4.4', '5.1/5.0']
+
+        self.mox.VerifyAll()
+
     @pytest.mark.parametrize('needupdate', [True, False])
     @pytest.mark.parametrize('dryrun', [True, False])
     def test_upgrade(self, needupdate, dryrun):
-        self.mox.StubOutWithMock(omego.db, 'glob')
-        omego.db.glob(
-            os.path.join('.', 'sql', 'psql', 'OMERO*')
-            ).AndReturn(['./sql/psql/OMERO4.4__0', './sql/psql/OMERO5.0__0'])
-
         args = self.Args({'dry_run': dryrun})
         db = self.PartialMockDb(args, None)
         self.mox.StubOutWithMock(db, 'get_current_db_version')
+        self.mox.StubOutWithMock(db, 'sql_version_matrix')
+        self.mox.StubOutWithMock(db, 'sql_version_resolve')
         self.mox.StubOutWithMock(db, 'psql')
 
+        versions = ['OMERO3.0__0', 'OMERO4.4__0', 'OMERO5.0__0']
         if needupdate:
-            db.get_current_db_version().AndReturn(('OMERO4.4', '0'))
+            db.get_current_db_version().AndReturn(('OMERO3.0', '0'))
+            db.sql_version_matrix().AndReturn(([], versions))
+            db.sql_version_resolve([], versions, versions[0]).AndReturn(
+                ['./sql/psql/OMERO4.4__0/OMERO3.0__0.sql',
+                 './sql/psql/OMERO5.0__0/OMERO4.4__0.sql'])
+            if not dryrun:
+                db.psql('-f', './sql/psql/OMERO4.4__0/OMERO3.0__0.sql')
+                db.psql('-f', './sql/psql/OMERO5.0__0/OMERO4.4__0.sql')
         else:
             db.get_current_db_version().AndReturn(('OMERO5.0', '0'))
-
-        if needupdate and not dryrun:
-            db.psql('-f', './sql/psql/OMERO5.0__0/OMERO4.4__0.sql')
+            db.sql_version_matrix().AndReturn(([], versions))
 
         self.mox.ReplayAll()
 
