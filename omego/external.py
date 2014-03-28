@@ -138,7 +138,7 @@ class External(object):
         if not self.old_env:
             raise Exception('Old environment not initialised')
         log.info("Running [old environment]: %s", " ".join(command))
-        self.run('omero', command, self.old_env)
+        self.run('omero', command, capturestd=True, env=self.old_env)
 
     @staticmethod
     def run(exe, args, capturestd=False, env=None):

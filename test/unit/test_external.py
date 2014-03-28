@@ -112,7 +112,8 @@ class TestExternal(object):
         env = {'TEST': 'test'}
         self.ext.old_env = env
         self.mox.StubOutWithMock(self.ext, 'run')
-        self.ext.run('omero', ['arg1', 'arg2'], env).AndReturn(0)
+        self.ext.run('omero', ['arg1', 'arg2'], capturestd=True, env=env
+                     ).AndReturn(0)
         self.mox.ReplayAll()
 
         self.ext.omero_bin(['arg1', 'arg2'])
