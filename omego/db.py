@@ -155,7 +155,7 @@ class DbAdmin(object):
         env['PGPASSWORD'] = self.args.dbpass
         args = ['-d', self.args.dbname, '-h', self.args.dbhost, '-U',
                 self.args.dbuser, '-w', '-A', '-t'] + list(psqlargs)
-        stdout, stderr = External.run('psql', args, env)
+        stdout, stderr = External.run('psql', args, env=env)
         if stderr:
             log.warn('stderr: %s', stderr)
         log.debug('stdout: %s', stdout)

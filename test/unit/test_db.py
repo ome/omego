@@ -194,7 +194,7 @@ class TestDb(object):
             os.environ.copy().AndReturn({'PGPASSWORD': 'incorrect'})
             psqlargs = ['-d', dbname, '-h', 'host', '-U', 'user',
                         '-w', '-A', '-t', 'arg1', 'arg2']
-            External.run('psql', psqlargs, {'PGPASSWORD': 'pass'}
+            External.run('psql', psqlargs, env={'PGPASSWORD': 'pass'}
                          ).AndReturn(('', ''))
         self.mox.ReplayAll()
 

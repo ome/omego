@@ -5,6 +5,7 @@ import subprocess
 import logging
 import os
 import sys
+import tempfile
 
 log = logging.getLogger("omego.external")
 
@@ -140,7 +141,7 @@ class External(object):
         self.run('omero', command, self.old_env)
 
     @staticmethod
-    def run(exe, args, env=None):
+    def run(exe, args, capturestd=False, env=None):
         """
         Runs an executable with an array of arguments, optionally in the
         specified environment.
@@ -151,11 +152,30 @@ class External(object):
             log.info("Executing [custom environment]: %s", " ".join(command))
         else:
             log.info("Executing : %s", " ".join(command))
-        proc = subprocess.Popen(
-            command, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        # Use communicate() since wait() may deadlock
-        stdout, stderr = proc.communicate()
-        r = proc.returncode
+
+        # Temp files will be automatically deleted on close()
+        # If run() throws the garbage collector should call close(), so don't
+        # bother with try-finally
+        outfile = None
+        errfile = None
+        if capturestd:
+            outfile = tempfile.TemporaryFile()
+            errfile = tempfile.TemporaryFile()
+
+        # Use call instead of Popen so that stdin is connected to the console,
+        # in case user input is required
+        r = subprocess.call(
+            command, env=env, stdout=outfile, stderr=errfile)
+
+        stdout = None
+        stderr = None
+        if capturestd:
+            outfile.seek(0)
+            stdout = outfile.read()
+            outfile.close()
+            errfile.seek(0)
+            stderr = errfile.read()
+            errfile.close()
 
         if r != 0:
             raise RunException(

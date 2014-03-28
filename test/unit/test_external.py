@@ -24,6 +24,7 @@ import mox
 
 import os
 import subprocess
+import tempfile
 
 from omego.external import External, RunException
 
@@ -117,33 +118,51 @@ class TestExternal(object):
         self.ext.omero_bin(['arg1', 'arg2'])
         self.mox.VerifyAll()
 
-    def test_run(self):
-        class MockProc:
-            def __init__(self):
-                self.returncode = 0
-
-            def communicate(self):
-                return 'ret1', 'ret2'
-
+    @pytest.mark.parametrize('retcode', [0, 1])
+    @pytest.mark.parametrize('capturestd', [True, False])
+    def test_run(self, tmpdir, retcode, capturestd):
         env = {'TEST': 'test'}
-        self.mox.StubOutWithMock(subprocess, 'Popen')
-        subprocess.Popen(
-            ['test', 'arg1', 'arg2'], env=env, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE).AndReturn(MockProc())
-        subprocess.Popen(
-            ['fail', 'arg1', 'arg2'], env=env, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE).AndRaise(RunException(
-                'Message', 'fail', ['arg1', 'arg2'], 2, 'ret1', 'ret2'))
+        self.mox.StubOutWithMock(subprocess, 'call')
+        self.mox.StubOutWithMock(tempfile, 'TemporaryFile')
+
+        if capturestd:
+            outfile = open(str(tmpdir.join('std.out')), 'w+')
+            outfile.write('out')
+            errfile = open(str(tmpdir.join('std.err')), 'w+')
+            errfile.write('err')
+
+            tempfile.TemporaryFile().AndReturn(outfile)
+            tempfile.TemporaryFile().AndReturn(errfile)
+            subprocess.call(
+                ['test', 'arg1', 'arg2'], env=env, stdout=outfile,
+                stderr=errfile).AndReturn(retcode)
+        else:
+            subprocess.call(
+                ['test', 'arg1', 'arg2'], env=env, stdout=None,
+                stderr=None).AndReturn(retcode)
         self.mox.ReplayAll()
 
-        self.ext.run('test', ['arg1', 'arg2'], env)
-        with pytest.raises(RunException) as excinfo:
-            self.ext.run('fail', ['arg1', 'arg2'], env)
-        exc = excinfo.value
-        assert exc.r == 2
-        assert exc.message == 'Message'
-        assert exc.stdout == 'ret1'
-        assert exc.stderr == 'ret2'
+        if retcode == 0:
+            stdout, stderr = self.ext.run(
+                'test', ['arg1', 'arg2'], capturestd, env)
+        else:
+            with pytest.raises(RunException) as excinfo:
+                self.ext.run('test', ['arg1', 'arg2'], capturestd, env)
+            exc = excinfo.value
+            assert exc.r == 1
+            assert exc.message == 'Non-zero return code'
+            stdout = exc.stdout
+            stderr = exc.stderr
+
+        if capturestd:
+            assert stdout == 'out'
+            assert stderr == 'err'
+            outfile.close()
+            errfile.close()
+        else:
+            assert stdout is None
+            assert stderr is None
+
         self.mox.VerifyAll()
 
     def test_get_environment(self, tmpdir):
