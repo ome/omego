@@ -73,6 +73,35 @@ class EnvDefault(argparse.Action):
                             default=default, **kwargs)
 
 
+class DbParser(argparse.ArgumentParser):
+
+    def __init__(self, parser):
+        self.parser = parser
+        group = self.parser.add_argument_group(
+            'Database arguments',
+            'Arguments related to administering the database')
+
+        Add = EnvDefault.add
+        Add(group, "dbhost", HOSTNAME,
+            help="Hostname of the OMERO database server")
+        # No default dbname to prevent inadvertent upgrading of databases
+        Add(group, "dbname", None,
+            help="Name of the OMERO database")
+        Add(group, "dbuser", "omero",
+            help="Username for connecting to the OMERO database")
+        Add(group, "dbpass", "omero",
+            help="Password for connecting to the OMERO database")
+        # TODO Admin credentials: dbauser, dbapass
+
+        Add(group, "omerosql", "omero.sql",
+            help="OMERO database SQL file")
+        Add(group, "rootpass", "omero",
+            help="OMERO admin password")
+
+    def __getattr__(self, key):
+        return getattr(self.parser, key)
+
+
 class JenkinsParser(argparse.ArgumentParser):
 
     def __init__(self, parser):

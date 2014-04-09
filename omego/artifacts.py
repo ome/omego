@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import os
-import subprocess
 import logging
 
 from urllib2 import build_opener, HTTPError
 import re
 
+from external import External, RunException
 from framework import Command, Stop
 from env import JenkinsParser
 
@@ -24,12 +24,45 @@ if 'USER_AGENT' in os.environ:
     opener.addheaders = [('User-agent', os.environ.get('USER_AGENT'))]
 
 
-def download(url, filename):
+class ProgressBar(object):
+    def __init__(self, ndots, total):
+        self.ndots = ndots
+        self.total = total
+        self.n = 0
+        self.marker = '*'
+        self.pad = True
+
+    def update(self, current):
+        nextn = int(current * self.ndots / self.total)
+        if nextn > self.n:
+            self.n = nextn
+            p = ''
+            if self.pad:
+                p = ' ' * (self.ndots - self.n) * len(self.marker)
+            print '%s%s (%d/%d bytes)' % (
+                self.marker * self.n, p, current, self.total)
+
+
+def download(url, filename, print_progress=0):
+    blocksize = 1024 * 1024
+    downloaded = 0
+    progress = None
+
     response = opener.open(url)
     try:
-        output = open(filename, 'w')
+        total = int(response.headers['Content-Length'])
+
+        if print_progress:
+            progress = ProgressBar(print_progress, total)
+
+        output = open(filename, 'wb')
         try:
-            output.write(response.read())
+            while downloaded < total:
+                block = response.read(blocksize)
+                output.write(block)
+                downloaded += len(block)
+                if progress:
+                    progress.update(downloaded)
         finally:
             output.close()
     finally:
@@ -142,21 +175,28 @@ class Artifacts(object):
 
         if not os.path.exists(filename):
             log.info("Downloading %s", componenturl)
-            download(componenturl, filename)
+            progress = 0
+            if self.args.verbose:
+                progress = 20
+            download(componenturl, filename, progress)
 
         if not self.args.skipunzip:
-            command = [self.args.unzip]
+            command = self.args.unzip
+            commandargs = []
             if self.args.unzipargs:
-                command.append(self.args.unzipargs)
+                commandargs.append(self.args.unzipargs)
             if self.args.unzipdir:
-                command.extend(["-d", self.args.unzipdir])
-            command.append(filename)
-            log.debug("Calling %s", command)
-            p = subprocess.Popen(command)
-            rc = p.wait()
-            if rc != 0:
-                log.error('Unzip failed')
-                raise Stop(rc, 'Unzip failed, unzip manually and run again')
+                commandargs.extend(["-d", self.args.unzipdir])
+            commandargs.append(filename)
+
+            try:
+                out, err = External.run(command, commandargs)
+                log.debug(out)
+                log.debug(err)
+            except RunException as e:
+                log.error('Unzip failed: %s' % e.fullstr())
+                print 'RunException: %s' % e.fullstr()
+                raise Stop(e.r, 'Unzip failed, unzip manually and run again')
             else:
                 return unzipped
         else:

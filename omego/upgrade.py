@@ -8,11 +8,12 @@ import logging
 
 import fileinput
 import smtplib
-import sys
 
 from artifacts import Artifacts
+from db import DbAdmin
+from external import External
 from framework import Command, Stop
-from env import EnvDefault, JenkinsParser
+from env import EnvDefault, DbParser, JenkinsParser
 from env import WINDOWS
 from env import HOSTNAME
 
@@ -57,18 +58,15 @@ class Upgrade(object):
         log.info("%s: Upgrading %s (%s)...",
                  self.__class__.__name__, dir, args.sym)
 
-        # setup_script_environment() may cause the creation of a default
-        # config.xml, so we must check for it here
-        noconfigure = self.has_config(dir)
-
         # If the symlink doesn't exist, create
         # it which simplifies the rest of the logic,
         # which already checks if OLD === NEW
         if not os.path.exists(args.sym):
             self.mklink(self.dir)
 
-        self.setup_script_environment(dir)
-        self.setup_previous_omero_env(args.sym, args.savevarsfile)
+        self.external = External(dir)
+        self.external.setup_omero_cli()
+        self.external.setup_previous_omero_env(args.sym, args.savevarsfile)
 
         # Need lib/python set above
         import path
@@ -77,10 +75,12 @@ class Upgrade(object):
 
         self.stop()
 
-        self.configure(noconfigure)
+        self.configure(self.external.has_config())
         self.directories()
 
-        self.save_env_vars(args.savevarsfile, args.savevars.split())
+        self.upgrade_db()
+
+        self.external.save_env_vars(args.savevarsfile, args.savevars.split())
         self.start()
 
     def stop(self):
@@ -94,10 +94,6 @@ class Upgrade(object):
         if self.web():
             log.info("Stopping web")
             self.stopweb()
-
-    def has_config(self, dir):
-        config = os.path.join(dir, "etc", "grid", "config.xml")
-        return os.path.exists(config)
 
     def configure(self, noconfigure):
 
@@ -138,45 +134,16 @@ class Upgrade(object):
                  self.args.registry, "--tcp",
                  self.args.tcp, "--ssl", self.args.ssl])
 
+    def upgrade_db(self):
+        if self.args.upgradedb:
+            log.debug('Upgrading database')
+            DbAdmin(self.dir, 'upgrade', self.args, self.external)
+
     def start(self):
         self.run("admin start")
         if self.web():
             log.info("Starting web")
             self.startweb()
-
-    def setup_script_environment(self, dir):
-        dir = os.path.abspath(dir)
-        lib = os.path.join(dir, "lib", "python")
-        if not os.path.exists(lib):
-            raise Exception("%s does not exist!" % lib)
-        sys.path.insert(0, lib)
-
-        import omero
-        import omero.cli
-
-        log.debug("Using CLI from %s", omero.cli.__file__)
-
-        self.cli = omero.cli.CLI()
-        self.cli.loadplugins()
-
-    def setup_previous_omero_env(self, dir, savevarsfile):
-        env = self.get_environment(savevarsfile)
-
-        def addpath(varname, p):
-            if not os.path.exists(p):
-                raise Exception("%s does not exist!" % p)
-            current = env.get(varname)
-            if current:
-                env[varname] = p + os.pathsep + current
-            else:
-                env[varname] = p
-
-        dir = os.path.abspath(dir)
-        lib = os.path.join(dir, "lib", "python")
-        addpath("PYTHONPATH", lib)
-        bin = os.path.join(dir, "bin")
-        addpath("PATH", bin)
-        self.old_env = env
 
     def run(self, command):
         """
@@ -186,10 +153,8 @@ class Upgrade(object):
         if isinstance(command, str):
             command = command.split()
         else:
-            for idx, val in enumerate(command):
-                command[idx] = val
-        log.info("Invoking CLI [current environment]: %s", " ".join(command))
-        self.cli.invoke(command, strict=True)
+            command = list(command)
+        self.external.omero_cli(command)
 
     def bin(self, command):
         """
@@ -198,54 +163,10 @@ class Upgrade(object):
         """
         if isinstance(command, str):
             command = command.split()
-        command.insert(0, 'omero')
-        log.info("Running [old environment]: %s", " ".join(command))
-        r = subprocess.call(command, env=self.old_env)
-        if r != 0:
-            raise Exception("Non-zero return code: %d" % r)
+        self.external.omero_bin(command)
 
     def web(self):
         return "false" == self.args.skipweb.lower()
-
-    def get_environment(self, filename=None):
-        env = os.environ.copy()
-        if not filename:
-            log.debug("Using original environment")
-            return env
-
-        try:
-            f = open(filename, "r")
-            log.info("Loading old environment")
-            for line in f:
-                key, value = line.strip().split("=", 1)
-                env[key] = value
-                log.debug("%s=%s", key, value)
-        except Exception as e:
-            log.error("Failed to load environment variables from %s: %s",
-                      filename, e)
-
-        try:
-            f.close()
-        except:
-            pass
-        return env
-
-    def save_env_vars(self, filename, varnames):
-        try:
-            f = open(filename, "w")
-            log.info("Saving environment")
-            for var in varnames:
-                value = os.environ.get(var, "")
-                f.write("%s=%s\n" % (var, value))
-                log.debug("%s=%s", var, value)
-        except Exception as e:
-            log.error("Failed to save environment variables to %s: %s",
-                      filename, e)
-
-        try:
-            f.close()
-        except:
-            pass
 
 
 class UnixUpgrade(Upgrade):
@@ -269,28 +190,28 @@ class UnixUpgrade(Upgrade):
             try:
                 log.info("Deleting %s", target)
                 shutil.rmtree(target)
-            except:
-                log.error("Failed to delete %s", target)
+            except OSError as e:
+                log.error("Failed to delete %s: %s", target, e)
 
         if "false" == self.args.skipdeletezip.lower():
             try:
                 log.info("Deleting %s", targetzip)
                 os.unlink(targetzip)
-            except:
-                log.error("Failed to delete %s", targetzip)
+            except OSError as e:
+                log.error("Failed to delete %s: %s", targetzip, e)
 
         try:
             os.unlink(self.args.sym)
-        except:
-            log.error("Failed to unlink %s", self.args.sym)
+        except OSError as e:
+            log.error("Failed to unlink %s: %s", self.args.sym, e)
 
         self.mklink(self.dir)
 
     def mklink(self, dir):
         try:
             os.symlink(dir, self.args.sym)
-        except:
-            log.error("Failed to symlink %s to %s", dir, self.args.sym)
+        except OSError as e:
+            log.error("Failed to symlink %s to %s: %s", dir, self.args.sym, e)
 
 
 class WindowsUpgrade(Upgrade):
@@ -363,6 +284,7 @@ class UpgradeCommand(Command):
         self.parser.add_argument("server", nargs="?")
 
         self.parser = JenkinsParser(self.parser)
+        self.parser = DbParser(self.parser)
 
         Add = EnvDefault.add
         Add(self.parser, "hostname", HOSTNAME)
@@ -406,6 +328,8 @@ class UpgradeCommand(Command):
         envvarsfile = os.path.join("%(sym)s", "omero.envvars")
         Add(self.parser, "savevars", envvars)
         Add(self.parser, "savevarsfile", envvarsfile)
+
+        self.parser.add_argument("--upgradedb", action="store_true")
 
     def __call__(self, args):
         super(UpgradeCommand, self).__call__(args)

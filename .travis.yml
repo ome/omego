@@ -30,10 +30,12 @@ before_script:
     - OMERO-CURRENT/bin/omero admin start
 
 script:
-    - python setup.py test -s test -v
+    - python setup.py test -s test/unit -v
+    - python setup.py test -s test/integration -v -m "not slowtest"
     - python setup.py sdist install
     - pip install dist/*.tar.gz
     - omego -h
+    - omego upgrade --unzipargs=-q --branch=OMERO-5.1-latest --labels=ICE=3.4 --upgradedb --dbhost localhost --dbname omero -v
 
 after_failure:
     - tail -n 1000 OMERO-CURRENT/var/log/Blitz-0.log
