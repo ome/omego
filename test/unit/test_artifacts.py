@@ -22,9 +22,13 @@
 import pytest
 import mox
 
+import os
+
 import omego
 from omego.framework import Stop
-from omego.artifacts import Artifacts
+import omego.artifacts
+from omego.artifacts import Artifacts, ArtifactException
+from omego.external import External
 
 
 class TestArtifacts(object):
@@ -61,6 +65,9 @@ class TestArtifacts(object):
             else:
                 self.labels = ''
                 self.build = TestArtifacts.MockUrl.labelledurl
+            self.unzip = '/test/unzip'
+            self.unzipargs = '-unzipargs'
+            self.unzipdir = 'unzip/dir'
 
     def setup_method(self, method):
         self.mox = mox.Mox()
@@ -122,6 +129,72 @@ class TestArtifacts(object):
             'http://example.org/x/ICE=3.5,label=foo/y')
         assert labels == set(['ICE=3.5', 'label=foo'])
         self.mox.VerifyAll()
+
+    @pytest.mark.parametrize('matchdir', [True, False])
+    @pytest.mark.parametrize('correctdir', [True, False])
+    def test_unzip(self, matchdir, correctdir):
+        self.mox.StubOutWithMock(External, 'run')
+        self.mox.StubOutWithMock(os.path, 'isdir')
+
+        External.run('/test/unzip', [
+            '-unzipargs', '-d', 'unzip/dir', 'test.zip']).AndReturn(('', ''))
+        if matchdir:
+            os.path.isdir('unzip/dir/test').AndReturn(correctdir)
+
+        self.mox.ReplayAll()
+
+        a = self.partial_mock_artifacts(True)
+        if correctdir or (not correctdir and not matchdir):
+            assert a.unzip('test.zip', matchdir) == 'unzip/dir/test'
+        else:
+            with pytest.raises(Exception):
+                a.unzip('test.zip')
+        self.mox.VerifyAll()
+
+    @pytest.mark.parametrize('exists', [True, False])
+    @pytest.mark.parametrize('remote', [True, False])
+    @pytest.mark.parametrize('overwrite', ['error', 'backup', 'keep'])
+    def test_get_as_local_path(self, exists, remote, overwrite):
+        if remote:
+            p = 'http://example.org/test.zip'
+            expectedp = 'test.zip'
+        else:
+            p = '/example/test.zip'
+            expectedp = p
+        a = self.partial_mock_artifacts(True)
+
+        self.mox.StubOutWithMock(os.path, 'exists')
+        self.mox.StubOutWithMock(os.path, 'isdir')
+        self.mox.StubOutWithMock(omego.artifacts, 'rename_backup')
+        self.mox.StubOutWithMock(omego.artifacts, 'download')
+
+        if remote:
+            os.path.exists(expectedp).AndReturn(exists)
+
+        if remote and exists and overwrite == 'backup':
+            omego.artifacts.rename_backup(expectedp)
+            omego.artifacts.download(p, expectedp, 0)
+
+        if remote and not exists:
+            omego.artifacts.download(p, expectedp, 0)
+
+        if not remote or (remote and not exists) or (
+                remote and exists and overwrite != 'error'):
+            os.path.isdir(expectedp).AndReturn(False)
+            os.path.exists(expectedp).AndReturn(True)
+
+        self.mox.ReplayAll()
+
+        if remote and exists and overwrite == 'error':
+            with pytest.raises(ArtifactException):
+                a.get_as_local_path(p, overwrite=overwrite)
+        else:
+            ptype, lpath = a.get_as_local_path(p, overwrite=overwrite)
+            assert ptype == 'file'
+            assert lpath == expectedp
+
+        self.mox.VerifyAll()
+
 
     # TODO
     # def test_download(self):

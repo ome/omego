@@ -24,6 +24,17 @@ if 'USER_AGENT' in os.environ:
     opener.addheaders = [('User-agent', os.environ.get('USER_AGENT'))]
 
 
+class ArtifactException(Exception):
+
+    def __init__(self, msg, path):
+        super(ArtifactException, self).__init__(msg)
+        self.path = path
+
+    def __str__(self):
+        return '%s\npath: %s' % (
+            super(ArtifactException, self).__str__(), self.path)
+
+
 class ProgressBar(object):
     def __init__(self, ndots, total):
         self.ndots = ndots
@@ -67,6 +78,21 @@ def download(url, filename, print_progress=0):
             output.close()
     finally:
         response.close()
+
+
+def rename_backup(name, suffix='.bak'):
+    """
+    Append a backup prefix to a file or directory, with an increasing numeric
+    suffix (.N) if a file already exists
+    """
+    newname = '%s.bak' % name
+    n = 0
+    while os.path.exists(newname):
+        n += 1
+        newname = '%s.bak.%d' % (name, n)
+    logging.info('Renaming %s to %s', name, newname)
+    os.rename(name, newname)
+    return newname
 
 
 class Artifacts(object):
@@ -159,7 +185,6 @@ class Artifacts(object):
                 }
 
     def download(self, component):
-
         if not hasattr(self, component) or getattr(self, component) is None:
             raise Exception("No %s found" % component)
 
@@ -173,34 +198,117 @@ class Artifacts(object):
         if os.path.exists(unzipped):
             return unzipped
 
-        if not os.path.exists(filename):
-            log.info("Downloading %s", componenturl)
-            progress = 0
-            if self.args.verbose:
-                progress = 20
-            download(componenturl, filename, progress)
+        log.info("Checking %s", componenturl)
+        progress = 0
+        if self.args.verbose:
+            progress = 20
+        ptype, localpath = self.get_as_local_path(
+            componenturl, overwrite='keep', progress=progress)
+        if ptype != 'file' or not localpath.endswith('.zip'):
+            raise ArtifactException('Expected local zip file', localpath)
 
         if not self.args.skipunzip:
-            command = self.args.unzip
-            commandargs = []
-            if self.args.unzipargs:
-                commandargs.append(self.args.unzipargs)
-            if self.args.unzipdir:
-                commandargs.extend(["-d", self.args.unzipdir])
-            commandargs.append(filename)
-
             try:
-                out, err = External.run(command, commandargs)
-                log.debug(out)
-                log.debug(err)
-            except RunException as e:
-                log.error('Unzip failed: %s' % e.fullstr())
-                print 'RunException: %s' % e.fullstr()
-                raise Stop(e.r, 'Unzip failed, unzip manually and run again')
-            else:
+                unzipped = self.unzip(localpath)
                 return unzipped
+            except Exception as e:
+                log.error('Unzip failed: %s', e)
+                raise Stop(20, 'Unzip failed, try unzipping manually')
+
+        return localpath
+
+    def unzip(self, zipname, match_dir=True):
+        """
+        unzip an archive. Zips are assumed to unzip into a directory named
+        after the zip (with the .zip extension removed). At present there is
+        very limited error checking to verify this.
+
+        zipname: The path to the zip file
+        match_dir: If true an error will be raised if a directory named after
+          the zip does not exist after unzipping
+        """
+        # TODO: Convert to pure python
+        if not zipname.endswith('.zip'):
+            raise ArtifactException('Expected zipname to end with .zip')
+        command = self.args.unzip
+        commandargs = []
+        if self.args.unzipargs:
+            commandargs.append(self.args.unzipargs)
+        if self.args.unzipdir:
+            commandargs.extend(["-d", self.args.unzipdir])
+        commandargs.append(zipname)
+
+        try:
+            out, err = External.run(command, commandargs)
+            log.debug(out)
+            log.debug(err)
+        except RunException as e:
+            raise ArtifactException(str(e), zipname)
+
+        unzipped = zipname[:-4]
+        log.error('%s %s', zipname, unzipped)
+        if self.args.unzipdir:
+            unzipped = os.path.join(self.args.unzipdir, unzipped)
+        if match_dir and not os.path.isdir(unzipped):
+            raise ArtifactException(
+                'Expected unzipped directory not found', unzipped)
+        return unzipped
+
+    def get_as_local_path(self, path, overwrite='error', progress=0):
+        """
+        Automatically handle local and remote URLs, files, directories and zips
+
+        path: Either a local directory, file or remote URL. If a URL is given
+          it will be fetched. If this is a zip it will be automatically
+          expanded by default.
+        overwrite: Whether to overwrite an existing file:
+          'error': Raise an exception
+          'backup: Renamed the old file and use the new one
+          'keep': Keep the old file, don't overwrite or raise an exception
+        progress: Number of progress dots, default 0 (don't print)
+        TODO:
+          httpuser, httppass: TODO: Credentials for HTTP authentication
+        return: A tuple (type, localpath)
+          type:
+            'file': localpath is the path to a local file
+            'directory': localpath is the path to a local directory
+            'unzipped': localpath is the path to a local unzipped directory
+        """
+        m = re.match('([a-z]+)://', path)
+        if m:
+            protocol = m.group(1)
+            if protocol not in ['http', 'https']:
+                raise ArtifactException('Unsupported protocol' % path)
+
+            # URL should use / as the pathsep
+            localpath = path.split('/')[-1]
+            if not localpath:
+                raise ArtifactException(
+                    'Remote path appears to be a directory', path)
+
+            if os.path.exists(localpath):
+                if overwrite == 'error':
+                    raise ArtifactException('File already exists', localpath)
+                elif overwrite == 'keep':
+                    log.info('Keeping existing %s', localpath)
+                elif overwrite == 'backup':
+                    rename_backup(localpath)
+                    download(path, localpath, progress)
+                else:
+                    raise Exception('Invalid overwrite flag: %s' % overwrite)
+            else:
+                download(path, localpath, progress)
         else:
-            return filename
+            localpath = path
+        log.debug("Local path: %s", localpath)
+
+        if os.path.isdir(localpath):
+            return 'directory', localpath
+        if os.path.exists(localpath):
+            return 'file', localpath
+
+        # Somethings gone very wrong
+        raise Exception('Local path does not exist: %s' % localpath)
 
 
 class DownloadCommand(Command):
