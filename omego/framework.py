@@ -93,11 +93,11 @@ class Command(object):
         self.parser.set_defaults(func=self.__call__)
 
         self.parser.add_argument(
-            "-v", "--verbose", action="count", default=0, help=
-            "Increase the logging level by multiples of 10")
+            "-v", "--verbose", action="count", default=0,
+            help="Increase the logging level by multiples of 10")
         self.parser.add_argument(
-            "-q", "--quiet", action="count", default=0, help=
-            "Decrease the logging level by multiples of 10")
+            "-q", "--quiet", action="count", default=0,
+            help="Decrease the logging level by multiples of 10")
 
     def __call__(self, args):
         self.configure_logging(args)
