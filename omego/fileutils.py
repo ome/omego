@@ -117,8 +117,9 @@ def unzip(zipname, match_dir=True, **kwargs):
     TODO: Rewrite in pure Python (otherwise we're dependent on the standard
     unzip being installed, which is unlikely on Windows)
 
-    kwargs:
-      unzip: The unzip executable to run
+    kwargs (will be ignored if None):
+      unzip: The unzip executable to run. This is currently compulsory, at some
+        point there will be built-in unzip functionality
       unzipargs: Additional arguments for unzip, will be split at whitespace
         TODO: Quoting isn't handled
       unzipdir: Pass a flag to unzip to indicate it should be expanded into a
