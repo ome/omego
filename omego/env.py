@@ -121,6 +121,18 @@ class JenkinsParser(argparse.ArgumentParser):
         Add(group, "labels", "ICE=3.5",
             help="Comma separated list of labels for matrix builds")
 
+    def __getattr__(self, key):
+        return getattr(self.parser, key)
+
+
+class FileUtilsParser(argparse.ArgumentParser):
+
+    def __init__(self, parser):
+        self.parser = parser
+        group = self.parser.add_argument_group(
+            'Remote and local file handling parameters',
+            'Additional arguments for downloading or unzipped files')
+
         # UNZIP TOOLS
         if WINDOWS:
             unzip = "C:\\Program Files (x86)\\7-Zip\\7z.exe"
@@ -129,14 +141,24 @@ class JenkinsParser(argparse.ArgumentParser):
             unzip = "unzip"
             unzipargs = ""
 
+        Add = EnvDefault.add
         Add(group, "unzip", unzip,
-            help="Program to use to unzip the Jenkins artifact")
+            help="Program to use to unzip archives")
         Add(group, "unzipargs", unzipargs,
-            help="Arguments to pass while unzipping the Jenkins artifact")
+            help="Arguments to pass while unzipping archives")
         Add(group, "unzipdir", "",
-            help="Directory to unzip the Jenkins artifact to")
+            help="Unzip archives into this directory")
         group.add_argument("--skipunzip", action="store_true",
-                           help="Skip the artifact unzipping")
+                           help="Don't unzip archives")
+        # Choices from fileutils.get_as_local_path
+        Add(group, "overwrite", "error",
+            choices=["error", "backup", "keep"],
+            help="Whether to overwrite or keep existing files (default error)")
+
+        Add(group, "httpuser", None,
+            help="Username for HTTP authentication")
+        Add(group, "httppassword", None,
+            help="Password for HTTP authentication")
 
     def __getattr__(self, key):
         return getattr(self.parser, key)
