@@ -9,7 +9,7 @@ import re
 
 import fileutils
 from framework import Command, Stop
-from env import JenkinsParser
+from env import FileUtilsParser, JenkinsParser
 
 try:
     from xml.etree.ElementTree import XML
@@ -138,7 +138,8 @@ class Artifacts(object):
         if self.args.verbose:
             progress = 20
         ptype, localpath = fileutils.get_as_local_path(
-            componenturl, overwrite='keep', progress=progress)
+            componenturl, self.args.overwrite, progress=progress,
+            httpuser=self.args.httpuser, httppassword=self.args.httppassword)
         if ptype != 'file' or not localpath.endswith('.zip'):
             raise ArtifactException('Expected local zip file', localpath)
 
@@ -173,6 +174,7 @@ class DownloadCommand(Command):
             help="The artifact to download from the CI server")
 
         self.parser = JenkinsParser(self.parser)
+        self.parser = FileUtilsParser(self.parser)
 
     def __call__(self, args):
         super(DownloadCommand, self).__call__(args)
