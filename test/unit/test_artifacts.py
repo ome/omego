@@ -67,6 +67,9 @@ class TestArtifacts(object):
             self.unzip = '/test/unzip'
             self.unzipargs = '-unzipargs'
             self.unzipdir = 'unzip/dir'
+            self.overwrite = 'error'
+            self.httpuser = None
+            self.httppassword = None
 
     def setup_method(self, method):
         self.mox = mox.Mox()
@@ -137,7 +140,8 @@ class TestArtifacts(object):
         self.mox.StubOutWithMock(fileutils, 'get_as_local_path')
         self.mox.StubOutWithMock(fileutils, 'unzip')
         fileutils.get_as_local_path(
-            url, overwrite='keep', progress=0).AndReturn(
+            url, 'error', progress=0, httpuser=None,
+            httppassword=None).AndReturn(
             ('file', 'component-0.0.0.zip'))
         fileutils.unzip('component-0.0.0.zip', unzip='/test/unzip',
                         unzipargs='-unzipargs', unzipdir='unzip/dir'
