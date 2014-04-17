@@ -155,7 +155,7 @@ def unzip(zipname, match_dir=True, **kwargs):
         new directory
     """
     if not zipname.endswith('.zip'):
-        raise FileException('Expected zipname to end with .zip')
+        raise FileException('Expected zipname to end with .zip', zipname)
     command = kwargs['unzip']
     commandargs = []
     if 'unzipargs' in kwargs:
@@ -202,11 +202,10 @@ def get_as_local_path(path, overwrite, progress=0,
         'directory': localpath is the path to a local directory
         'unzipped': localpath is the path to a local unzipped directory
     """
-    m = re.match('([a-z]+)://', path)
+    m = re.match('([A-Za-z]+)://', path)
     if m:
-        protocol = m.group(1)
-        if protocol not in ['http', 'https']:
-            raise FileException('Unsupported protocol' % path)
+        # url_open handles multiple protocols so don't bother validating
+        log.debug('Detected URL protocol: %s', m.group(1))
 
         # URL should use / as the pathsep
         localpath = path.split('/')[-1]
