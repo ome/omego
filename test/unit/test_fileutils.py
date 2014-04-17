@@ -125,11 +125,11 @@ class TestFileutils(object):
             'unzip': '/test/unzip',
             'unzipargs': '-unzipargs',
             'unzipdir': 'unzip/dir'
-        }
+            }
 
         if correctdir or (not correctdir and not matchdir):
             assert fileutils.unzip('test.zip', matchdir, **args
-                ) == 'unzip/dir/test'
+                                   ) == 'unzip/dir/test'
         else:
             with pytest.raises(fileutils.FileException):
                 fileutils.unzip('test.zip', **args)
