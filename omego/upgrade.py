@@ -13,7 +13,8 @@ from artifacts import Artifacts
 from db import DbAdmin
 from external import External
 from framework import Command, Stop
-from env import EnvDefault, DbParser, JenkinsParser
+import fileutils
+from env import EnvDefault, DbParser, FileUtilsParser, JenkinsParser
 from env import WINDOWS
 from env import HOSTNAME
 
@@ -51,12 +52,13 @@ class Email(object):
 
 class Upgrade(object):
 
-    def __init__(self, dir, args):
+    def __init__(self, args):
 
-        self.dir = dir
         self.args = args
         log.info("%s: Upgrading %s (%s)...",
                  self.__class__.__name__, dir, args.sym)
+
+        self.dir = self.get_server_dir()
 
         # If the symlink doesn't exist, create
         # it which simplifies the rest of the logic,
@@ -64,7 +66,7 @@ class Upgrade(object):
         if not os.path.exists(args.sym):
             self.mklink(self.dir)
 
-        self.external = External(dir)
+        self.external = External(self.dir)
         self.external.setup_omero_cli()
         self.external.setup_previous_omero_env(args.sym, args.savevarsfile)
 
@@ -82,6 +84,32 @@ class Upgrade(object):
 
         self.external.save_env_vars(args.savevarsfile, args.savevars.split())
         self.start()
+
+    def get_server_dir(self):
+        """
+        Either downloads and/or unzips the server if necessary
+        return: the directory of the unzipped server
+        """
+        if not self.args.server:
+            if self.args.skipunzip:
+                raise Stop(0, 'Unzip disabled, exiting')
+
+            log.info('Downloading server')
+            artifacts = Artifacts(self.args)
+            server = artifacts.download('server')
+        else:
+            ptype, server = fileutils.get_as_local_path(
+                self.args.server, self.args.overwrite,
+                httpuser=self.args.httpuser,
+                httppassword=self.args.httppassword)
+            if ptype == 'file':
+                if self.args.skipunzip:
+                    raise Stop(0, 'Unzip disabled, exiting')
+                log.debug('Unzipping %s', server)
+                server = fileutils.unzip(
+                    server, unzip=self.args.unzip,
+                    unzipargs=self.args.unzipargs, unzipdir=self.args.unzipdir)
+        return server
 
     def stop(self):
         try:
@@ -281,10 +309,13 @@ class UpgradeCommand(Command):
             skipemail = "true"
 
         self.parser.add_argument("-n", "--dry-run", action="store_true")
-        self.parser.add_argument("server", nargs="?")
+        self.parser.add_argument(
+            "server", nargs="?", help="The server directory, or a server-zip, "
+            "or the url of a server-zip")
 
         self.parser = JenkinsParser(self.parser)
         self.parser = DbParser(self.parser)
+        self.parser = FileUtilsParser(self.parser)
 
         Add = EnvDefault.add
         Add(self.parser, "hostname", HOSTNAME)
@@ -353,23 +384,13 @@ class UpgradeCommand(Command):
         if args.dry_run:
             return
 
-        artifacts = Artifacts(args)
-
-        if not args.server:
-            if args.skipunzip:
-                raise Stop(0, 'Unzip disabled, exiting')
-
-            dir = artifacts.download('server')
-            # Exits if directory does not exist!
-        else:
-            dir = args.server
-
         if WINDOWS:
-            WindowsUpgrade(dir, args)
+            WindowsUpgrade(args)
         else:
-            UnixUpgrade(dir, args)
+            UnixUpgrade(args)
 
         if "false" == args.skipemail.lower():
+            artifacts = Artifacts(args)
             Email(artifacts, args)
         else:
             log.info("Skipping email")
