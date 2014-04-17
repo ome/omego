@@ -62,7 +62,7 @@ class Artifacts(object):
     def read_xml(self, buildurl):
         url = None
         try:
-            url = fileutils.opener.open(buildurl + 'api/xml')
+            url = fileutils.open_url(buildurl + 'api/xml')
             log.debug('Fetching xml from %s code:%d', url.url, url.code)
             if url.code != 200:
                 log.error('Failed to get CI XML from %s (code %d)',

@@ -51,12 +51,18 @@ class TestFileutils(object):
         def close(self):
             pass
 
+    # TODO
+    # def test_open_url
+
+    # TODO
+    # def test_read
+
     @pytest.mark.parametrize('filename', [True, False])
     def test_download(self, tmpdir, filename):
         url = 'http://example.org/test/file.dat'
         filesize = 2 * 1024 * 1024 + 1
-        self.mox.StubOutWithMock(fileutils.opener, 'open')
-        fileutils.opener.open(url).AndReturn(self.MockResponse(filesize))
+        self.mox.StubOutWithMock(fileutils, 'open_url')
+        fileutils.open_url(url).AndReturn(self.MockResponse(filesize))
         self.mox.ReplayAll()
 
         with tmpdir.as_cwd():

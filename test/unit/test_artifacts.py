@@ -77,12 +77,12 @@ class TestArtifacts(object):
     def partial_mock_artifacts(self, matrix):
         # Artifacts.__init__ does a lot of work, so we can't just
         # stubout methods after constructing it
-        self.mox.StubOutWithMock(fileutils.opener, 'open')
+        self.mox.StubOutWithMock(fileutils, 'open_url')
         if matrix:
-            fileutils.opener.open(
+            fileutils.open_url(
                 self.MockUrl.unlabelledurl + 'api/xml').AndReturn(
                 self.MockUrl(True))
-        fileutils.opener.open(
+        fileutils.open_url(
             self.MockUrl.labelledurl + 'api/xml').AndReturn(
             self.MockUrl(False))
         self.mox.ReplayAll()

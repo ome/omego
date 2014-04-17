@@ -4,17 +4,11 @@
 import os
 import logging
 import re
-
-from urllib2 import build_opener
+import urllib2
 
 from external import External, RunException
 
 log = logging.getLogger("omego.fileutils")
-
-# create an opener that will simulate a browser user-agent
-opener = build_opener()
-if 'USER_AGENT' in os.environ:
-    opener.addheaders = [('User-agent', os.environ.get('USER_AGENT'))]
 
 
 class FileException(Exception):
@@ -47,7 +41,36 @@ class ProgressBar(object):
                 self.marker * self.n, p, current, self.total)
 
 
-def download(url, filename=None, print_progress=0):
+def open_url(url, auth=None):
+    """
+    Open a URL using an opener that will simulate a browser user-agent
+    url: The URL
+    auth: Optional 2-tuple of authentication credentials (user, password)
+    """
+    opener = urllib2.build_opener()
+    if 'USER_AGENT' in os.environ:
+        opener.addheaders = [('User-agent', os.environ.get('USER_AGENT'))]
+    if auth:
+        mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
+        mgr.add_password(None, url, auth[0], auth[1])
+        opener.add_handler(urllib2.HTTPBasicAuthHandler(mgr))
+        opener.add_handler(urllib2.HTTPDigestAuthHandler(mgr))
+
+    return opener.open(url)
+
+
+def read(url, **kwargs):
+    """
+    Read the contents of a URL into memory, return
+    """
+    response = open_url(url, **kwargs)
+    try:
+        return response.read()
+    finally:
+        response.close()
+
+
+def download(url, filename=None, print_progress=0, **kwargs):
     """
     Download a file, optionally printing a simple progress abar
     url: The URL to download
@@ -59,7 +82,7 @@ def download(url, filename=None, print_progress=0):
     downloaded = 0
     progress = None
 
-    response = opener.open(url)
+    response = open_url(url, **kwargs)
 
     if not filename:
         filename = os.path.basename(url)
