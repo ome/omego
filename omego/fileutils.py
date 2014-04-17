@@ -41,7 +41,7 @@ class ProgressBar(object):
                 self.marker * self.n, p, current, self.total)
 
 
-def open_url(url, auth=None):
+def open_url(url, httpuser=None, httppassword=None):
     """
     Open a URL using an opener that will simulate a browser user-agent
     url: The URL
@@ -50,11 +50,17 @@ def open_url(url, auth=None):
     opener = urllib2.build_opener()
     if 'USER_AGENT' in os.environ:
         opener.addheaders = [('User-agent', os.environ.get('USER_AGENT'))]
-    if auth:
+        log.debug('Setting user-agent: %s', os.environ.get('USER_AGENT'))
+
+    if httpuser and httppassword:
         mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
-        mgr.add_password(None, url, auth[0], auth[1])
+        mgr.add_password(None, url, httpuser, httppassword)
+        log.debug('Enabling HTTP authentication')
         opener.add_handler(urllib2.HTTPBasicAuthHandler(mgr))
         opener.add_handler(urllib2.HTTPDigestAuthHandler(mgr))
+    elif httpuser or httppassword:
+        raise FileException(
+            'httpuser and httppassword must be used together', url)
 
     return opener.open(url)
 
@@ -176,7 +182,8 @@ def unzip(zipname, match_dir=True, **kwargs):
     return unzipped
 
 
-def get_as_local_path(path, overwrite='error', progress=0):
+def get_as_local_path(path, overwrite, progress=0,
+                      httpuser=None, httppassword=None):
     """
     Automatically handle local and remote URLs, files and directories
 
@@ -188,8 +195,7 @@ def get_as_local_path(path, overwrite='error', progress=0):
       'backup: Renamed the old file and use the new one
       'keep': Keep the old file, don't overwrite or raise an exception
     progress: Number of progress dots, default 0 (don't print)
-    TODO:
-      httpuser, httppass: TODO: Credentials for HTTP authentication
+    httpuser, httppass: Credentials for HTTP authentication
     return: A tuple (type, localpath)
       type:
         'file': localpath is the path to a local file
@@ -215,11 +221,13 @@ def get_as_local_path(path, overwrite='error', progress=0):
                 log.info('Keeping existing %s', localpath)
             elif overwrite == 'backup':
                 rename_backup(localpath)
-                download(path, localpath, progress)
+                download(path, localpath, progress, httpuser=httpuser,
+                         httppassword=httppassword)
             else:
                 raise Exception('Invalid overwrite flag: %s' % overwrite)
         else:
-            download(path, localpath, progress)
+            download(path, localpath, progress, httpuser=httpuser,
+                     httppassword=httppassword)
     else:
         localpath = path
     log.debug("Local path: %s", localpath)

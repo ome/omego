@@ -58,20 +58,33 @@ class TestFileutils(object):
     # def test_read
 
     @pytest.mark.parametrize('filename', [True, False])
-    def test_download(self, tmpdir, filename):
+    @pytest.mark.parametrize('httpauth', [True, False])
+    def test_download(self, tmpdir, filename, httpauth):
         url = 'http://example.org/test/file.dat'
         filesize = 2 * 1024 * 1024 + 1
         self.mox.StubOutWithMock(fileutils, 'open_url')
-        fileutils.open_url(url).AndReturn(self.MockResponse(filesize))
+        if httpauth:
+            fileutils.open_url(url, httpuser='user', httppassword='password'
+                               ).AndReturn(self.MockResponse(filesize))
+        else:
+            fileutils.open_url(url).AndReturn(self.MockResponse(filesize))
         self.mox.ReplayAll()
 
         with tmpdir.as_cwd():
             if filename:
                 output = 'test.name'
-                f = fileutils.download(url, output)
+                if httpauth:
+                    f = f = fileutils.download(url, output, httpuser='user',
+                                               httppassword='password')
+                else:
+                    f = fileutils.download(url, output)
             else:
                 output = 'file.dat'
-                f = fileutils.download(url)
+                if httpauth:
+                    f = f = fileutils.download(url, output, httpuser='user',
+                                               httppassword='password')
+                else:
+                    f = fileutils.download(url)
 
             assert f == output
             assert os.path.exists(output)
@@ -144,7 +157,8 @@ class TestFileutils(object):
     @pytest.mark.parametrize('exists', [True, False])
     @pytest.mark.parametrize('remote', [True, False])
     @pytest.mark.parametrize('overwrite', ['error', 'backup', 'keep'])
-    def test_get_as_local_path(self, exists, remote, overwrite):
+    @pytest.mark.parametrize('httpauth', [True, False])
+    def test_get_as_local_path(self, exists, remote, overwrite, httpauth):
         if remote:
             p = 'http://example.org/test.zip'
             expectedp = 'test.zip'
@@ -157,15 +171,20 @@ class TestFileutils(object):
         self.mox.StubOutWithMock(fileutils, 'rename_backup')
         self.mox.StubOutWithMock(fileutils, 'download')
 
+        if httpauth:
+            kwargs = {'httpuser': 'user', 'httppassword': 'password'}
+        else:
+            kwargs = {'httpuser': None, 'httppassword': None}
+
         if remote:
             os.path.exists(expectedp).AndReturn(exists)
 
         if remote and exists and overwrite == 'backup':
             fileutils.rename_backup(expectedp)
-            fileutils.download(p, expectedp, 0)
 
-        if remote and not exists:
-            fileutils.download(p, expectedp, 0)
+        if (remote and exists and overwrite == 'backup') or (
+                remote and not exists):
+            fileutils.download(p, expectedp, 0, **kwargs)
 
         if not remote or (remote and not exists) or (
                 remote and exists and overwrite != 'error'):
@@ -176,9 +195,9 @@ class TestFileutils(object):
 
         if remote and exists and overwrite == 'error':
             with pytest.raises(fileutils.FileException):
-                fileutils.get_as_local_path(p, overwrite=overwrite)
+                fileutils.get_as_local_path(p, overwrite, **kwargs)
         else:
-            ptype, lpath = fileutils.get_as_local_path(p, overwrite=overwrite)
+            ptype, lpath = fileutils.get_as_local_path(p, overwrite, **kwargs)
             assert ptype == 'file'
             assert lpath == expectedp
 
