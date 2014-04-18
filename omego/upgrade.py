@@ -55,25 +55,24 @@ class Upgrade(object):
     def __init__(self, args):
 
         self.args = args
+        server_dir = self.get_server_dir()
         log.info("%s: Upgrading %s (%s)...",
-                 self.__class__.__name__, dir, args.sym)
-
-        self.dir = self.get_server_dir()
+                 self.__class__.__name__, server_dir, args.sym)
 
         # If the symlink doesn't exist, create
         # it which simplifies the rest of the logic,
         # which already checks if OLD === NEW
         if not os.path.exists(args.sym):
-            self.mklink(self.dir)
+            self.mklink(server_dir)
 
-        self.external = External(self.dir)
+        self.external = External(server_dir)
         self.external.setup_omero_cli()
         self.external.setup_previous_omero_env(args.sym, args.savevarsfile)
 
         # Need lib/python set above
         import path
         self.cfg = path.path(args.cfg)
-        self.dir = path.path(dir)
+        self.dir = path.path(server_dir)
 
         self.stop()
 
@@ -109,6 +108,8 @@ class Upgrade(object):
                 server = fileutils.unzip(
                     server, unzip=self.args.unzip,
                     unzipargs=self.args.unzipargs, unzipdir=self.args.unzipdir)
+
+        log.debug('Server directory: %s', server)
         return server
 
     def stop(self):
