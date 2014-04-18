@@ -139,7 +139,7 @@ class FileUtilsParser(argparse.ArgumentParser):
         group.add_argument("--skipunzip", action="store_true",
                            help="Don't unzip archives")
         # Choices from fileutils.get_as_local_path
-        Add(group, "overwrite", "error",
+        Add(group, "overwrite", "keep",
             choices=["error", "backup", "keep"],
             help="Whether to overwrite or keep existing files (default error)")
 
