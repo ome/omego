@@ -73,8 +73,7 @@ class TestUpgrade(object):
         self.mox.StubOutWithMock(fileutils, 'unzip')
 
         args = self.Args({'server': None, 'skipunzip': False,
-                          'overwrite': 'error', 'unzip': 'unzip',
-                          'unzipargs': None, 'unzipdir': None,
+                          'overwrite': 'error', 'unzipdir': None,
                           'httpuser': 'user', 'httppassword': 'password'})
         if server == 'local':
             args.server = 'local-server-dir'
