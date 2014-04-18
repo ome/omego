@@ -148,8 +148,9 @@ def check_extracted_paths(namelist, subdir=None):
     """
     def relpath(p):
         # relpath strips a trailing sep
+        # Windows paths may also use unix sep
         q = os.path.relpath(p)
-        if p.endswith(os.path.sep):
+        if p.endswith(os.path.sep) or p.endswith('/'):
             q += os.path.sep
         return q
 
