@@ -5,8 +5,7 @@ import os
 import logging
 import re
 import urllib2
-
-from external import External, RunException
+from zipfile import ZipFile
 
 log = logging.getLogger("omego.fileutils")
 
@@ -134,53 +133,77 @@ def is_archive(filename):
     return filename.endswith('.zip')
 
 
-def unzip(zipname, match_dir=True, **kwargs):
+def check_extracted_paths(namelist, subdir=None):
     """
-    Unzip an archive. Zips are assumed to unzip into a directory named
-    after the zip (with the .zip extension removed). At present there is
-    very limited error checking to verify this.
+    Check whether zip file paths are all relative, and optionally in a
+    specified subdirectory, raises an exception if not
 
-    zipname: The path to the zip file
-    match_dir: If true an error will be raised if a directory named after
-      the zip does not exist after unzipping (note this does not check whether
-      other directories have been unexpectedly created)
+    namelist: A list of paths from the zip file
+    subdir: If specified then check whether all paths in the zip file are
+      under this subdirectory
 
-    TODO: Rewrite in pure Python otherwise we're dependent on a hard-coded
-    non-standard program, especially on Windows (see.env.py)
-
-    kwargs (will be ignored if None):
-      unzip: The unzip executable to run. This is currently compulsory, at some
-        point there will be built-in unzip functionality
-      unzipargs: Additional arguments for unzip, will be split at whitespace
-        TODO: Quoting isn't handled
-      unzipdir: Pass a flag to unzip to indicate it should be expanded into a
-        new directory
+    Python docs are unclear about the security of extract/extractall:
+    https://docs.python.org/2/library/zipfile.html#zipfile.ZipFile.extractall
+    https://docs.python.org/2/library/zipfile.html#zipfile.ZipFile.extract
     """
-    if not zipname.endswith('.zip'):
-        raise FileException('Expected zipname to end with .zip', zipname)
-    command = kwargs['unzip']
-    commandargs = []
-    if 'unzipargs' in kwargs:
-        commandargs.extend(kwargs['unzipargs'].split())
-    unzipdir = kwargs.get('unzipdir')
-    if unzipdir:
-        commandargs.extend(["-d", unzipdir])
-    commandargs.append(zipname)
+    def relpath(p):
+        # relpath strips a trailing sep
+        q = os.path.relpath(p)
+        if p.endswith(os.path.sep):
+            q += os.path.sep
+        return q
 
-    try:
-        out, err = External.run(command, commandargs)
-        log.debug(out)
-        log.debug(err)
-    except RunException as e:
-        raise FileException(str(e), zipname)
+    parent = os.path.abspath('.')
+    if subdir:
+        if os.path.isabs(subdir):
+            raise FileException('subdir must be a relative path', subdir)
+        subdir = relpath(subdir + os.path.sep)
 
-    unzipped = zipname[:-4]
-    if unzipdir:
-        unzipped = os.path.join(unzipdir, unzipped)
-    if match_dir and not os.path.isdir(unzipped):
-        raise FileException(
-            'Expected unzipped directory not found', unzipped)
-    return unzipped
+    for name in namelist:
+        if os.path.commonprefix([parent, os.path.abspath(name)]) != parent:
+            raise FileException('Insecure path in zipfile', name)
+
+        if subdir and os.path.commonprefix(
+                [subdir, relpath(name)]) != subdir:
+            raise FileException(
+                'Path in zipfile is not in required subdir', name)
+
+
+def unzip(filename, match_dir=False, destdir=None):
+    """
+    Extract all files from a zip archive
+    filename: The path to the zip file
+    match_dir: If True all files in the zip must be contained in a subdirectory
+      named after the archive file with extension removed
+    destdir: Extract the zip into this directory, default current directory
+
+    return: If match_dir is True then returns the subdirectory (including
+      destdir), otherwise returns destdir or '.'
+    """
+    if not destdir:
+        destdir = '.'
+
+    z = ZipFile(filename)
+    unzipped = '.'
+
+    if match_dir:
+        if not filename.endswith('.zip'):
+            raise FileException('Expected .zip file extension', filename)
+        unzipped = os.path.basename(filename)[:-4]
+        check_extracted_paths(z.namelist(), unzipped)
+    else:
+        check_extracted_paths(z.namelist())
+
+    # File permissions, see
+    # http://stackoverflow.com/a/6297838
+    # http://stackoverflow.com/a/3015466
+    for info in z.infolist():
+        log.debug('Extracting %s to %s', info.filename, destdir)
+        z.extract(info, destdir)
+        os.chmod(os.path.join(destdir, info.filename),
+                 info.external_attr >> 16 & 4095)
+
+    return os.path.join(destdir, unzipped)
 
 
 def get_as_local_path(path, overwrite, progress=0,

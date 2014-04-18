@@ -25,7 +25,6 @@ import mox
 import os
 
 from omego import fileutils
-from omego.external import External
 
 
 class TestFileutils(object):
@@ -49,6 +48,14 @@ class TestFileutils(object):
             return 'x' * r
 
         def close(self):
+            pass
+
+    class MockZipfile(object):
+
+        def infolist(self):
+            pass
+
+        def extract(self):
             pass
 
     # TODO
@@ -127,31 +134,57 @@ class TestFileutils(object):
         assert b == output
         self.mox.VerifyAll()
 
-    @pytest.mark.parametrize('matchdir', [True, False])
-    @pytest.mark.parametrize('correctdir', [True, False])
-    def test_unzip(self, matchdir, correctdir):
-        self.mox.StubOutWithMock(External, 'run')
-        self.mox.StubOutWithMock(os.path, 'isdir')
+    def test_check_extracted_paths(self):
+        fileutils.check_extracted_paths(['a/', 'a/b'])
+        fileutils.check_extracted_paths(['a/', 'a/b'], 'a')
 
-        External.run('/test/unzip', [
-            '-unzipargs', '-d', 'unzip/dir', 'test.zip']).AndReturn(('', ''))
-        if matchdir:
-            os.path.isdir('unzip/dir/test').AndReturn(correctdir)
+        with pytest.raises(fileutils.FileException) as excinfo:
+            fileutils.check_extracted_paths(['a', '/b'])
+        assert excinfo.value.message == 'Insecure path in zipfile'
+
+        with pytest.raises(fileutils.FileException) as excinfo:
+            fileutils.check_extracted_paths(['a', 'a/../..'])
+        assert excinfo.value.message == 'Insecure path in zipfile'
+
+        with pytest.raises(fileutils.FileException) as excinfo:
+            fileutils.check_extracted_paths(['a', '..'])
+        assert excinfo.value.message == 'Insecure path in zipfile'
+
+        with pytest.raises(fileutils.FileException) as excinfo:
+            fileutils.check_extracted_paths(['a', 'b/c'], 'a')
+        assert excinfo.value.message == \
+            'Path in zipfile is not in required subdir'
+
+    @pytest.mark.parametrize('destdir', ['.', 'testdir'])
+    def test_unzip(self, destdir):
+        class MockZipInfo(object):
+
+            def __init__(self, name, perms):
+                self.filename = name
+                self.external_attr = perms << 16
+
+        self.mox.StubOutClassWithMocks(fileutils, 'ZipFile')
+        self.mox.StubOutWithMock(os, 'chmod')
+
+        files = ['test/', 'test/a', 'test/b/', 'test/b/c']
+        perms = [0755, 0644, 0755, 0550]
+        infos = [MockZipInfo(f, p) for (f, p) in zip(files, perms)]
+
+        mockzip = fileutils.ZipFile('path/to/test.zip')
+        mockzip.namelist().AndReturn(files)
+        mockzip.infolist().AndReturn(infos)
+        for n in xrange(4):
+            mockzip.extract(infos[n], destdir)
+            os.chmod(os.path.join(destdir, files[n]), perms[n])
 
         self.mox.ReplayAll()
 
-        args = {
-            'unzip': '/test/unzip',
-            'unzipargs': '-unzipargs',
-            'unzipdir': 'unzip/dir'
-            }
-
-        if correctdir or (not correctdir and not matchdir):
-            assert fileutils.unzip('test.zip', matchdir, **args
-                                   ) == 'unzip/dir/test'
+        if destdir == '.':
+            unzipped = fileutils.unzip('path/to/test.zip', True)
         else:
-            with pytest.raises(fileutils.FileException):
-                fileutils.unzip('test.zip', **args)
+            unzipped = fileutils.unzip('path/to/test.zip', True, destdir)
+        assert unzipped == os.path.join(destdir, 'test')
+
         self.mox.VerifyAll()
 
     @pytest.mark.parametrize('exists', [True, False])
