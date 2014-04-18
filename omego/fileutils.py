@@ -45,7 +45,8 @@ def open_url(url, httpuser=None, httppassword=None):
     """
     Open a URL using an opener that will simulate a browser user-agent
     url: The URL
-    auth: Optional 2-tuple of authentication credentials (user, password)
+    httpuser, httppassword: HTTP authentication credentials (either both or
+      neither must be provided)
     """
     opener = urllib2.build_opener()
     if 'USER_AGENT' in os.environ:
@@ -78,7 +79,7 @@ def read(url, **kwargs):
 
 def download(url, filename=None, print_progress=0, **kwargs):
     """
-    Download a file, optionally printing a simple progress abar
+    Download a file, optionally printing a simple progress bar
     url: The URL to download
     filename: The filename to save to, default is to use the URL basename
     print_progress: The length of the progress bar, use 0 to disable
@@ -141,10 +142,11 @@ def unzip(zipname, match_dir=True, **kwargs):
 
     zipname: The path to the zip file
     match_dir: If true an error will be raised if a directory named after
-    the zip does not exist after unzipping
+      the zip does not exist after unzipping (note this does not check whether
+      other directories have been unexpectedly created)
 
-    TODO: Rewrite in pure Python (otherwise we're dependent on the standard
-    unzip being installed, which is unlikely on Windows)
+    TODO: Rewrite in pure Python otherwise we're dependent on a hard-coded
+    non-standard program, especially on Windows (see.env.py)
 
     kwargs (will be ignored if None):
       unzip: The unzip executable to run. This is currently compulsory, at some
@@ -173,7 +175,6 @@ def unzip(zipname, match_dir=True, **kwargs):
         raise FileException(str(e), zipname)
 
     unzipped = zipname[:-4]
-    log.error('%s %s', zipname, unzipped)
     if unzipdir:
         unzipped = os.path.join(unzipdir, unzipped)
     if match_dir and not os.path.isdir(unzipped):
