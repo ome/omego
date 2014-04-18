@@ -97,8 +97,11 @@ class Upgrade(object):
             artifacts = Artifacts(self.args)
             server = artifacts.download('server')
         else:
+            progress = 0
+            if self.args.verbose:
+                progress = 20
             ptype, server = fileutils.get_as_local_path(
-                self.args.server, self.args.overwrite,
+                self.args.server, self.args.overwrite, progress=progress,
                 httpuser=self.args.httpuser,
                 httppassword=self.args.httppassword)
             if ptype == 'file':

@@ -88,6 +88,7 @@ def download(url, filename=None, print_progress=0, **kwargs):
     downloaded = 0
     progress = None
 
+    log.info('Downloading %s', url)
     response = open_url(url, **kwargs)
 
     if not filename:
@@ -121,7 +122,7 @@ def rename_backup(name, suffix='.bak'):
     while os.path.exists(newname):
         n += 1
         newname = '%s%s.%d' % (name, suffix, n)
-    logging.info('Renaming %s to %s', name, newname)
+    log.info('Renaming %s to %s', name, newname)
     os.rename(name, newname)
     return newname
 
