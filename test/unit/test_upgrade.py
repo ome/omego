@@ -43,6 +43,7 @@ class TestUpgrade(object):
             self.skipweb = 'false'
             self.skipdelete = 'false'
             self.skipdeletezip = 'false'
+            self.verbose = False
             for k, v in args.iteritems():
                 setattr(self, k, v)
 
@@ -78,16 +79,16 @@ class TestUpgrade(object):
         if server == 'local':
             args.server = 'local-server-dir'
             fileutils.get_as_local_path(
-                args.server, args.overwrite, httpuser=args.httpuser,
-                httppassword=args.httppassword).AndReturn(
-                    ('directory', 'local-server-dir'))
+                args.server, args.overwrite, progress=0,
+                httpuser=args.httpuser, httppassword=args.httppassword
+                ).AndReturn(('directory', 'local-server-dir'))
             expected = 'local-server-dir'
         elif server == 'remote':
             args.server = 'http://example.org/remote/server.zip'
             fileutils.get_as_local_path(
-                args.server, args.overwrite, httpuser=args.httpuser,
-                httppassword=args.httppassword).AndReturn(
-                    ('file', 'server.zip'))
+                args.server, args.overwrite, progress=0,
+                httpuser=args.httpuser, httppassword=args.httppassword
+                ).AndReturn(('file', 'server.zip'))
             fileutils.unzip(
                 'server.zip', match_dir=True, destdir=args.unzipdir
                 ).AndReturn('server')
