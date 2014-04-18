@@ -145,9 +145,9 @@ class Artifacts(object):
 
         if not self.args.skipunzip:
             try:
+                log.info('Unzipping %s', localpath)
                 unzipped = fileutils.unzip(
-                    localpath, unzip=self.args.unzip,
-                    unzipargs=self.args.unzipargs, unzipdir=self.args.unzipdir)
+                    localpath, match_dir=True, destdir=self.args.unzipdir)
                 return unzipped
             except Exception as e:
                 log.error('Unzip failed: %s', e)

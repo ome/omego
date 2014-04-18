@@ -104,10 +104,9 @@ class Upgrade(object):
             if ptype == 'file':
                 if self.args.skipunzip:
                     raise Stop(0, 'Unzip disabled, exiting')
-                log.debug('Unzipping %s', server)
+                log.info('Unzipping %s', server)
                 server = fileutils.unzip(
-                    server, unzip=self.args.unzip,
-                    unzipargs=self.args.unzipargs, unzipdir=self.args.unzipdir)
+                    server, match_dir=True, destdir=self.args.unzipdir)
 
         log.debug('Server directory: %s', server)
         return server

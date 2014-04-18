@@ -89,8 +89,8 @@ class TestUpgrade(object):
                 httppassword=args.httppassword).AndReturn(
                     ('file', 'server.zip'))
             fileutils.unzip(
-                'server.zip', unzip=args.unzip, unzipargs=args.unzipargs,
-                unzipdir=args.unzipdir).AndReturn('server')
+                'server.zip', match_dir=True, destdir=args.unzipdir
+                ).AndReturn('server')
             expected = 'server'
         else:
             omego.upgrade.Artifacts(args).AndReturn(self.MockArtifacts())

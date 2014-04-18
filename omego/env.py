@@ -133,19 +133,7 @@ class FileUtilsParser(argparse.ArgumentParser):
             'Remote and local file handling parameters',
             'Additional arguments for downloading or unzipped files')
 
-        # UNZIP TOOLS
-        if WINDOWS:
-            unzip = "C:\\Program Files (x86)\\7-Zip\\7z.exe"
-            unzipargs = "x"
-        else:
-            unzip = "unzip"
-            unzipargs = ""
-
         Add = EnvDefault.add
-        Add(group, "unzip", unzip,
-            help="Program to use to unzip archives")
-        Add(group, "unzipargs", unzipargs,
-            help="Arguments to pass while unzipping archives")
         Add(group, "unzipdir", "",
             help="Unzip archives into this directory")
         group.add_argument("--skipunzip", action="store_true",

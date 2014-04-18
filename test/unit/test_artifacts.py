@@ -64,8 +64,6 @@ class TestArtifacts(object):
             self.dry_run = False
             self.verbose = False
             self.skipunzip = False
-            self.unzip = '/test/unzip'
-            self.unzipargs = '-unzipargs'
             self.unzipdir = 'unzip/dir'
             self.overwrite = 'error'
             self.httpuser = None
@@ -143,9 +141,8 @@ class TestArtifacts(object):
             url, 'error', progress=0, httpuser=None,
             httppassword=None).AndReturn(
             ('file', 'component-0.0.0.zip'))
-        fileutils.unzip('component-0.0.0.zip', unzip='/test/unzip',
-                        unzipargs='-unzipargs', unzipdir='unzip/dir'
-                        ).AndReturn('component-0.0.0')
+        fileutils.unzip('component-0.0.0.zip', match_dir=True,
+                        destdir='unzip/dir').AndReturn('component-0.0.0')
 
         self.mox.ReplayAll()
 
