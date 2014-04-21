@@ -1,1 +1,0 @@
-rsync -av --files-from=inc --exclude-from=exc pwalczysko@necromancer.openmicroscopy.org.uk:/ome/data_repo .
