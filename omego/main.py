@@ -48,7 +48,10 @@ def entry_point():
             (DbCommand.NAME, DbCommand),
             (Version.NAME, Version)])
     except Stop, stop:
-        print stop,
+        if stop.rc != 0:
+            print "ERROR:", stop
+        else:
+            print stop
         sys.exit(stop.rc)
 
 
