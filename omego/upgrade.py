@@ -429,7 +429,8 @@ class InstallCommand(InstallBaseCommand):
 
     def __init__(self, sub_parsers):
         super(InstallCommand, self).__init__(sub_parsers)
-        self.parser.add_argument("--initdb", action="store_true")
+        self.parser.add_argument(
+            "--initdb", action="store_true", help="Initialise the database")
 
 
 class UpgradeCommand(InstallBaseCommand):
@@ -441,4 +442,5 @@ class UpgradeCommand(InstallBaseCommand):
 
     def __init__(self, sub_parsers):
         super(UpgradeCommand, self).__init__(sub_parsers)
-        self.parser.add_argument("--upgradedb", action="store_true")
+        self.parser.add_argument(
+            "--upgradedb", action="store_true", help="Upgrade the database")
