@@ -6,7 +6,9 @@ python:
 virtualenv:
   system_site_packages: true
 
-env: USER_AGENT=Travis
+env:
+    - USER_AGENT=Travis TEST=install
+    - USER_AGENT=Travis TEST=upgrade
 
 before_install:
   - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install argparse; fi
@@ -22,12 +24,12 @@ before_script:
     - psql -c "select 1;" -U omero -h localhost omero
     - sudo mkdir /OMERO
     - sudo chown $USER:$USER /OMERO
-    - wget --user-agent $USER_AGENT http://downloads.openmicroscopy.org/omero/5.0.0-rc1/artifacts/OMERO.server-5.0.0-rc1-ice34-b10.zip
-    - unzip -qq OMERO.server-5.0.0-rc1-ice34-b10.zip
-    - ln -s OMERO.server-5.0.0-rc1-ice34-b10 OMERO-CURRENT
-    - OMERO-CURRENT/bin/omero db script "" "" ome -f OMERO.sql
-    - psql -q -h localhost -U omero omero < OMERO.sql
-    - OMERO-CURRENT/bin/omero admin start
+    - if [ $TEST == upgrade ]; then wget --user-agent $USER_AGENT https://downloads.openmicroscopy.org/omero/4.4.11/artifacts/OMERO.server-4.4.11-ice34-b114.zip; fi
+    - if [ $TEST == upgrade ]; then unzip -qq OMERO.server-4.4.11-ice34-b114.zip; fi
+    - if [ $TEST == upgrade ]; then ln -s OMERO.server-4.4.11-ice34-b114 OMERO-CURRENT; fi
+    - if [ $TEST == upgrade ]; then OMERO-CURRENT/bin/omero db script "" "" ome -f OMERO.sql; fi
+    - if [ $TEST == upgrade ]; then psql -q -h localhost -U omero omero < OMERO.sql; fi
+    - if [ $TEST == upgrade ]; then OMERO-CURRENT/bin/omero admin start; fi
 
 script:
     - python setup.py test -s test/unit -v
@@ -35,7 +37,10 @@ script:
     - python setup.py sdist install
     - pip install dist/*.tar.gz
     - omego -h
-    - omego upgrade --branch=OMERO-5.1-latest --labels=ICE=3.4 --upgradedb --dbhost localhost --dbname omero -v
+    # Install a new server
+    - if [ $TEST == install ]; then omego install --initdb --dbhost localhost --dbname omero -v http://downloads.openmicroscopy.org/omero/5.0.0-rc1/artifacts/OMERO.server-5.0.0-rc1-ice34-b10.zip; fi
+    # Test a multistage DB upgrade (4.4 -> 5.1DEV) as part fo the server upgrade
+    - if [ $TEST == upgrade ]; then omego upgrade --branch=OMERO-5.1-latest --labels=ICE=3.4 --upgradedb --dbhost localhost --dbname omero -v; fi
 
 after_failure:
     - tail -n 1000 OMERO-CURRENT/var/log/Blitz-0.log
