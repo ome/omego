@@ -55,28 +55,29 @@ class Install(object):
     def __init__(self, cmd, args):
 
         self.args = args
-        server_dir = self.get_server_dir()
+        log.info("%s: %s", self.__class__.__name__, cmd)
+        log.debug("Current directory: %s", os.getcwd())
 
         if cmd == 'upgrade':
             newinstall = False
-            log.info("%s: Upgrading %s (%s)...",
-                     self.__class__.__name__, server_dir, args.sym)
+            if not os.path.exists(args.sym):
+                raise Stop(30, 'Symlink is missing: %s' % args.sym)
         elif cmd == 'install':
             newinstall = True
-            log.info("%s: Installing %s (%s)...",
-                     self.__class__.__name__, server_dir, args.sym)
+            if os.path.exists(args.sym):
+                raise Stop(30, 'Symlink already exists: %s' % args.sym)
         else:
             raise Exception('Unexpected command: %s' % cmd)
+
+        server_dir = self.get_server_dir()
 
         if newinstall:
             # Create a symlink to simplify the rest of the logic-
             # just need to check if OLD == NEW
-            if os.path.exists(args.sym):
-                raise Stop(30, 'Symlink already exists: %s' % args.sym)
             self.mklink(server_dir)
+            log.info("Upgrading %s (%s)...", server_dir, args.sym)
         else:
-            if not os.path.exists(args.sym):
-                raise Stop(30, 'Symlink is missing: %s' % args.sym)
+            log.info("Installing %s (%s)...", server_dir, args.sym)
 
         self.external = External(server_dir)
         self.external.setup_omero_cli()
