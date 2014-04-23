@@ -35,7 +35,7 @@ script:
     - python setup.py sdist install
     - pip install dist/*.tar.gz
     - omego -h
-    - omego upgrade --unzipargs=-q --branch=OMERO-5.1-latest --labels=ICE=3.4 --upgradedb --dbhost localhost --dbname omero -v
+    - omego upgrade --branch=OMERO-5.1-latest --labels=ICE=3.4 --upgradedb --dbhost localhost --dbname omero -v
 
 after_failure:
     - tail -n 1000 OMERO-CURRENT/var/log/Blitz-0.log

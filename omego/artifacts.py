@@ -4,12 +4,12 @@
 import os
 import logging
 
-from urllib2 import build_opener, HTTPError
+from urllib2 import HTTPError
 import re
 
-from external import External, RunException
+import fileutils
 from framework import Command, Stop
-from env import JenkinsParser
+from env import FileUtilsParser, JenkinsParser
 
 try:
     from xml.etree.ElementTree import XML
@@ -18,55 +18,16 @@ except ImportError:
 
 log = logging.getLogger("omego.artifacts")
 
-# create an opener that will simulate a browser user-agent
-opener = build_opener()
-if 'USER_AGENT' in os.environ:
-    opener.addheaders = [('User-agent', os.environ.get('USER_AGENT'))]
 
+class ArtifactException(Exception):
 
-class ProgressBar(object):
-    def __init__(self, ndots, total):
-        self.ndots = ndots
-        self.total = total
-        self.n = 0
-        self.marker = '*'
-        self.pad = True
+    def __init__(self, msg, path):
+        super(ArtifactException, self).__init__(msg)
+        self.path = path
 
-    def update(self, current):
-        nextn = int(current * self.ndots / self.total)
-        if nextn > self.n:
-            self.n = nextn
-            p = ''
-            if self.pad:
-                p = ' ' * (self.ndots - self.n) * len(self.marker)
-            print '%s%s (%d/%d bytes)' % (
-                self.marker * self.n, p, current, self.total)
-
-
-def download(url, filename, print_progress=0):
-    blocksize = 1024 * 1024
-    downloaded = 0
-    progress = None
-
-    response = opener.open(url)
-    try:
-        total = int(response.headers['Content-Length'])
-
-        if print_progress:
-            progress = ProgressBar(print_progress, total)
-
-        output = open(filename, 'wb')
-        try:
-            while downloaded < total:
-                block = response.read(blocksize)
-                output.write(block)
-                downloaded += len(block)
-                if progress:
-                    progress.update(downloaded)
-        finally:
-            output.close()
-    finally:
-        response.close()
+    def __str__(self):
+        return '%s\npath: %s' % (
+            super(ArtifactException, self).__str__(), self.path)
 
 
 class Artifacts(object):
@@ -101,7 +62,7 @@ class Artifacts(object):
     def read_xml(self, buildurl):
         url = None
         try:
-            url = opener.open(buildurl + 'api/xml')
+            url = fileutils.open_url(buildurl + 'api/xml')
             log.debug('Fetching xml from %s code:%d', url.url, url.code)
             if url.code != 200:
                 log.error('Failed to get CI XML from %s (code %d)',
@@ -159,7 +120,6 @@ class Artifacts(object):
                 }
 
     def download(self, component):
-
         if not hasattr(self, component) or getattr(self, component) is None:
             raise Exception("No %s found" % component)
 
@@ -173,34 +133,28 @@ class Artifacts(object):
         if os.path.exists(unzipped):
             return unzipped
 
-        if not os.path.exists(filename):
-            log.info("Downloading %s", componenturl)
-            progress = 0
-            if self.args.verbose:
-                progress = 20
-            download(componenturl, filename, progress)
+        log.info("Checking %s", componenturl)
+        progress = 0
+        if self.args.verbose:
+            progress = 20
+        ptype, localpath = fileutils.get_as_local_path(
+            componenturl, self.args.overwrite, progress=progress,
+            httpuser=self.args.httpuser, httppassword=self.args.httppassword)
+        if ptype != 'file' or not localpath.endswith('.zip'):
+            raise ArtifactException('Expected local zip file', localpath)
 
         if not self.args.skipunzip:
-            command = self.args.unzip
-            commandargs = []
-            if self.args.unzipargs:
-                commandargs.append(self.args.unzipargs)
-            if self.args.unzipdir:
-                commandargs.extend(["-d", self.args.unzipdir])
-            commandargs.append(filename)
-
             try:
-                out, err = External.run(command, commandargs)
-                log.debug(out)
-                log.debug(err)
-            except RunException as e:
-                log.error('Unzip failed: %s' % e.fullstr())
-                print 'RunException: %s' % e.fullstr()
-                raise Stop(e.r, 'Unzip failed, unzip manually and run again')
-            else:
+                log.info('Unzipping %s', localpath)
+                unzipped = fileutils.unzip(
+                    localpath, match_dir=True, destdir=self.args.unzipdir)
                 return unzipped
-        else:
-            return filename
+            except Exception as e:
+                log.error('Unzip failed: %s', e)
+                print e
+                raise Stop(20, 'Unzip failed, try unzipping manually')
+
+        return localpath
 
 
 class DownloadCommand(Command):
@@ -220,6 +174,7 @@ class DownloadCommand(Command):
             help="The artifact to download from the CI server")
 
         self.parser = JenkinsParser(self.parser)
+        self.parser = FileUtilsParser(self.parser)
 
     def __call__(self, args):
         super(DownloadCommand, self).__call__(args)

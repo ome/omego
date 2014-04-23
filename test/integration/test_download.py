@@ -42,11 +42,11 @@ class TestDownload(object):
 
     def testDownloadUnzip(self, tmpdir):
         with tmpdir.as_cwd():
-            self.download('--unzipargs=-q')
+            self.download()
             files = tmpdir.listdir()
             assert len(files) == 2
 
     def testDownloadUnzipDir(self, tmpdir):
         with tmpdir.as_cwd():
-            self.download('--unzipargs=-q', '--unzipdir', 'OMERO.cpp')
+            self.download('--unzipdir', 'OMERO.cpp')
             assert tmpdir.ensure('OMERO.cpp', dir=True)

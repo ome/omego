@@ -22,9 +22,9 @@
 import pytest
 import mox
 
-import omego
 from omego.framework import Stop
 from omego.artifacts import Artifacts
+from omego import fileutils
 
 
 class TestArtifacts(object):
@@ -61,6 +61,13 @@ class TestArtifacts(object):
             else:
                 self.labels = ''
                 self.build = TestArtifacts.MockUrl.labelledurl
+            self.dry_run = False
+            self.verbose = False
+            self.skipunzip = False
+            self.unzipdir = 'unzip/dir'
+            self.overwrite = 'error'
+            self.httpuser = None
+            self.httppassword = None
 
     def setup_method(self, method):
         self.mox = mox.Mox()
@@ -71,12 +78,12 @@ class TestArtifacts(object):
     def partial_mock_artifacts(self, matrix):
         # Artifacts.__init__ does a lot of work, so we can't just
         # stubout methods after constructing it
-        self.mox.StubOutWithMock(omego.artifacts.opener, 'open')
+        self.mox.StubOutWithMock(fileutils, 'open_url')
         if matrix:
-            omego.artifacts.opener.open(
+            fileutils.open_url(
                 self.MockUrl.unlabelledurl + 'api/xml').AndReturn(
                 self.MockUrl(True))
-        omego.artifacts.opener.open(
+        fileutils.open_url(
             self.MockUrl.labelledurl + 'api/xml').AndReturn(
             self.MockUrl(False))
         self.mox.ReplayAll()
@@ -123,6 +130,22 @@ class TestArtifacts(object):
         assert labels == set(['ICE=3.5', 'label=foo'])
         self.mox.VerifyAll()
 
-    # TODO
-    # def test_download(self):
-    #    pass
+    def test_download(self):
+        a = self.partial_mock_artifacts(True)
+        url = 'http://example.org/test/component-0.0.0.zip'
+        setattr(a, 'testcomponent', url)
+
+        self.mox.StubOutWithMock(fileutils, 'get_as_local_path')
+        self.mox.StubOutWithMock(fileutils, 'unzip')
+        fileutils.get_as_local_path(
+            url, 'error', progress=0, httpuser=None,
+            httppassword=None).AndReturn(
+            ('file', 'component-0.0.0.zip'))
+        fileutils.unzip('component-0.0.0.zip', match_dir=True,
+                        destdir='unzip/dir').AndReturn('component-0.0.0')
+
+        self.mox.ReplayAll()
+
+        assert a.download('testcomponent') == 'component-0.0.0'
+
+        self.mox.VerifyAll()

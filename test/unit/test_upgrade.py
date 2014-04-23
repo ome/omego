@@ -26,6 +26,8 @@ import os
 import shutil
 
 from omego.external import External
+from omego import fileutils
+import omego.upgrade
 from omego.upgrade import UnixUpgrade
 
 
@@ -41,6 +43,7 @@ class TestUpgrade(object):
             self.skipweb = 'false'
             self.skipdelete = 'false'
             self.skipdeletezip = 'false'
+            self.verbose = False
             for k, v in args.iteritems():
                 setattr(self, k, v)
 
@@ -50,11 +53,56 @@ class TestUpgrade(object):
             self.args = args
             self.external = ext
 
+    class MockArtifacts(object):
+
+        def download(self, component):
+            assert component == 'server'
+            return 'server-dir'
+
     def setup_method(self, method):
         self.mox = mox.Mox()
 
     def teardown_method(self, method):
         self.mox.UnsetStubs()
+
+    @pytest.mark.parametrize('server', [None, 'local', 'remote'])
+    def test_get_server_dir(self, server):
+        ext = self.mox.CreateMock(External)
+        self.mox.StubOutWithMock(omego.upgrade, 'Artifacts')
+        self.mox.StubOutWithMock(fileutils, 'get_as_local_path')
+        self.mox.StubOutWithMock(fileutils, 'unzip')
+
+        args = self.Args({'server': None, 'skipunzip': False,
+                          'overwrite': 'error', 'unzipdir': None,
+                          'httpuser': 'user', 'httppassword': 'password'})
+        if server == 'local':
+            args.server = 'local-server-dir'
+            fileutils.get_as_local_path(
+                args.server, args.overwrite, progress=0,
+                httpuser=args.httpuser, httppassword=args.httppassword
+                ).AndReturn(('directory', 'local-server-dir'))
+            expected = 'local-server-dir'
+        elif server == 'remote':
+            args.server = 'http://example.org/remote/server.zip'
+            fileutils.get_as_local_path(
+                args.server, args.overwrite, progress=0,
+                httpuser=args.httpuser, httppassword=args.httppassword
+                ).AndReturn(('file', 'server.zip'))
+            fileutils.unzip(
+                'server.zip', match_dir=True, destdir=args.unzipdir
+                ).AndReturn('server')
+            expected = 'server'
+        else:
+            omego.upgrade.Artifacts(args).AndReturn(self.MockArtifacts())
+            expected = 'server-dir'
+
+        self.mox.ReplayAll()
+
+        upgrade = self.PartialMockUnixUpgrade(args, ext)
+        s = upgrade.get_server_dir()
+        assert s == expected
+
+        self.mox.VerifyAll()
 
     @pytest.mark.parametrize('skipweb', [True, False])
     def test_stop(self, skipweb):
