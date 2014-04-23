@@ -28,7 +28,7 @@ import shutil
 from omego.external import External
 from omego import fileutils
 import omego.upgrade
-from omego.upgrade import UnixUpgrade
+from omego.upgrade import UnixInstall
 
 
 class TestUpgrade(object):
@@ -47,7 +47,7 @@ class TestUpgrade(object):
             for k, v in args.iteritems():
                 setattr(self, k, v)
 
-    class PartialMockUnixUpgrade(UnixUpgrade):
+    class PartialMockUnixInstall(UnixInstall):
 
         def __init__(self, args, ext):
             self.args = args
@@ -98,7 +98,7 @@ class TestUpgrade(object):
 
         self.mox.ReplayAll()
 
-        upgrade = self.PartialMockUnixUpgrade(args, ext)
+        upgrade = self.PartialMockUnixInstall(args, ext)
         s = upgrade.get_server_dir()
         assert s == expected
 
@@ -114,7 +114,7 @@ class TestUpgrade(object):
         self.mox.ReplayAll()
 
         args = self.Args({'skipweb': str(skipweb)})
-        upgrade = self.PartialMockUnixUpgrade(args, ext)
+        upgrade = self.PartialMockUnixInstall(args, ext)
         print '*** %s' % upgrade.args.__dict__
         print upgrade.web()
         upgrade.stop()
@@ -132,7 +132,7 @@ class TestUpgrade(object):
              '--tcp', args.tcp, '--ssl', args.ssl])
         self.mox.ReplayAll()
 
-        upgrade = self.PartialMockUnixUpgrade(args, ext)
+        upgrade = self.PartialMockUnixInstall(args, ext)
         upgrade.configure_ports()
         self.mox.VerifyAll()
 
@@ -145,7 +145,7 @@ class TestUpgrade(object):
         self.mox.ReplayAll()
 
         args = self.Args({'skipweb': str(skipweb)})
-        upgrade = self.PartialMockUnixUpgrade(args, ext)
+        upgrade = self.PartialMockUnixInstall(args, ext)
         upgrade.start()
         self.mox.VerifyAll()
 
@@ -155,7 +155,7 @@ class TestUpgrade(object):
         ext.omero_cli(['a', 'b'])
         self.mox.ReplayAll()
 
-        upgrade = self.PartialMockUnixUpgrade({}, ext)
+        upgrade = self.PartialMockUnixInstall({}, ext)
         upgrade.run('a b')
         upgrade.run(['a',  'b'])
         self.mox.VerifyAll()
@@ -166,7 +166,7 @@ class TestUpgrade(object):
         ext.omero_bin(['a', 'b'])
         self.mox.ReplayAll()
 
-        upgrade = self.PartialMockUnixUpgrade({}, ext)
+        upgrade = self.PartialMockUnixInstall({}, ext)
         upgrade.bin('a b')
         upgrade.bin(['a', 'b'])
         self.mox.VerifyAll()
@@ -174,7 +174,7 @@ class TestUpgrade(object):
     @pytest.mark.parametrize('skipweb', [True, False])
     def test_web(self, skipweb):
         args = self.Args({'skipweb': str(skipweb)})
-        upgrade = self.PartialMockUnixUpgrade(args, None)
+        upgrade = self.PartialMockUnixInstall(args, None)
         assert upgrade.web() != skipweb
         self.mox.VerifyAll()
 
@@ -183,7 +183,7 @@ class TestUpgrade(object):
     def test_directories(self, skipdelete, skipdeletezip):
         args = self.Args({'skipdelete': str(skipdelete),
                           'skipdeletezip': str(skipdeletezip)})
-        upgrade = self.PartialMockUnixUpgrade(args, None)
+        upgrade = self.PartialMockUnixInstall(args, None)
         upgrade.dir = 'new'
 
         self.mox.StubOutWithMock(os.path, 'samefile')
@@ -207,7 +207,7 @@ class TestUpgrade(object):
 
     def test_mklink(self):
         args = self.Args({})
-        upgrade = self.PartialMockUnixUpgrade(args, None)
+        upgrade = self.PartialMockUnixInstall(args, None)
 
         self.mox.StubOutWithMock(os, 'symlink')
         os.symlink('new', 'sym')
