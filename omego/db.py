@@ -8,7 +8,7 @@ from glob import glob
 import re
 
 from external import External, RunException
-from framework import Command, Stop
+from yaclifw.framework import Command, Stop
 from env import EnvDefault, DbParser
 
 log = logging.getLogger("omego.db")

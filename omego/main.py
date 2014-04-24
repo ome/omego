@@ -27,12 +27,17 @@ will be presented to the user.
 
 import sys
 
-from framework import main, Stop
+from yaclifw.framework import main, Stop
+from yaclifw.version import Version
 
+from omego import __file__ as module_file
 from upgrade import UpgradeCommand
 from artifacts import DownloadCommand
 from db import DbCommand
-from version import Version
+
+
+class OmegoVersion(Version):
+    FILE = module_file
 
 
 def entry_point():
@@ -41,11 +46,11 @@ def entry_point():
     if Stop is raised, calls sys.exit()
     """
     try:
-        main(items=[
+        main("omego", items=[
             (UpgradeCommand.NAME, UpgradeCommand),
             (DownloadCommand.NAME, DownloadCommand),
             (DbCommand.NAME, DbCommand),
-            (Version.NAME, Version)])
+            (Version.NAME, OmegoVersion)])
     except Stop, stop:
         print stop,
         sys.exit(stop.rc)

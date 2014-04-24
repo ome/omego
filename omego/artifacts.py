@@ -8,7 +8,7 @@ from urllib2 import HTTPError
 import re
 
 import fileutils
-from framework import Command, Stop
+from yaclifw.framework import Command, Stop
 from env import FileUtilsParser, JenkinsParser
 
 try:

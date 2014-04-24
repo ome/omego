@@ -24,7 +24,7 @@ OME-GO Management library
 """
 
 from setuptools import setup
-from omego.version import get_git_version
+from yaclifw.version import get_git_version
 
 from setuptools.command.test import test as TestCommand
 import sys
@@ -80,7 +80,8 @@ class PyTest(TestCommand):
         errno = pytest.main(self.test_args)
         sys.exit(errno)
 
-VERSION = get_git_version()
+from omego import __file__ as module_file
+VERSION = get_git_version(module_file)
 ZIP_SAFE = False
 
 
@@ -111,7 +112,7 @@ setup(name='omego',
       # More complex variables
       packages=['omego'],
       include_package_data=True,
-      install_requires=[],  # Skipping argparse for Python 2.7 and greater.
+      install_requires=['yaclifw==0.0.3'],  # Skipping argparse for Python 2.7 and greater.
       entry_points={'console_scripts': ['omego = omego.main:entry_point']},
       zip_safe=ZIP_SAFE,
 
