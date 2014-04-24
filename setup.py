@@ -106,7 +106,7 @@ setup(name='omego',
       author_email='ome-devel@lists.openmicroscopy.org.uk',
       description='OME installation and administration tool',
       license='GPLv2',
-      url='https://github.com/ome/omero-setup',
+      url='https://github.com/ome/omego',
 
       # More complex variables
       packages=['omego'],
