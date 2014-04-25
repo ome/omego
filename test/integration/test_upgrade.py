@@ -21,7 +21,7 @@
 
 import pytest  # noqa
 
-from omego.framework import main, Stop
+from yaclifw.framework import main, Stop
 from omego.upgrade import UpgradeCommand
 
 

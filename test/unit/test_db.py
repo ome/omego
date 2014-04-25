@@ -25,7 +25,7 @@ import mox
 import os
 
 from omego.external import External, RunException
-from omego.framework import Stop
+from yaclifw.framework import Stop
 import omego.db
 from omego.db import DbAdmin
 

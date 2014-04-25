@@ -21,7 +21,7 @@
 
 import pytest  # noqa
 
-from omego.framework import main
+from yaclifw.framework import main
 from omego.artifacts import DownloadCommand
 
 
