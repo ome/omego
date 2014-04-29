@@ -3,6 +3,7 @@
 
 import os
 import argparse
+import argparseconfig
 import platform
 import subprocess
 
@@ -73,7 +74,7 @@ class EnvDefault(argparse.Action):
                             default=default, **kwargs)
 
 
-class DbParser(argparse.ArgumentParser):
+class DbParser(argparseconfig.ArgparseConfigParser):
 
     def __init__(self, parser):
         self.parser = parser
@@ -102,7 +103,7 @@ class DbParser(argparse.ArgumentParser):
         return getattr(self.parser, key)
 
 
-class JenkinsParser(argparse.ArgumentParser):
+class JenkinsParser(argparseconfig.ArgparseConfigParser):
 
     def __init__(self, parser):
         self.parser = parser
@@ -125,7 +126,7 @@ class JenkinsParser(argparse.ArgumentParser):
         return getattr(self.parser, key)
 
 
-class FileUtilsParser(argparse.ArgumentParser):
+class FileUtilsParser(argparseconfig.ArgparseConfigParser):
 
     def __init__(self, parser):
         self.parser = parser
