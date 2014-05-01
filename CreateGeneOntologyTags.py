@@ -101,7 +101,7 @@ def generate(tagGroups, terms):
             continue
 
         groupData = terms[pid]
-        groupName = groupData['name']
+        groupName = "[%s] %s" % (pid, groupData['name'])
         groupDesc = groupData['desc']
         children = []
         group = dict(name=groupName, desc=groupDesc, set=children)
@@ -109,7 +109,7 @@ def generate(tagGroups, terms):
 
         for cid in groupData['children']:
             cData = terms[cid]
-            cName = cData['name']
+            cName = "[%s] %s" % (cid, cData['name'])
             cDesc = cData['desc']
             child = dict(name=cName, desc=cDesc)
             children.append(child)
