@@ -14,7 +14,7 @@ from db import DbAdmin
 from external import External
 from yaclifw.framework import Command, Stop
 import fileutils
-from env import EnvDefault, DbParser, FileUtilsParser, JenkinsParser
+from env import Add, DbParser, FileUtilsParser, JenkinsParser
 from env import WINDOWS
 from env import HOSTNAME
 
@@ -344,7 +344,6 @@ class InstallBaseCommand(Command):
         self.parser = DbParser(self.parser)
         self.parser = FileUtilsParser(self.parser)
 
-        Add = EnvDefault.add
         Add(self.parser, "hostname", HOSTNAME)
         Add(self.parser, "name", name)
         Add(self.parser, "address", address)

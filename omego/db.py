@@ -9,7 +9,7 @@ import re
 
 from external import External, RunException
 from yaclifw.framework import Command, Stop
-from env import EnvDefault, DbParser
+from env import Add, DbParser
 
 log = logging.getLogger("omego.db")
 
@@ -175,7 +175,6 @@ class DbCommand(Command):
         self.parser = DbParser(self.parser)
         self.parser.add_argument("-n", "--dry-run", action="store_true")
 
-        Add = EnvDefault.add
         # TODO: Kind of duplicates Upgrade args.sym/args.server
         Add(self.parser, 'serverdir', 'Root directory of the server')
         self.parser.add_argument(
