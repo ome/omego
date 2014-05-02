@@ -97,7 +97,7 @@ def generate(tagGroups, terms):
 
     rv = []
     for pid in tagGroups:
-        if pid not in terms.keys():    # In testing we may not have comeplete set
+        if pid not in terms.keys():    # In testing we may not have complete set
             continue
 
         groupData = terms[pid]
