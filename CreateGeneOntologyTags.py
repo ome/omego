@@ -114,7 +114,7 @@ def generate(tagGroups, terms):
             child = dict(name=cName, desc=cDesc)
             children.append(child)
 
-    return json.dumps(rv)
+    return json.dumps(rv, indent=2)
 
 
 if __name__ == "__main__":
