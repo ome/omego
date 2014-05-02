@@ -35,8 +35,16 @@ Parser for the gene-ontology to OMERO's tag format:
 }]
 """
 
+
+from framework import Command
+
+import logging
 import json
 import sys
+
+
+log = logging.getLogger("omego.convert")
+
 
 def parse(filename, MAX_TERM_COUNT=1000):
     """
@@ -117,7 +125,26 @@ def generate(tagGroups, terms):
     return json.dumps(rv, indent=2)
 
 
-if __name__ == "__main__":
-    for filename in sys.argv[1:]:
-        tagGroups, terms = parse(filename)
+class ConvertCommand(Command):
+    """
+    Convert between various formats
+    """
+
+    NAME = "convert"
+
+    def __init__(self, sub_parsers):
+        super(ConvertCommand, self).__init__(sub_parsers)
+
+        self.parser.add_argument("--format", default="go", choices=["go"],
+                                 help="input file format")
+        self.parser.add_argument("--limit", default=1000,
+                                 help="number of lines to parse")
+        self.parser.add_argument("-o", "--out", default="-",
+                                 help="output file. stdout by default")
+        self.parser.add_argument("filename", help="input file")
+
+    def __call__(self, args):
+        super(ConvertCommand, self).__call__(args)
+        self.configure_logging(args)
+        tagGroups, terms = parse(args.filename, args.limit)
         print generate(tagGroups, terms)
