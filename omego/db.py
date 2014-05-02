@@ -169,8 +169,8 @@ class DbCommand(Command):
 
     NAME = "db"
 
-    def __init__(self, sub_parsers):
-        super(DbCommand, self).__init__(sub_parsers)
+    def __init__(self, sub_parsers, parents):
+        super(DbCommand, self).__init__(sub_parsers, parents)
 
         self.parser = DbParser(self.parser)
         self.parser.add_argument("-n", "--dry-run", action="store_true")

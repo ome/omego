@@ -54,7 +54,8 @@ def entry_point():
             (ConvertCommand.NAME, ConvertCommand),
             (DownloadCommand.NAME, DownloadCommand),
             (DbCommand.NAME, DbCommand),
-            (Version.NAME, OmegoVersion)])
+            (Version.NAME, OmegoVersion)],
+            parse_config_files=['-c', '--conffile'])
     except Stop, stop:
         if stop.rc != 0:
             print "ERROR:", stop

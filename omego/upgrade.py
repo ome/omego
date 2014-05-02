@@ -316,8 +316,8 @@ class InstallBaseCommand(Command):
     Do not call this class directly
     """
 
-    def __init__(self, sub_parsers):
-        super(InstallBaseCommand, self).__init__(sub_parsers)
+    def __init__(self, sub_parsers, parents):
+        super(InstallBaseCommand, self).__init__(sub_parsers, parents)
 
         # TODO: these are very internal values and should be refactored out
         # to a configure file.
@@ -428,8 +428,8 @@ class InstallCommand(InstallBaseCommand):
 
     NAME = "install"
 
-    def __init__(self, sub_parsers):
-        super(InstallCommand, self).__init__(sub_parsers)
+    def __init__(self, sub_parsers, parents):
+        super(InstallCommand, self).__init__(sub_parsers, parents)
         self.parser.add_argument(
             "--initdb", action="store_true", help="Initialise the database")
 
@@ -441,7 +441,7 @@ class UpgradeCommand(InstallBaseCommand):
 
     NAME = "upgrade"
 
-    def __init__(self, sub_parsers):
-        super(UpgradeCommand, self).__init__(sub_parsers)
+    def __init__(self, sub_parsers, parents):
+        super(UpgradeCommand, self).__init__(sub_parsers, parents)
         self.parser.add_argument(
             "--upgradedb", action="store_true", help="Upgrade the database")
