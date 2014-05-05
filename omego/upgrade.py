@@ -50,36 +50,56 @@ class Email(object):
         log.info("Mail was sent to: %s", args.recipients)
 
 
-class Upgrade(object):
+class Install(object):
 
-    def __init__(self, args):
+    def __init__(self, cmd, args):
 
         self.args = args
-        server_dir = self.get_server_dir()
-        log.info("%s: Upgrading %s (%s)...",
-                 self.__class__.__name__, server_dir, args.sym)
+        log.info("%s: %s", self.__class__.__name__, cmd)
+        log.debug("Current directory: %s", os.getcwd())
 
-        # If the symlink doesn't exist, create
-        # it which simplifies the rest of the logic,
-        # which already checks if OLD === NEW
-        if not os.path.exists(args.sym):
+        if cmd == 'upgrade':
+            newinstall = False
+            if not os.path.exists(args.sym):
+                raise Stop(30, 'Symlink is missing: %s' % args.sym)
+        elif cmd == 'install':
+            newinstall = True
+            if os.path.exists(args.sym):
+                raise Stop(30, 'Symlink already exists: %s' % args.sym)
+        else:
+            raise Exception('Unexpected command: %s' % cmd)
+
+        server_dir = self.get_server_dir()
+
+        if newinstall:
+            # Create a symlink to simplify the rest of the logic-
+            # just need to check if OLD == NEW
             self.mklink(server_dir)
+            log.info("Upgrading %s (%s)...", server_dir, args.sym)
+        else:
+            log.info("Installing %s (%s)...", server_dir, args.sym)
 
         self.external = External(server_dir)
         self.external.setup_omero_cli()
-        self.external.setup_previous_omero_env(args.sym, args.savevarsfile)
+
+        if not newinstall:
+            self.external.setup_previous_omero_env(args.sym, args.savevarsfile)
 
         # Need lib/python set above
         import path
         self.cfg = path.path(args.cfg)
         self.dir = path.path(server_dir)
 
-        self.stop()
+        if not newinstall:
+            self.stop()
 
         self.configure(self.external.has_config())
         self.directories()
 
-        self.upgrade_db()
+        if newinstall:
+            self.init_db()
+        else:
+            self.upgrade_db()
 
         self.external.save_env_vars(args.savevarsfile, args.savevars.split())
         self.start()
@@ -165,6 +185,11 @@ class Upgrade(object):
                  self.args.registry, "--tcp",
                  self.args.tcp, "--ssl", self.args.ssl])
 
+    def init_db(self):
+        if self.args.initdb:
+            log.debug('Initialising database')
+            DbAdmin(self.dir, 'init', self.args, self.external)
+
     def upgrade_db(self):
         if self.args.upgradedb:
             log.debug('Upgrading database')
@@ -200,7 +225,7 @@ class Upgrade(object):
         return "false" == self.args.skipweb.lower()
 
 
-class UnixUpgrade(Upgrade):
+class UnixInstall(Install):
 
     def stopweb(self):
         self.bin("web stop")
@@ -245,7 +270,7 @@ class UnixUpgrade(Upgrade):
             log.error("Failed to symlink %s to %s: %s", dir, self.args.sym, e)
 
 
-class WindowsUpgrade(Upgrade):
+class WindowsInstall(Install):
 
     def stopweb(self):
         log.info("Removing web from IIS")
@@ -285,15 +310,14 @@ class WindowsUpgrade(Upgrade):
         self.call(["iisreset"])
 
 
-class UpgradeCommand(Command):
+class InstallBaseCommand(Command):
     """
-    Upgrade an existing OMERO installation.
+    Base command class to install or upgrade an OMERO server
+    Do not call this class directly
     """
-
-    NAME = "upgrade"
 
     def __init__(self, sub_parsers):
-        super(UpgradeCommand, self).__init__(sub_parsers)
+        super(InstallBaseCommand, self).__init__(sub_parsers)
 
         # TODO: these are very internal values and should be refactored out
         # to a configure file.
@@ -363,10 +387,8 @@ class UpgradeCommand(Command):
         Add(self.parser, "savevars", envvars)
         Add(self.parser, "savevarsfile", envvarsfile)
 
-        self.parser.add_argument("--upgradedb", action="store_true")
-
     def __call__(self, args):
-        super(UpgradeCommand, self).__call__(args)
+        super(InstallBaseCommand, self).__call__(args)
         self.configure_logging(args)
 
         # Since EnvDefault.__action__ is only called if a user actively passes
@@ -388,12 +410,38 @@ class UpgradeCommand(Command):
             return
 
         if WINDOWS:
-            WindowsUpgrade(args)
+            WindowsInstall(self.NAME, args)
         else:
-            UnixUpgrade(args)
+            UnixInstall(self.NAME, args)
 
         if "false" == args.skipemail.lower():
             artifacts = Artifacts(args)
             Email(artifacts, args)
         else:
             log.info("Skipping email")
+
+
+class InstallCommand(InstallBaseCommand):
+    """
+    Setup a new OMERO installation.
+    """
+
+    NAME = "install"
+
+    def __init__(self, sub_parsers):
+        super(InstallCommand, self).__init__(sub_parsers)
+        self.parser.add_argument(
+            "--initdb", action="store_true", help="Initialise the database")
+
+
+class UpgradeCommand(InstallBaseCommand):
+    """
+    Upgrade an existing OMERO installation.
+    """
+
+    NAME = "upgrade"
+
+    def __init__(self, sub_parsers):
+        super(UpgradeCommand, self).__init__(sub_parsers)
+        self.parser.add_argument(
+            "--upgradedb", action="store_true", help="Upgrade the database")

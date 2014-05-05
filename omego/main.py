@@ -29,7 +29,7 @@ import sys
 
 from framework import main, Stop
 
-from upgrade import UpgradeCommand
+from upgrade import InstallCommand, UpgradeCommand
 from artifacts import DownloadCommand
 from db import DbCommand
 from version import Version
@@ -42,12 +42,16 @@ def entry_point():
     """
     try:
         main(items=[
+            (InstallCommand.NAME, InstallCommand),
             (UpgradeCommand.NAME, UpgradeCommand),
             (DownloadCommand.NAME, DownloadCommand),
             (DbCommand.NAME, DbCommand),
             (Version.NAME, Version)])
     except Stop, stop:
-        print stop,
+        if stop.rc != 0:
+            print "ERROR:", stop
+        else:
+            print stop
         sys.exit(stop.rc)
 
 
