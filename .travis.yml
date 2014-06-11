@@ -32,7 +32,6 @@ before_script:
     - if [ $TEST == upgrade ]; then OMERO-CURRENT/bin/omero admin start; fi
 
 script:
-    - git describe || git tag -m "Fake tag" v0.0.0
     - python setup.py test -s test/unit -v
     - python setup.py test -s test/integration -v -m "not slowtest"
     - python setup.py sdist install
