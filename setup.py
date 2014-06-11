@@ -112,9 +112,12 @@ setup(name='omego',
       # More complex variables
       packages=['omego'],
       include_package_data=True,
-      install_requires=['yaclifw==0.0.3'],  # Skipping argparse for Python 2.7 and greater.
       entry_points={'console_scripts': ['omego = omego.main:entry_point']},
       zip_safe=ZIP_SAFE,
+      # REQUIREMENTS:
+      # These should be kept in sync with requirements.txt
+      # Skipping argparse for Python 2.7 and greater.
+      install_requires=['yaclifw==0.1.0'],
 
       # Using global variables
       long_description=LONG_DESCRIPTION,
