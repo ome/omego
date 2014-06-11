@@ -40,17 +40,26 @@ from framework import Command
 
 import logging
 import json
-import sys
 
 
 log = logging.getLogger("omego.convert")
+
+Example = {
+    "GO:0000002": {
+        'name': "name",
+        'def': "defaul",
+        'children': ['GO:00003', 'GO:00004'],
+        'parents': ['GO:000045'],
+    }
+}
+
+terms = {}
 
 
 def parse(filename, MAX_TERM_COUNT=1000):
     """
     MAX_TERM_COUNT = 10000       # There are 39,000 terms in the GO!
     """
-    terms = {}      # "GO:0000002" : {'name':name, 'def': def, 'children': ['GO:00003', 'GO:00004'...], 'parents': ['GO:000045'...]}
     with open(filename, "r") as f:
 
         termId = None
@@ -72,12 +81,14 @@ def parse(filename, MAX_TERM_COUNT=1000):
             if len(l) == 1:     # newline
                 # save
                 if termId is not None and name is not None:
-                    terms[termId] = {'name':name, 'desc':desc, 'parents': parents[:], 'children':[]}
+                    terms[termId] = {'name': name, 'desc': desc,
+                                     'parents': parents[:], 'children': []}
                     termId = None
                     name = None
                     parents = []
                     termCount += 1
-                    if MAX_TERM_COUNT is not None and termCount > MAX_TERM_COUNT:
+                    if MAX_TERM_COUNT is not None and \
+                       termCount > MAX_TERM_COUNT:
                         break
 
     count = 0
@@ -105,7 +116,8 @@ def generate(tagGroups, terms):
 
     rv = []
     for pid in tagGroups:
-        if pid not in terms.keys():    # In testing we may not have complete set
+        # In testing we may not have complete set
+        if pid not in terms.keys():
             continue
 
         groupData = terms[pid]
