@@ -31,6 +31,8 @@ from yaclifw.framework import main, Stop
 from yaclifw.version import Version
 
 from omego import __file__ as module_file
+from convert import ConvertCommand
+from upgrade import InstallCommand
 from upgrade import UpgradeCommand
 from artifacts import DownloadCommand
 from db import DbCommand
@@ -47,12 +49,17 @@ def entry_point():
     """
     try:
         main("omego", items=[
+            (InstallCommand.NAME, InstallCommand),
             (UpgradeCommand.NAME, UpgradeCommand),
+            (ConvertCommand.NAME, ConvertCommand),
             (DownloadCommand.NAME, DownloadCommand),
             (DbCommand.NAME, DbCommand),
             (Version.NAME, OmegoVersion)])
     except Stop, stop:
-        print stop,
+        if stop.rc != 0:
+            print "ERROR:", stop
+        else:
+            print stop
         sys.exit(stop.rc)
 
 
