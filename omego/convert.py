@@ -36,7 +36,7 @@ Parser for the gene-ontology to OMERO's tag format:
 """
 
 
-from framework import Command
+from yaclifw.framework import Command
 
 import logging
 import json
