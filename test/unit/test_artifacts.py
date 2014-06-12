@@ -22,7 +22,7 @@
 import pytest
 import mox
 
-from omego.framework import Stop
+from yaclifw.framework import Stop
 from omego.artifacts import Artifacts
 from omego import fileutils
 

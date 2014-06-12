@@ -21,7 +21,7 @@
 
 import pytest  # noqa
 
-from omego.framework import main
+from yaclifw.framework import main
 from omego.artifacts import DownloadCommand
 
 
@@ -32,7 +32,7 @@ class TestDownload(object):
 
     def download(self, *args):
         args = ["download", self.artifact] + list(args)
-        main(args=args, items=[("download", DownloadCommand)])
+        main("omego", args=args, items=[("download", DownloadCommand)])
 
     def testDownloadNoUnzip(self, tmpdir):
         with tmpdir.as_cwd():

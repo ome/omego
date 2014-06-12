@@ -12,7 +12,7 @@ import smtplib
 from artifacts import Artifacts
 from db import DbAdmin
 from external import External
-from framework import Command, Stop
+from yaclifw.framework import Command, Stop
 import fileutils
 from env import EnvDefault, DbParser, FileUtilsParser, JenkinsParser
 from env import WINDOWS
