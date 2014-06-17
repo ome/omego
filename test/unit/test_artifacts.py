@@ -24,16 +24,22 @@ import mox
 
 from yaclifw.framework import Stop
 from omego.artifacts import Artifacts
+# Import whatever XML module was imported in omego.artifacts to avoid dealing
+# with different versions
+from omego.artifacts import XML
 from omego import fileutils
 
 
 class TestArtifacts(object):
 
     class MockUrl(object):
-        labelledurl = 'http://example.org/jenkins/ICE=3.5,label=foo/'
-        unlabelledurl = 'http://example.org/jenkins/'
-        artifactname = 'OMERO.server-0.0.0-ice35-b0.zip'
-        artifactpath = 'a/OMERO.server-0.0.0-ice35-b0.zip'
+        build = 1
+        oldbuild = 0
+        labelledurl = 'http://example.org/jenkins/ICE=3.5,label=foo/1/'
+        oldlabelledurl = 'http://example.org/jenkins/ICE=3.5,label=foo/0/'
+        unlabelledurl = 'http://example.org/jenkins/1/'
+        artifactname = 'OMERO.server-0.0.0-ice35-b1.zip'
+        artifactpath = 'a/OMERO.server-0.0.0-ice35-b1.zip'
 
         def __init__(self, matrix):
             self.code = 200
@@ -43,8 +49,14 @@ class TestArtifacts(object):
         def read(self):
             if self.matrix:
                 return (
-                    '<matrixBuild><run><url>%s</url></run></matrixBuild>' %
-                    self.labelledurl)
+                    '<matrixBuild>'
+                    '<url>%s</url>'
+                    '<run><number>%d</number><url>%s</url></run>'
+                    '<run><number>%d</number><url>%s</url></run>'
+                    '</matrixBuild>' % (
+                        self.unlabelledurl,
+                        self.oldbuild, self.oldlabelledurl,
+                        self.build, self.labelledurl))
             return (
                 '<root><artifact><fileName>%s</fileName><relativePath>'
                 '%s</relativePath></artifact></root>' %
@@ -97,6 +109,13 @@ class TestArtifacts(object):
         assert a.server == '%sartifact/%s' % (
             self.MockUrl.labelledurl, self.MockUrl.artifactpath)
         self.mox.VerifyAll()
+
+    def test_get_latest_runs(self):
+        a = self.partial_mock_artifacts(True)
+        root = XML(self.MockUrl(True).read())
+        runs = a.get_latest_runs(root)
+
+        assert runs == [self.MockUrl.labelledurl]
 
     def test_find_label_matches(self):
         a = self.partial_mock_artifacts(True)
