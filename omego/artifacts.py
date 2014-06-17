@@ -108,8 +108,6 @@ class Artifacts(object):
 
         return runurls
 
-
-
     def find_label_matches(self, urls):
         required = set(self.args.labels.split(','))
         if '' in required:
