@@ -39,8 +39,8 @@ class Artifacts(object):
 
         root = self.read_xml(buildurl)
         if root.tag == "matrixBuild":
-            runs = root.findall("./run/url")
-            buildurl = self.find_label_matches(r.text for r in runs)
+            runurls = self.get_latest_runs(root)
+            buildurl = self.find_label_matches(runurls)
             root = self.read_xml(buildurl)
 
         artifacts = root.findall("./artifact")
@@ -78,6 +78,37 @@ class Artifacts(object):
 
         root = XML(ci_xml)
         return root
+
+    def get_latest_runs(self, root):
+        """
+        Jenkins has a bug whereby it may return matrix sub-builds for older
+        runs from different nodes in addition to the latest one, so we need
+        to compare each run with the current build number
+        """
+        rurl = [u.text for u in root.findall('./url')]
+        if len(rurl) != 1:
+            log.error('Expected one root url, found %d: %s', len(rurl), rurl)
+            raise Stop(20, 'Failed to parse CI XML')
+        rurl = rurl[0]
+        log.debug('Root url: %s', rurl)
+
+        try:
+            build = re.search('/(\d+)/?$', rurl).group(1)
+        except:
+            log.error('Failed to extract build number from url: %s', rurl)
+            raise Stop(20, 'Failed to parse CI XML')
+
+        runs = root.findall('./run')
+        runurls = [
+            r.find('url').text for r in runs if r.find('number').text == build]
+        log.debug('Child runs: %s', runurls)
+        if len(runurls) < 1:
+            log.error('No runs found in build: %s', rurl)
+            raise Stop(20, 'Failed to parse CI XML')
+
+        return runurls
+
+
 
     def find_label_matches(self, urls):
         required = set(self.args.labels.split(','))
