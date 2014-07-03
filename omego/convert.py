@@ -144,8 +144,8 @@ class ConvertCommand(Command):
 
     NAME = "convert"
 
-    def __init__(self, sub_parsers):
-        super(ConvertCommand, self).__init__(sub_parsers)
+    def __init__(self, sub_parsers, parents):
+        super(ConvertCommand, self).__init__(sub_parsers, parents)
 
         self.parser.add_argument("--format", default="go", choices=["go"],
                                  help="input file format")
