@@ -3,7 +3,7 @@
 
 import os
 import argparse
-import argparseconfig
+from yaclifw import argparseconfig
 import platform
 import subprocess
 
