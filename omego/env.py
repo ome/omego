@@ -70,7 +70,7 @@ class JenkinsParser(argparseconfig.ArgparseConfigParser):
 
         Add(group, "ci", "ci.openmicroscopy.org",
             help="Base url of the continuous integration server")
-        Add(group, "branch", "OMERO-trunk",
+        Add(group, "branch", "OMERO-5.0-latest",
             help="Name of the Jenkins job containing the artifacts")
         Add(group, "build",
             "http://%(ci)s/job/%(branch)s/lastSuccessfulBuild/",
