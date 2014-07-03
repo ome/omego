@@ -19,10 +19,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import pytest  # noqa
+import pytest
 
 from yaclifw.framework import main
 from omego.artifacts import DownloadCommand
+
+from integration_test_library import create_config_file
 
 
 class TestDownload(object):
@@ -32,13 +34,20 @@ class TestDownload(object):
 
     def download(self, *args):
         args = ["download", self.artifact] + list(args)
-        main("omego", args=args, items=[("download", DownloadCommand)])
+        main("omego", args=args, parse_config_files=['-c', '--conffile'],
+             items=[("download", DownloadCommand)])
 
-    def testDownloadNoUnzip(self, tmpdir):
+    @pytest.mark.parametrize('conffile', [True, False])
+    def testDownloadNoUnzip(self, tmpdir, conffile):
         with tmpdir.as_cwd():
-            self.download('--skipunzip')
-            files = tmpdir.listdir()
-            assert len(files) == 1
+            if conffile:
+                cfg1 = tmpdir.join('f1.cfg')
+                create_config_file(cfg1, download={'skipunzip': True})
+                self.download('-c', str(cfg1))
+            else:
+                self.download('--skipunzip')
+            assert len(tmpdir.listdir(
+                lambda f: not str(f).endswith('f1.cfg'))) == 1
 
     def testDownloadUnzip(self, tmpdir):
         with tmpdir.as_cwd():
@@ -46,7 +55,13 @@ class TestDownload(object):
             files = tmpdir.listdir()
             assert len(files) == 2
 
-    def testDownloadUnzipDir(self, tmpdir):
+    @pytest.mark.parametrize('conffile', [True, False])
+    def testDownloadUnzipDir(self, tmpdir, conffile):
         with tmpdir.as_cwd():
-            self.download('--unzipdir', 'OMERO.cpp')
+            if conffile:
+                cfg1 = tmpdir.join('f1.cfg')
+                create_config_file(cfg1, download={'unzipdir': 'OMERO.cpp'})
+                self.download('-c', str(cfg1))
+            else:
+                self.download('--unzipdir', 'OMERO.cpp')
             assert tmpdir.ensure('OMERO.cpp', dir=True)
