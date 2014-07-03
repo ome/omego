@@ -8,7 +8,8 @@ from glob import glob
 import re
 
 from external import External, RunException
-from yaclifw.framework import Command, Stop
+from yaclifw.framework import Stop
+from env import OmegoCommand
 from env import Add, DbParser
 
 log = logging.getLogger("omego.db")
@@ -162,7 +163,7 @@ class DbAdmin(object):
         return stdout
 
 
-class DbCommand(Command):
+class DbCommand(OmegoCommand):
     """
     Administer an OMERO database
     """

@@ -3,8 +3,20 @@
 
 import os
 from yaclifw import argparseconfig
+from yaclifw.framework import Command
 import platform
 import subprocess
+
+
+class OmegoCommand(Command):
+    """
+    Base class for omego commands
+    Includes main in the list config file sections to be merged
+    """
+
+    def __init__(self, sub_parsers, parents):
+        super(OmegoCommand, self).__init__(
+            sub_parsers, parents, ['main', self.NAME])
 
 
 ###########################################################################

@@ -12,8 +12,9 @@ import smtplib
 from artifacts import Artifacts
 from db import DbAdmin
 from external import External
-from yaclifw.framework import Command, Stop
+from yaclifw.framework import Stop
 import fileutils
+from env import OmegoCommand
 from env import Add, DbParser, FileUtilsParser, JenkinsParser
 from env import WINDOWS
 from env import HOSTNAME
@@ -310,7 +311,7 @@ class WindowsInstall(Install):
         self.call(["iisreset"])
 
 
-class InstallBaseCommand(Command):
+class InstallBaseCommand(OmegoCommand):
     """
     Base command class to install or upgrade an OMERO server
     Do not call this class directly

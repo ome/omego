@@ -8,7 +8,8 @@ from urllib2 import HTTPError
 import re
 
 import fileutils
-from yaclifw.framework import Command, Stop
+from yaclifw.framework import Stop
+from env import OmegoCommand
 from env import FileUtilsParser, JenkinsParser
 
 try:
@@ -186,7 +187,7 @@ class Artifacts(object):
         return localpath
 
 
-class DownloadCommand(Command):
+class DownloadCommand(OmegoCommand):
     """
     Download an OMERO artifact from a CI server.
     """
