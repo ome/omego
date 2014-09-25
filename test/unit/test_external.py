@@ -26,6 +26,7 @@ import os
 import subprocess
 import tempfile
 
+import omego.external
 from omego.external import External, RunException
 
 
@@ -121,10 +122,14 @@ class TestExternal(object):
 
     @pytest.mark.parametrize('retcode', [0, 1])
     @pytest.mark.parametrize('capturestd', [True, False])
-    def test_run(self, tmpdir, retcode, capturestd):
+    @pytest.mark.parametrize('windows', [True, False])
+    def test_run(self, tmpdir, retcode, capturestd, windows):
         env = {'TEST': 'test'}
         self.mox.StubOutWithMock(subprocess, 'call')
         self.mox.StubOutWithMock(tempfile, 'TemporaryFile')
+        self.mox.StubOutWithMock(omego.external, 'WINDOWS')
+
+        omego.external.WINDOWS = windows
 
         if capturestd:
             outfile = open(str(tmpdir.join('std.out')), 'w+')
@@ -135,11 +140,11 @@ class TestExternal(object):
             tempfile.TemporaryFile().AndReturn(outfile)
             tempfile.TemporaryFile().AndReturn(errfile)
             subprocess.call(
-                ['test', 'arg1', 'arg2'], env=env, shell=True,
+                ['test', 'arg1', 'arg2'], env=env, shell=windows,
                 stdout=outfile, stderr=errfile).AndReturn(retcode)
         else:
             subprocess.call(
-                ['test', 'arg1', 'arg2'], env=env, shell=True,
+                ['test', 'arg1', 'arg2'], env=env, shell=windows,
                 stdout=None, stderr=None).AndReturn(retcode)
         self.mox.ReplayAll()
 
