@@ -3,7 +3,6 @@
 
 import os
 import shutil
-import subprocess
 import logging
 
 import fileinput
@@ -311,7 +310,6 @@ class WindowsInstall(Install):
     def rmlink(self):
         """
         """
-        #self.call(["rmdir", self.args.sym])
         if os.path.isdir(self.args.sym):
             os.rmdir(self.args.sym)
         else:
@@ -320,7 +318,6 @@ class WindowsInstall(Install):
     def mklink(self, dir):
         """
         """
-        #self.call(["mklink", "/d", self.args.sym, dir])
         import win32file
         flag = 1 if os.path.isdir(dir) else 0
         try:
