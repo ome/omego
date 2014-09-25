@@ -164,8 +164,12 @@ class External(object):
 
         # Use call instead of Popen so that stdin is connected to the console,
         # in case user input is required
+        # Use call instead of Popen so that stdin is connected to the console,
+        # in case user input is required
+        # On Windows shell=True is needed otherwise the modified environment
+        # PATH variable is ignored (on Unix this isn't necessary)
         r = subprocess.call(
-            command, env=env, stdout=outfile, stderr=errfile)
+            command, env=env, stdout=outfile, stderr=errfile, shell=True)
 
         stdout = None
         stderr = None
