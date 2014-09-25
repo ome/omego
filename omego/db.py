@@ -143,7 +143,7 @@ class DbAdmin(object):
         log.debug('Executing query: %s', q)
         result = self.psql('-c', q)
         # Ignore empty string
-        result = [r for r in result.split('\n') if r]
+        result = [r for r in result.split(os.linesep) if r]
         if len(result) != 1:
             raise Exception('Got %d rows, expected 1', len(result))
         v = tuple(result[0].split('|'))
