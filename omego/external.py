@@ -7,6 +7,8 @@ import os
 import sys
 import tempfile
 
+from env import WINDOWS
+
 log = logging.getLogger("omego.external")
 
 
@@ -164,12 +166,10 @@ class External(object):
 
         # Use call instead of Popen so that stdin is connected to the console,
         # in case user input is required
-        # Use call instead of Popen so that stdin is connected to the console,
-        # in case user input is required
         # On Windows shell=True is needed otherwise the modified environment
-        # PATH variable is ignored (on Unix this isn't necessary)
+        # PATH variable is ignored. On Unix this breaks things.
         r = subprocess.call(
-            command, env=env, stdout=outfile, stderr=errfile, shell=True)
+            command, env=env, stdout=outfile, stderr=errfile, shell=WINDOWS)
 
         stdout = None
         stderr = None
