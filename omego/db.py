@@ -71,7 +71,7 @@ class DbAdmin(object):
                 '.*OMERO(\d+)(\.|A)?(\d*)([A-Z]*)__(\d+)$', v).groups()
             # x3: 'DEV' should come before ''
             return (int(x[0]), x[1], int(x[2]) if x[2] else None,
-                    x[3] if x[3] else 'zzz', x[4])
+                    x[3] if x[3] else 'zzz', int(x[4]))
 
         sortedver = sorted(versions, key=keyfun)
         return sortedver

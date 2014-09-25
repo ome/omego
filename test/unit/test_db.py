@@ -98,9 +98,10 @@ class TestDb(object):
     def test_sort_schema(self):
         ordered = ['OMERO3__0', 'OMERO3A__10', 'OMERO4__0', 'OMERO4.4__0',
                    'OMERO5.0__0', 'OMERO5.1DEV__0', 'OMERO5.1DEV__1',
+                   'OMERO5.1DEV__2', 'OMERO5.1DEV__10',
                    'OMERO5.1__0']
 
-        ps = [5, 3, 7, 2, 6, 0, 1, 4]
+        ps = [5, 3, 7, 9, 2, 6, 0, 1, 8, 4]
         permuted = [ordered[p] for p in ps]
 
         db = self.PartialMockDb(None, None)
