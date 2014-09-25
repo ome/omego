@@ -143,8 +143,11 @@ class Install(object):
             log.error('Error whilst stopping server: %s', e)
 
         if self.web():
-            log.info("Stopping web")
-            self.stopweb()
+            try:
+                log.info("Stopping web")
+                self.stopweb()
+            except Exception as e:
+                log.error('Error whilst stopping web: %s', e)
 
     def configure(self, noconfigure):
 
