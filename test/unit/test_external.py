@@ -135,12 +135,12 @@ class TestExternal(object):
             tempfile.TemporaryFile().AndReturn(outfile)
             tempfile.TemporaryFile().AndReturn(errfile)
             subprocess.call(
-                ['test', 'arg1', 'arg2'], env=env, stdout=outfile,
-                stderr=errfile).AndReturn(retcode)
+                ['test', 'arg1', 'arg2'], env=env, shell=True,
+                stdout=outfile, stderr=errfile).AndReturn(retcode)
         else:
             subprocess.call(
-                ['test', 'arg1', 'arg2'], env=env, stdout=None,
-                stderr=None).AndReturn(retcode)
+                ['test', 'arg1', 'arg2'], env=env, shell=True,
+                stdout=None, stderr=None).AndReturn(retcode)
         self.mox.ReplayAll()
 
         if retcode == 0:
