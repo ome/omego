@@ -162,9 +162,12 @@ class Install(object):
             from path import path
             old_grid = path(self.args.sym) / "etc" / "grid"
             old_cfg = old_grid / "config.xml"
+            if not old_cfg.exists():
+                raise Stop(40, 'config.xml not found')
             if target.exists() and os.path.samefile(old_cfg, target):
                 # This likely is caused by the symlink being
                 # created early on an initial install.
+                # TODO: os.path.samefile is not available on Windows
                 pass
             else:
                 old_cfg.copy(target)
