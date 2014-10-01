@@ -87,13 +87,12 @@ class Install(object):
 
         # Need lib/python set above
         import path
-        self.cfg = path.path(args.cfg)
         self.dir = path.path(server_dir)
 
         if not newinstall:
             self.stop()
 
-        self.configure(self.external.has_config())
+        self.configure(not newinstall, args.replaceconfig, args.mergeconfig)
         self.directories()
 
         if newinstall:
@@ -146,19 +145,22 @@ class Install(object):
             log.info("Stopping web")
             self.stopweb()
 
-    def configure(self, noconfigure):
-
+    def configure(self, copyold, replaceconfig, mergeconfig):
         target = self.dir / "etc" / "grid" / "config.xml"
-        if noconfigure:
-            log.warn("Target %s already exists, skipping.", target)
-            self.configure_ports()
-            return  # Early exit!
 
-        if not self.cfg.exists():
-            log.info("%s not found. Copying old files", self.cfg)
+        if replaceconfig:
+            if target.exists():
+                log.info('Deleting configuration file %s', target)
+                target.remove()
+            log.info('Setting configuration from %s', replaceconfig)
+            self.run(['config', 'load', replaceconfig])
+        elif copyold:
             from path import path
             old_grid = path(self.args.sym) / "etc" / "grid"
             old_cfg = old_grid / "config.xml"
+            log.info("Copying old configuration from %s", old_cfg)
+            if not old_cfg.exists():
+                raise Stop(40, 'config.xml not found')
             if target.exists() and os.path.samefile(old_cfg, target):
                 # This likely is caused by the symlink being
                 # created early on an initial install.
@@ -166,9 +168,12 @@ class Install(object):
             else:
                 old_cfg.copy(target)
         else:
-            self.cfg.copy(target)
             # TODO: Unneeded if copy old?
             self.run(["config", "set", "omero.web.server_list", self.args.web])
+
+        if mergeconfig:
+            log.info('Merging configuration from %s', mergeconfig)
+            self.run(['config', 'load', '-q', mergeconfig])
 
         log.debug('Configuring JVM memory')
         templates = self.dir / "etc" / "grid" / "templates.xml"
@@ -340,6 +345,13 @@ class InstallBaseCommand(Command):
             "server", nargs="?", help="The server directory, or a server-zip, "
             "or the url of a server-zip")
 
+        self.parser.add_argument(
+            "--replaceconfig",
+            help="Set OMERO configuration from properties file")
+        self.parser.add_argument(
+            "--mergeconfig",
+            help="Merge OMERO configuration from properties file")
+
         self.parser = JenkinsParser(self.parser)
         self.parser = DbParser(self.parser)
         self.parser = FileUtilsParser(self.parser)
@@ -357,10 +369,8 @@ class InstallBaseCommand(Command):
         Add(self.parser, "ssl", "%(prefix)s4064")
 
         # new_server.py
-        cfg = os.path.join(os.path.expanduser("~"), "config.xml")
         Add(self.parser, "mem", "Xmx1024M")
         Add(self.parser, "sym", "OMERO-CURRENT")
-        Add(self.parser, "cfg", cfg)
 
         web = """[["localhost", %(ssl)s, "%(name)s"]"""
         web += """, ["gretzky.openmicroscopy.org.uk", 4064, "gretzky"]"""
