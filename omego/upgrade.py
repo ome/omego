@@ -167,9 +167,6 @@ class Install(object):
                 pass
             else:
                 old_cfg.copy(target)
-        else:
-            # TODO: Unneeded if copy old?
-            self.run(["config", "set", "omero.web.server_list", self.args.web])
 
         if mergeconfig:
             log.info('Merging configuration from %s', mergeconfig)
@@ -371,11 +368,6 @@ class InstallBaseCommand(Command):
         # new_server.py
         Add(self.parser, "mem", "Xmx1024M")
         Add(self.parser, "sym", "OMERO-CURRENT")
-
-        web = """[["localhost", %(ssl)s, "%(name)s"]"""
-        web += """, ["gretzky.openmicroscopy.org.uk", 4064, "gretzky"]"""
-        web += """, ["howe.openmicroscopy.org.uk", 4064, "howe"]]"""
-        Add(self.parser, "web", web)
 
         # send_email.py
         Add(self.parser, "subject", "OMERO - %(name)s was upgraded")
