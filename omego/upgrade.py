@@ -149,6 +149,14 @@ class Install(object):
                 log.error('Error whilst stopping web: %s', e)
 
     def configure(self, noconfigure):
+        def samecontents(a, b):
+            # os.path.samefile is not available on Windows
+            try:
+                return os.path.samefile(a, b)
+            except AttributeError:
+                with open(a) as fa:
+                    with open(b) as fb:
+                        return fa.read() == fb.read()
 
         target = self.dir / "etc" / "grid" / "config.xml"
         if noconfigure:
@@ -163,10 +171,9 @@ class Install(object):
             old_cfg = old_grid / "config.xml"
             if not old_cfg.exists():
                 raise Stop(40, 'config.xml not found')
-            if target.exists() and os.path.samefile(old_cfg, target):
+            if target.exists() and samecontents(old_cfg, target):
                 # This likely is caused by the symlink being
                 # created early on an initial install.
-                # TODO: os.path.samefile is not available on Windows
                 pass
             else:
                 old_cfg.copy(target)
