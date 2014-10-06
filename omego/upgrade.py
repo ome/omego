@@ -3,7 +3,6 @@
 
 import os
 import shutil
-import subprocess
 import logging
 
 import fileinput
@@ -143,10 +142,21 @@ class Install(object):
             log.error('Error whilst stopping server: %s', e)
 
         if self.web():
-            log.info("Stopping web")
-            self.stopweb()
+            try:
+                log.info("Stopping web")
+                self.stopweb()
+            except Exception as e:
+                log.error('Error whilst stopping web: %s', e)
 
     def configure(self, noconfigure):
+        def samecontents(a, b):
+            # os.path.samefile is not available on Windows
+            try:
+                return os.path.samefile(a, b)
+            except AttributeError:
+                with open(a) as fa:
+                    with open(b) as fb:
+                        return fa.read() == fb.read()
 
         target = self.dir / "etc" / "grid" / "config.xml"
         if noconfigure:
@@ -159,7 +169,9 @@ class Install(object):
             from path import path
             old_grid = path(self.args.sym) / "etc" / "grid"
             old_cfg = old_grid / "config.xml"
-            if target.exists() and os.path.samefile(old_cfg, target):
+            if not old_cfg.exists():
+                raise Stop(40, 'config.xml not found')
+            if target.exists() and samecontents(old_cfg, target):
                 # This likely is caused by the symlink being
                 # created early on an initial install.
                 pass
@@ -256,18 +268,22 @@ class UnixInstall(Install):
             except OSError as e:
                 log.error("Failed to delete %s: %s", targetzip, e)
 
+        self.rmlink()
+        self.mklink(self.dir)
+
+    def rmlink(self):
         try:
             os.unlink(self.args.sym)
         except OSError as e:
             log.error("Failed to unlink %s: %s", self.args.sym, e)
-
-        self.mklink(self.dir)
+            raise
 
     def mklink(self, dir):
         try:
             os.symlink(dir, self.args.sym)
         except OSError as e:
             log.error("Failed to symlink %s to %s: %s", dir, self.args.sym, e)
+            raise
 
 
 class WindowsInstall(Install):
@@ -283,31 +299,45 @@ class WindowsInstall(Install):
         self.iisreset()
 
     def directories(self):
-        self.rmdir()  # TODO: skipdelete etc?
+        # At present we can't easily dereference symlinks on Windows, so we
+        # can't check whether the new server directory is the same as the old
+        # one, so don't delete anything
         log.warn(
             "Should probably move directory to OLD_OMERO and test handles")
+
+        if "false" == self.args.skipdelete.lower():
+            log.error("Failed to delete old server (not supported on Windows)")
+
+        if "false" == self.args.skipdeletezip.lower():
+            log.error("Failed to delete old zip (not supported on Windows)")
+
+        self.rmlink()
         self.mklink(self.dir)
 
-    def call(self, command):
-        rc = subprocess.call(command, shell=True)
-        if rc != 0:
-            log.warn("'%s' returned with non-zero value: %s", command, rc)
-
-    def rmdir(self):
+    def rmlink(self):
         """
         """
-        self.call("rmdir %s".split() % self.args.sym)
+        if os.path.isdir(self.args.sym):
+            os.rmdir(self.args.sym)
+        else:
+            os.unlink(self.args.sym)
 
     def mklink(self, dir):
         """
         """
-        self.call("mklink /d %s".split() % self.args.sym + ["%s" % dir])
+        import win32file
+        flag = 1 if os.path.isdir(dir) else 0
+        try:
+            win32file.CreateSymbolicLink(self.args.sym, dir, flag)
+        except Exception as e:
+            log.error("Failed to symlink %s to %s: %s", dir, self.args.sym, e)
+            raise
 
     def iisreset(self):
         """
         Calls iisreset
         """
-        self.call(["iisreset"])
+        self.external.run('iisreset', [])
 
 
 class InstallBaseCommand(Command):

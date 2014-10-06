@@ -84,6 +84,12 @@ class DbAdmin(object):
 
         files = glob(os.path.join(
             self.dir, 'sql', 'psql', 'OMERO*', 'OMERO*.sql'))
+
+        # Windows is case-insensitive, so need to ignore additional files
+        # such as OMERO4.2__0/omero-4.1-*sql
+        files = [f for f in files if not
+                 os.path.basename(f).startswith('omero-')]
+
         versions = set()
         for f in files:
             versions.update(version_pair(f))
@@ -137,7 +143,7 @@ class DbAdmin(object):
         log.debug('Executing query: %s', q)
         result = self.psql('-c', q)
         # Ignore empty string
-        result = [r for r in result.split('\n') if r]
+        result = [r for r in result.split(os.linesep) if r]
         if len(result) != 1:
             raise Exception('Got %d rows, expected 1', len(result))
         v = tuple(result[0].split('|'))
