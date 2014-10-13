@@ -74,9 +74,9 @@ class Install(object):
             # Create a symlink to simplify the rest of the logic-
             # just need to check if OLD == NEW
             self.mklink(server_dir)
-            log.info("Upgrading %s (%s)...", server_dir, args.sym)
-        else:
             log.info("Installing %s (%s)...", server_dir, args.sym)
+        else:
+            log.info("Upgrading %s (%s)...", server_dir, args.sym)
 
         self.external = External(server_dir)
         self.external.setup_omero_cli()
