@@ -5,7 +5,6 @@ import os
 import shutil
 import logging
 
-import fileinput
 import smtplib
 
 from artifacts import Artifacts
@@ -186,13 +185,6 @@ class Install(object):
                     raise Stop(50, 'Expected file, found: %s %s' % (
                         ftype, f))
                 self.run(['load', fpath])
-
-        log.debug('Configuring JVM memory')
-        templates = self.dir / "etc" / "grid" / "templates.xml"
-        for line in fileinput.input([templates], inplace=True):
-            line = line.replace("Xmx512M", self.args.mem)
-            line = line.replace("Xmx256M", self.args.mem)
-            print line,
 
         self.configure_ports()
 
