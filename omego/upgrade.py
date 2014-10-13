@@ -403,11 +403,6 @@ class InstallBaseCommand(Command):
         Add(self.parser, "mem", "Xmx1024M")
         Add(self.parser, "sym", "OMERO-CURRENT")
 
-        web = """[["localhost", %(ssl)s, "%(name)s"]"""
-        web += """, ["gretzky.openmicroscopy.org.uk", 4064, "gretzky"]"""
-        web += """, ["howe.openmicroscopy.org.uk", 4064, "howe"]]"""
-        Add(self.parser, "web", web)
-
         # send_email.py
         Add(self.parser, "subject", "OMERO - %(name)s was upgraded")
         Add(self.parser, "sender", "sysadmin@openmicroscopy.org")
