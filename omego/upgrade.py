@@ -392,7 +392,6 @@ class InstallBaseCommand(Command):
         Add(self.parser, "ssl", "%(prefix)s4064")
 
         # new_server.py
-        Add(self.parser, "mem", "Xmx1024M")
         Add(self.parser, "sym", "OMERO-CURRENT")
 
         # send_email.py

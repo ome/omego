@@ -36,7 +36,6 @@ class TestUpgrade(object):
     class Args(object):
         def __init__(self, args):
             self.sym = 'sym'
-            self.mem = '123'
             self.registry = '12'
             self.tcp = '34'
             self.ssl = '56'
