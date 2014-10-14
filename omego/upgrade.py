@@ -370,7 +370,7 @@ class InstallBaseCommand(Command):
         self.parser.add_argument(
             "--prestartfile", action="append",
             help="Run these OMERO commands before starting server, "
-                 "can be repated")
+                 "can be repeated")
         self.parser.add_argument(
             "--ignoreconfig", action="store_true",
             help="Don't copy the old configuration file when upgrading")
