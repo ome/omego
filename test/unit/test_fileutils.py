@@ -23,6 +23,7 @@ import pytest
 import mox
 
 import os
+import re
 
 from omego import fileutils
 
@@ -133,6 +134,15 @@ class TestFileutils(object):
             b = fileutils.rename_backup(input)
         assert b == output
         self.mox.VerifyAll()
+
+    @pytest.mark.parametrize('ext', [True, False])
+    def test_timestamp_filename(self, ext):
+        if ext:
+            s = fileutils.timestamp_filename('name', 'test')
+            assert re.match('^name-\d{8}-\d{6}-\d{6}\.test$', s)
+        else:
+            s = fileutils.timestamp_filename('name')
+            assert re.match('^name-\d{8}-\d{6}-\d{6}$', s)
 
     def test_check_extracted_paths(self):
         fileutils.check_extracted_paths(['a/', 'a/b'])
