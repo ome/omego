@@ -27,6 +27,7 @@ import os
 from omego.external import External, RunException
 from yaclifw.framework import Stop
 import omego.db
+import omego.fileutils
 from omego.db import DbAdmin
 
 
@@ -71,28 +72,43 @@ class TestDb(object):
 
         self.mox.VerifyAll()
 
-    @pytest.mark.parametrize('sqlexists', [True, False])
+    @pytest.mark.parametrize('sqlfile', ['exists', 'missing', 'notprovided'])
     @pytest.mark.parametrize('dryrun', [True, False])
-    def test_initialise(self, sqlexists, dryrun):
+    def test_initialise(self, sqlfile, dryrun):
         ext = self.mox.CreateMock(External)
-        args = self.Args({'omerosql': 'omero.sql', 'rootpass': 'rootpass',
+        if sqlfile != 'notprovided':
+            omerosql = 'omero.sql'
+        else:
+            omerosql = None
+        args = self.Args({'omerosql': omerosql, 'rootpass': 'rootpass',
                           'dry_run': dryrun})
         db = self.PartialMockDb(args, ext)
         self.mox.StubOutWithMock(db, 'psql')
+        self.mox.StubOutWithMock(omego.fileutils, 'timestamp_filename')
         self.mox.StubOutWithMock(os.path, 'exists')
 
-        os.path.exists(args.omerosql).AndReturn(sqlexists)
+        if sqlfile == 'notprovided':
+            omerosql = 'omero-00000000-000000-000000.sql'
+            omego.fileutils.timestamp_filename('omero', 'sql').AndReturn(
+                omerosql)
+        else:
+            os.path.exists(omerosql).AndReturn(sqlfile == 'exists')
 
-        if not sqlexists and not dryrun:
+        if sqlfile == 'notprovided' and not dryrun:
             ext.omero_cli([
-                'db', 'script', '-f', args.omerosql, '', '', args.rootpass])
+                'db', 'script', '-f', omerosql, '', '', args.rootpass])
 
-        if not dryrun:
-            db.psql('-f', args.omerosql)
+        if sqlfile != 'missing' and not dryrun:
+            db.psql('-f', omerosql)
 
         self.mox.ReplayAll()
 
-        db.initialise()
+        if sqlfile == 'missing':
+            with pytest.raises(Stop) as excinfo:
+                db.initialise()
+            assert str(excinfo.value) == 'SQL file not found'
+        else:
+            db.initialise()
         self.mox.VerifyAll()
 
     def test_sort_schema(self):

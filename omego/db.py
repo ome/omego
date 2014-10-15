@@ -7,6 +7,7 @@ import logging
 from glob import glob
 import re
 
+import fileutils
 from external import External, RunException
 from yaclifw.framework import Command, Stop
 from env import EnvDefault, DbParser
@@ -51,18 +52,23 @@ class DbAdmin(object):
             raise Stop(30, 'Database connection check failed')
 
     def initialise(self):
-        if not os.path.exists(self.args.omerosql):
-            log.info('Creating SQL: %s', self.args.omerosql)
+        omerosql = self.args.omerosql
+        if not omerosql:
+            omerosql = fileutils.timestamp_filename('omero', 'sql')
+            log.info('Creating SQL: %s', omerosql)
             if not self.args.dry_run:
                 self.external.omero_cli(
-                    ["db", "script", "-f", self.args.omerosql, "", "",
+                    ["db", "script", "-f", omerosql, "", "",
                      self.args.rootpass])
+        elif os.path.exists(omerosql):
+            log.info('Using existing SQL: %s', omerosql)
         else:
-            log.info('Using existing SQL: %s', self.args.omerosql)
+            log.error('SQL file not found: %s', omerosql)
+            raise Stop(40, 'SQL file not found')
 
-        log.info('Creating database using %s', self.args.omerosql)
+        log.info('Creating database using %s', omerosql)
         if not self.args.dry_run:
-            self.psql('-f', self.args.omerosql)
+            self.psql('-f', omerosql)
 
     def sort_schema(self, versions):
         # E.g. OMERO3__0 OMERO3A__10 OMERO4__0 OMERO4.4__0 OMERO5.1DEV__0

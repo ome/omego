@@ -93,8 +93,8 @@ class DbParser(argparse.ArgumentParser):
             help="Password for connecting to the OMERO database")
         # TODO Admin credentials: dbauser, dbapass
 
-        Add(group, "omerosql", "omero.sql",
-            help="OMERO database SQL file")
+        Add(group, "omerosql", None,
+            help="OMERO database SQL initialisation file")
         Add(group, "rootpass", "omero",
             help="OMERO admin password")
 
