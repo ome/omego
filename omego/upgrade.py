@@ -5,7 +5,6 @@ import os
 import shutil
 import logging
 
-import fileinput
 import smtplib
 
 from artifacts import Artifacts
@@ -74,9 +73,9 @@ class Install(object):
             # Create a symlink to simplify the rest of the logic-
             # just need to check if OLD == NEW
             self.mklink(server_dir)
-            log.info("Upgrading %s (%s)...", server_dir, args.sym)
-        else:
             log.info("Installing %s (%s)...", server_dir, args.sym)
+        else:
+            log.info("Upgrading %s (%s)...", server_dir, args.sym)
 
         self.external = External(server_dir)
         self.external.setup_omero_cli()
@@ -86,13 +85,13 @@ class Install(object):
 
         # Need lib/python set above
         import path
-        self.cfg = path.path(args.cfg)
         self.dir = path.path(server_dir)
 
         if not newinstall:
             self.stop()
 
-        self.configure(self.external.has_config())
+        copyold = not newinstall and not args.ignoreconfig
+        self.configure(copyold, args.prestartfile)
         self.directories()
 
         if newinstall:
@@ -148,7 +147,7 @@ class Install(object):
             except Exception as e:
                 log.error('Error whilst stopping web: %s', e)
 
-    def configure(self, noconfigure):
+    def configure(self, copyold, prestartfile):
         def samecontents(a, b):
             # os.path.samefile is not available on Windows
             try:
@@ -159,16 +158,12 @@ class Install(object):
                         return fa.read() == fb.read()
 
         target = self.dir / "etc" / "grid" / "config.xml"
-        if noconfigure:
-            log.warn("Target %s already exists, skipping.", target)
-            self.configure_ports()
-            return  # Early exit!
 
-        if not self.cfg.exists():
-            log.info("%s not found. Copying old files", self.cfg)
+        if copyold:
             from path import path
             old_grid = path(self.args.sym) / "etc" / "grid"
             old_cfg = old_grid / "config.xml"
+            log.info("Copying old configuration from %s", old_cfg)
             if not old_cfg.exists():
                 raise Stop(40, 'config.xml not found')
             if target.exists() and samecontents(old_cfg, target):
@@ -178,16 +173,18 @@ class Install(object):
             else:
                 old_cfg.copy(target)
         else:
-            self.cfg.copy(target)
-            # TODO: Unneeded if copy old?
-            self.run(["config", "set", "omero.web.server_list", self.args.web])
+            if target.exists():
+                log.info('Deleting configuration file %s', target)
+                target.remove()
 
-        log.debug('Configuring JVM memory')
-        templates = self.dir / "etc" / "grid" / "templates.xml"
-        for line in fileinput.input([templates], inplace=True):
-            line = line.replace("Xmx512M", self.args.mem)
-            line = line.replace("Xmx256M", self.args.mem)
-            print line,
+        if prestartfile:
+            for f in prestartfile:
+                log.info('Loading prestart file %s', f)
+                ftype, fpath = fileutils.get_as_local_path(f, 'backup')
+                if ftype != 'file':
+                    raise Stop(50, 'Expected file, found: %s %s' % (
+                        ftype, f))
+                self.run(['load', fpath])
 
         self.configure_ports()
 
@@ -370,6 +367,14 @@ class InstallBaseCommand(Command):
             "server", nargs="?", help="The server directory, or a server-zip, "
             "or the url of a server-zip")
 
+        self.parser.add_argument(
+            "--prestartfile", action="append",
+            help="Run these OMERO commands before starting server, "
+                 "can be repeated")
+        self.parser.add_argument(
+            "--ignoreconfig", action="store_true",
+            help="Don't copy the old configuration file when upgrading")
+
         self.parser = JenkinsParser(self.parser)
         self.parser = DbParser(self.parser)
         self.parser = FileUtilsParser(self.parser)
@@ -387,15 +392,7 @@ class InstallBaseCommand(Command):
         Add(self.parser, "ssl", "%(prefix)s4064")
 
         # new_server.py
-        cfg = os.path.join(os.path.expanduser("~"), "config.xml")
-        Add(self.parser, "mem", "Xmx1024M")
         Add(self.parser, "sym", "OMERO-CURRENT")
-        Add(self.parser, "cfg", cfg)
-
-        web = """[["localhost", %(ssl)s, "%(name)s"]"""
-        web += """, ["gretzky.openmicroscopy.org.uk", 4064, "gretzky"]"""
-        web += """, ["howe.openmicroscopy.org.uk", 4064, "howe"]]"""
-        Add(self.parser, "web", web)
 
         # send_email.py
         Add(self.parser, "subject", "OMERO - %(name)s was upgraded")
