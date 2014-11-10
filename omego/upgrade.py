@@ -307,8 +307,10 @@ class WindowsInstall(Install):
         try:
             return os.path.samefile(targetdir, link)
         except AttributeError:
-            log.warn('WindowsInstall.dir_eq_link may be incorrect')
-            return os.path.normpath(targetdir) == self.readlink(link)
+            same = os.path.normpath(targetdir) == self.readlink(link)
+            if not same:
+                log.warn('WindowsInstall.dir_eq_link may be incorrect')
+            return same
 
     # Symlinks are a bit more complicated on Windows:
     # - You must have (elevated) administrator privileges
