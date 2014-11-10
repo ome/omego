@@ -189,22 +189,22 @@ class TestUpgrade(object):
         self.mox.StubOutWithMock(os, 'readlink')
         self.mox.StubOutWithMock(shutil, 'rmtree')
         self.mox.StubOutWithMock(os, 'unlink')
-        self.mox.StubOutWithMock(upgrade, 'mklink')
+        self.mox.StubOutWithMock(upgrade, 'symlink')
 
         os.path.samefile('new', 'sym').AndReturn(False)
         os.readlink('sym').AndReturn('old/')
         if not skipdelete:
-            shutil.rmtree('old/')
+            shutil.rmtree('old')
         if not skipdeletezip:
             os.unlink('old.zip')
         os.unlink('sym')
-        upgrade.mklink('new')
+        upgrade.symlink('new', 'sym')
         self.mox.ReplayAll()
 
         upgrade.directories()
         self.mox.VerifyAll()
 
-    def test_mklink(self):
+    def test_symlink(self):
         args = self.Args({})
         upgrade = self.PartialMockUnixInstall(args, None)
 
@@ -212,5 +212,5 @@ class TestUpgrade(object):
         os.symlink('new', 'sym')
         self.mox.ReplayAll()
 
-        upgrade.mklink('new')
+        upgrade.symlink('new', 'sym')
         self.mox.VerifyAll()

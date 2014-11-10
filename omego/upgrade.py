@@ -72,7 +72,7 @@ class Install(object):
         if newinstall:
             # Create a symlink to simplify the rest of the logic-
             # just need to check if OLD == NEW
-            self.mklink(server_dir)
+            self.symlink(server_dir, args.sym)
             log.info("Installing %s (%s)...", server_dir, args.sym)
         else:
             log.info("Upgrading %s (%s)...", server_dir, args.sym)
@@ -243,13 +243,12 @@ class UnixInstall(Install):
         self.run("web start")
 
     def directories(self):
-        if os.path.samefile(self.dir, self.args.sym):
+        if self.dir_eq_link(self.dir, self.args.sym):
             log.warn("Upgraded server was the same, not deleting")
             return
 
-        target = os.readlink(self.args.sym)
-        # normpath in case there's a trailing /
-        targetzip = os.path.normpath(target) + '.zip'
+        target = self.readlink(self.args.sym)
+        targetzip = target + '.zip'
 
         if "false" == self.args.skipdelete.lower():
             try:
@@ -265,21 +264,27 @@ class UnixInstall(Install):
             except OSError as e:
                 log.error("Failed to delete %s: %s", targetzip, e)
 
-        self.rmlink()
-        self.mklink(self.dir)
+        self.rmlink(self.args.sym)
+        self.symlink(self.dir, self.args.sym)
 
-    def rmlink(self):
+    def dir_eq_link(self, targetdir, link):
+        return os.path.samefile(targetdir, link)
+
+    def readlink(self, link):
+        return os.path.normpath(os.readlink(link))
+
+    def rmlink(self, link):
         try:
-            os.unlink(self.args.sym)
+            os.unlink(link)
         except OSError as e:
-            log.error("Failed to unlink %s: %s", self.args.sym, e)
+            log.error("Failed to unlink %s: %s", link, e)
             raise
 
-    def mklink(self, dir):
+    def symlink(self, targetdir, link):
         try:
-            os.symlink(dir, self.args.sym)
+            os.symlink(targetdir, link)
         except OSError as e:
-            log.error("Failed to symlink %s to %s: %s", dir, self.args.sym, e)
+            log.error("Failed to symlink %s to %s: %s", targetdir, link, e)
             raise
 
 
