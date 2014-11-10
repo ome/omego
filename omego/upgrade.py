@@ -316,7 +316,7 @@ class WindowsInstall(Install):
         except AttributeError:
             with tempfile.NamedTemporaryFile(dir=targetdir) as test:
                 return os.path.exists(
-                    os.path.join(link), os.path.basename(test.name))
+                    os.path.join(link, os.path.basename(test.name)))
 
     # Symlinks are a bit more complicated on Windows:
     # - You must have (elevated) administrator privileges
