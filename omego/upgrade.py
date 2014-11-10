@@ -313,27 +313,59 @@ class WindowsInstall(Install):
         if "false" == self.args.skipdeletezip.lower():
             log.error("Failed to delete old zip (not supported on Windows)")
 
-        self.rmlink()
-        self.mklink(self.dir)
+        self.rmlink(self.args.sym)
+        self.symlink(self.dir, self.args.sym)
 
-    def rmlink(self):
-        """
-        """
-        if os.path.isdir(self.args.sym):
-            os.rmdir(self.args.sym)
-        else:
-            os.unlink(self.args.sym)
+    # os.path.samefile doesn't work on Python 2
+    # Comparing paths should work unless any of the parent paths are links
 
-    def mklink(self, dir):
-        """
-        """
-        import win32file
-        flag = 1 if os.path.isdir(dir) else 0
+    def dir_eq_link(self, targetdir, link):
         try:
-            win32file.CreateSymbolicLink(self.args.sym, dir, flag)
-        except Exception as e:
-            log.error("Failed to symlink %s to %s: %s", dir, self.args.sym, e)
-            raise
+            return os.path.samefile(targetdir, link)
+        except AttributeError:
+            log.warn('WindowsInstall.dir_eq_link may be incorrect')
+            return os.path.normpath(targetdir) == self.readlink(link)
+
+    # Symlinks are a bit more complicated on Windows:
+    # - You must have (elevated) administrator privileges
+    # - os.symlink doesn't work on Python 2, you must use a win32 call
+    # - os.readlink doesn't work on Python 2, and the solution suggested in
+    #   http://stackoverflow.com/a/7924557 doesn't work for me.
+    #
+    # We need to dereference the symlink in order to delete the old server
+    # so for now just store it in a text file alongside the symlink.
+
+    def readlink(self, link):
+        try:
+            return os.path.normpath(os.readlink(link))
+        except AttributeError:
+            with open('%s.target' % link, 'r') as f:
+                return os.path.normpath(f.read())
+
+    def rmlink(self, link):
+        """
+        """
+        if os.path.isdir(link):
+            os.rmdir(link)
+        else:
+            os.unlink(link)
+
+    def symlink(self, targetdir, link):
+        """
+        """
+        try:
+            os.symlink(targetdir, link)
+        except AttributeError:
+            import win32file
+            flag = 1 if os.path.isdir(targetdir) else 0
+            try:
+                win32file.CreateSymbolicLink(link, targetdir, flag)
+            except Exception as e:
+                log.error(
+                    "Failed to symlink %s to %s: %s", targetdir, link, e)
+                raise
+            with open('%s.target' % link, 'w') as f:
+                f.write(targetdir)
 
     def iisreset(self):
         """
