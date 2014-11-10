@@ -194,6 +194,31 @@ class Install(object):
                  self.args.registry, "--tcp",
                  self.args.tcp, "--ssl", self.args.ssl])
 
+    def directories(self):
+        if self.dir_eq_link(self.dir, self.args.sym):
+            log.warn("Upgraded server was the same, not deleting")
+            return
+
+        target = self.readlink(self.args.sym)
+        targetzip = target + '.zip'
+
+        if "false" == self.args.skipdelete.lower():
+            try:
+                log.info("Deleting %s", target)
+                shutil.rmtree(target)
+            except OSError as e:
+                log.error("Failed to delete %s: %s", target, e)
+
+        if "false" == self.args.skipdeletezip.lower():
+            try:
+                log.info("Deleting %s", targetzip)
+                os.unlink(targetzip)
+            except OSError as e:
+                log.error("Failed to delete %s: %s", targetzip, e)
+
+        self.rmlink(self.args.sym)
+        self.symlink(self.dir, self.args.sym)
+
     def init_db(self):
         if self.args.initdb:
             log.debug('Initialising database')
@@ -242,31 +267,6 @@ class UnixInstall(Install):
     def startweb(self):
         self.run("web start")
 
-    def directories(self):
-        if self.dir_eq_link(self.dir, self.args.sym):
-            log.warn("Upgraded server was the same, not deleting")
-            return
-
-        target = self.readlink(self.args.sym)
-        targetzip = target + '.zip'
-
-        if "false" == self.args.skipdelete.lower():
-            try:
-                log.info("Deleting %s", target)
-                shutil.rmtree(target)
-            except OSError as e:
-                log.error("Failed to delete %s: %s", target, e)
-
-        if "false" == self.args.skipdeletezip.lower():
-            try:
-                log.info("Deleting %s", targetzip)
-                os.unlink(targetzip)
-            except OSError as e:
-                log.error("Failed to delete %s: %s", targetzip, e)
-
-        self.rmlink(self.args.sym)
-        self.symlink(self.dir, self.args.sym)
-
     def dir_eq_link(self, targetdir, link):
         return os.path.samefile(targetdir, link)
 
@@ -299,22 +299,6 @@ class WindowsInstall(Install):
         log.info("Configuring web in IIS")
         self.run("web iis")
         self.iisreset()
-
-    def directories(self):
-        # At present we can't easily dereference symlinks on Windows, so we
-        # can't check whether the new server directory is the same as the old
-        # one, so don't delete anything
-        log.warn(
-            "Should probably move directory to OLD_OMERO and test handles")
-
-        if "false" == self.args.skipdelete.lower():
-            log.error("Failed to delete old server (not supported on Windows)")
-
-        if "false" == self.args.skipdeletezip.lower():
-            log.error("Failed to delete old zip (not supported on Windows)")
-
-        self.rmlink(self.args.sym)
-        self.symlink(self.dir, self.args.sym)
 
     # os.path.samefile doesn't work on Python 2
     # Comparing paths should work unless any of the parent paths are links
