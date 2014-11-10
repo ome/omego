@@ -3,6 +3,7 @@
 
 import os
 import shutil
+import tempfile
 import logging
 
 import smtplib
@@ -195,21 +196,26 @@ class Install(object):
                  self.args.tcp, "--ssl", self.args.ssl])
 
     def directories(self):
-        if self.dir_eq_link(self.dir, self.args.sym):
+        if self.samedir(self.dir, self.args.sym):
             log.warn("Upgraded server was the same, not deleting")
             return
 
-        target = self.readlink(self.args.sym)
-        targetzip = target + '.zip'
+        try:
+            target = self.readlink(self.args.sym)
+            targetzip = target + '.zip'
+        except IOError:
+            log.error('Unable to get symlink target: %s', self.args.sym)
+            target = None
+            targetzip = None
 
-        if "false" == self.args.skipdelete.lower():
+        if "false" == self.args.skipdelete.lower() and target:
             try:
                 log.info("Deleting %s", target)
                 shutil.rmtree(target)
             except OSError as e:
                 log.error("Failed to delete %s: %s", target, e)
 
-        if "false" == self.args.skipdeletezip.lower():
+        if "false" == self.args.skipdeletezip.lower() and targetzip:
             try:
                 log.info("Deleting %s", targetzip)
                 os.unlink(targetzip)
@@ -267,7 +273,7 @@ class UnixInstall(Install):
     def startweb(self):
         self.run("web start")
 
-    def dir_eq_link(self, targetdir, link):
+    def samedir(self, targetdir, link):
         return os.path.samefile(targetdir, link)
 
     def readlink(self, link):
@@ -301,16 +307,16 @@ class WindowsInstall(Install):
         self.iisreset()
 
     # os.path.samefile doesn't work on Python 2
-    # Comparing paths should work unless any of the parent paths are links
+    # Create a tempfile in one directory and test for it's existence in the
+    # other
 
-    def dir_eq_link(self, targetdir, link):
+    def samedir(self, targetdir, link):
         try:
             return os.path.samefile(targetdir, link)
         except AttributeError:
-            same = os.path.normpath(targetdir) == self.readlink(link)
-            if not same:
-                log.warn('WindowsInstall.dir_eq_link may be incorrect')
-            return same
+            with tempfile.NamedTemporaryFile(dir=targetdir) as test:
+                return os.path.exists(
+                    os.path.join(link), os.path.basename(test.name))
 
     # Symlinks are a bit more complicated on Windows:
     # - You must have (elevated) administrator privileges
