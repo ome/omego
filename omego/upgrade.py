@@ -3,6 +3,7 @@
 
 import os
 import shutil
+import tempfile
 import logging
 
 import smtplib
@@ -72,7 +73,7 @@ class Install(object):
         if newinstall:
             # Create a symlink to simplify the rest of the logic-
             # just need to check if OLD == NEW
-            self.mklink(server_dir)
+            self.symlink(server_dir, args.sym)
             log.info("Installing %s (%s)...", server_dir, args.sym)
         else:
             log.info("Upgrading %s (%s)...", server_dir, args.sym)
@@ -194,6 +195,36 @@ class Install(object):
                  self.args.registry, "--tcp",
                  self.args.tcp, "--ssl", self.args.ssl])
 
+    def directories(self):
+        if self.samedir(self.dir, self.args.sym):
+            log.warn("Upgraded server was the same, not deleting")
+            return
+
+        try:
+            target = self.readlink(self.args.sym)
+            targetzip = target + '.zip'
+        except IOError:
+            log.error('Unable to get symlink target: %s', self.args.sym)
+            target = None
+            targetzip = None
+
+        if "false" == self.args.skipdelete.lower() and target:
+            try:
+                log.info("Deleting %s", target)
+                shutil.rmtree(target)
+            except OSError as e:
+                log.error("Failed to delete %s: %s", target, e)
+
+        if "false" == self.args.skipdeletezip.lower() and targetzip:
+            try:
+                log.info("Deleting %s", targetzip)
+                os.unlink(targetzip)
+            except OSError as e:
+                log.error("Failed to delete %s: %s", targetzip, e)
+
+        self.rmlink(self.args.sym)
+        self.symlink(self.dir, self.args.sym)
+
     def init_db(self):
         if self.args.initdb:
             log.debug('Initialising database')
@@ -242,44 +273,24 @@ class UnixInstall(Install):
     def startweb(self):
         self.run("web start")
 
-    def directories(self):
-        if os.path.samefile(self.dir, self.args.sym):
-            log.warn("Upgraded server was the same, not deleting")
-            return
+    def samedir(self, targetdir, link):
+        return os.path.samefile(targetdir, link)
 
-        target = os.readlink(self.args.sym)
-        # normpath in case there's a trailing /
-        targetzip = os.path.normpath(target) + '.zip'
+    def readlink(self, link):
+        return os.path.normpath(os.readlink(link))
 
-        if "false" == self.args.skipdelete.lower():
-            try:
-                log.info("Deleting %s", target)
-                shutil.rmtree(target)
-            except OSError as e:
-                log.error("Failed to delete %s: %s", target, e)
-
-        if "false" == self.args.skipdeletezip.lower():
-            try:
-                log.info("Deleting %s", targetzip)
-                os.unlink(targetzip)
-            except OSError as e:
-                log.error("Failed to delete %s: %s", targetzip, e)
-
-        self.rmlink()
-        self.mklink(self.dir)
-
-    def rmlink(self):
+    def rmlink(self, link):
         try:
-            os.unlink(self.args.sym)
+            os.unlink(link)
         except OSError as e:
-            log.error("Failed to unlink %s: %s", self.args.sym, e)
+            log.error("Failed to unlink %s: %s", link, e)
             raise
 
-    def mklink(self, dir):
+    def symlink(self, targetdir, link):
         try:
-            os.symlink(dir, self.args.sym)
+            os.symlink(targetdir, link)
         except OSError as e:
-            log.error("Failed to symlink %s to %s: %s", dir, self.args.sym, e)
+            log.error("Failed to symlink %s to %s: %s", targetdir, link, e)
             raise
 
 
@@ -295,40 +306,58 @@ class WindowsInstall(Install):
         self.run("web iis")
         self.iisreset()
 
-    def directories(self):
-        # At present we can't easily dereference symlinks on Windows, so we
-        # can't check whether the new server directory is the same as the old
-        # one, so don't delete anything
-        log.warn(
-            "Should probably move directory to OLD_OMERO and test handles")
+    # os.path.samefile doesn't work on Python 2
+    # Create a tempfile in one directory and test for it's existence in the
+    # other
 
-        if "false" == self.args.skipdelete.lower():
-            log.error("Failed to delete old server (not supported on Windows)")
-
-        if "false" == self.args.skipdeletezip.lower():
-            log.error("Failed to delete old zip (not supported on Windows)")
-
-        self.rmlink()
-        self.mklink(self.dir)
-
-    def rmlink(self):
-        """
-        """
-        if os.path.isdir(self.args.sym):
-            os.rmdir(self.args.sym)
-        else:
-            os.unlink(self.args.sym)
-
-    def mklink(self, dir):
-        """
-        """
-        import win32file
-        flag = 1 if os.path.isdir(dir) else 0
+    def samedir(self, targetdir, link):
         try:
-            win32file.CreateSymbolicLink(self.args.sym, dir, flag)
-        except Exception as e:
-            log.error("Failed to symlink %s to %s: %s", dir, self.args.sym, e)
-            raise
+            return os.path.samefile(targetdir, link)
+        except AttributeError:
+            with tempfile.NamedTemporaryFile(dir=targetdir) as test:
+                return os.path.exists(
+                    os.path.join(link, os.path.basename(test.name)))
+
+    # Symlinks are a bit more complicated on Windows:
+    # - You must have (elevated) administrator privileges
+    # - os.symlink doesn't work on Python 2, you must use a win32 call
+    # - os.readlink doesn't work on Python 2, and the solution suggested in
+    #   http://stackoverflow.com/a/7924557 doesn't work for me.
+    #
+    # We need to dereference the symlink in order to delete the old server
+    # so for now just store it in a text file alongside the symlink.
+
+    def readlink(self, link):
+        try:
+            return os.path.normpath(os.readlink(link))
+        except AttributeError:
+            with open('%s.target' % link, 'r') as f:
+                return os.path.normpath(f.read())
+
+    def rmlink(self, link):
+        """
+        """
+        if os.path.isdir(link):
+            os.rmdir(link)
+        else:
+            os.unlink(link)
+
+    def symlink(self, targetdir, link):
+        """
+        """
+        try:
+            os.symlink(targetdir, link)
+        except AttributeError:
+            import win32file
+            flag = 1 if os.path.isdir(targetdir) else 0
+            try:
+                win32file.CreateSymbolicLink(link, targetdir, flag)
+            except Exception as e:
+                log.error(
+                    "Failed to symlink %s to %s: %s", targetdir, link, e)
+                raise
+            with open('%s.target' % link, 'w') as f:
+                f.write(targetdir)
 
     def iisreset(self):
         """
