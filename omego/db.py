@@ -8,8 +8,9 @@ from glob import glob
 import re
 
 from external import External, RunException
-from yaclifw.framework import Command, Stop
-from env import EnvDefault, DbParser
+from yaclifw.framework import Stop
+from env import OmegoCommand
+from env import Add, DbParser
 
 log = logging.getLogger("omego.db")
 
@@ -168,20 +169,19 @@ class DbAdmin(object):
         return stdout
 
 
-class DbCommand(Command):
+class DbCommand(OmegoCommand):
     """
     Administer an OMERO database
     """
 
     NAME = "db"
 
-    def __init__(self, sub_parsers):
-        super(DbCommand, self).__init__(sub_parsers)
+    def __init__(self, sub_parsers, parents):
+        super(DbCommand, self).__init__(sub_parsers, parents)
 
         self.parser = DbParser(self.parser)
         self.parser.add_argument("-n", "--dry-run", action="store_true")
 
-        Add = EnvDefault.add
         # TODO: Kind of duplicates Upgrade args.sym/args.server
         Add(self.parser, 'serverdir', 'Root directory of the server')
         self.parser.add_argument(

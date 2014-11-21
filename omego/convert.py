@@ -36,7 +36,7 @@ Parser for the gene-ontology to OMERO's tag format:
 """
 
 
-from yaclifw.framework import Command
+from env import OmegoCommand
 
 import logging
 import json
@@ -137,15 +137,15 @@ def generate(tagGroups, terms):
     return json.dumps(rv, indent=2)
 
 
-class ConvertCommand(Command):
+class ConvertCommand(OmegoCommand):
     """
     Convert between various formats
     """
 
     NAME = "convert"
 
-    def __init__(self, sub_parsers):
-        super(ConvertCommand, self).__init__(sub_parsers)
+    def __init__(self, sub_parsers, parents):
+        super(ConvertCommand, self).__init__(sub_parsers, parents)
 
         self.parser.add_argument("--format", default="go", choices=["go"],
                                  help="input file format")

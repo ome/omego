@@ -11,9 +11,10 @@ import smtplib
 from artifacts import Artifacts
 from db import DbAdmin
 from external import External
-from yaclifw.framework import Command, Stop
+from yaclifw.framework import Stop
 import fileutils
-from env import EnvDefault, DbParser, FileUtilsParser, JenkinsParser
+from env import OmegoCommand
+from env import Add, DbParser, FileUtilsParser, JenkinsParser
 from env import WINDOWS
 from env import HOSTNAME
 
@@ -366,14 +367,14 @@ class WindowsInstall(Install):
         self.external.run('iisreset', [])
 
 
-class InstallBaseCommand(Command):
+class InstallBaseCommand(OmegoCommand):
     """
     Base command class to install or upgrade an OMERO server
     Do not call this class directly
     """
 
-    def __init__(self, sub_parsers):
-        super(InstallBaseCommand, self).__init__(sub_parsers)
+    def __init__(self, sub_parsers, parents):
+        super(InstallBaseCommand, self).__init__(sub_parsers, parents)
 
         # TODO: these are very internal values and should be refactored out
         # to a configure file.
@@ -408,7 +409,6 @@ class InstallBaseCommand(Command):
         self.parser = DbParser(self.parser)
         self.parser = FileUtilsParser(self.parser)
 
-        Add = EnvDefault.add
         Add(self.parser, "hostname", HOSTNAME)
         Add(self.parser, "name", name)
         Add(self.parser, "address", address)
@@ -484,8 +484,8 @@ class InstallCommand(InstallBaseCommand):
 
     NAME = "install"
 
-    def __init__(self, sub_parsers):
-        super(InstallCommand, self).__init__(sub_parsers)
+    def __init__(self, sub_parsers, parents):
+        super(InstallCommand, self).__init__(sub_parsers, parents)
         self.parser.add_argument(
             "--initdb", action="store_true", help="Initialise the database")
 
@@ -497,7 +497,7 @@ class UpgradeCommand(InstallBaseCommand):
 
     NAME = "upgrade"
 
-    def __init__(self, sub_parsers):
-        super(UpgradeCommand, self).__init__(sub_parsers)
+    def __init__(self, sub_parsers, parents):
+        super(UpgradeCommand, self).__init__(sub_parsers, parents)
         self.parser.add_argument(
             "--upgradedb", action="store_true", help="Upgrade the database")
