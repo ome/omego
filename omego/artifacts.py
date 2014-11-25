@@ -140,7 +140,7 @@ class Artifacts(object):
     @classmethod
     def get_artifacts_list(self):
         return {'server': r'OMERO\.server.*\.zip',
-                'source': r'OMERO\.source.*\.zip',
+                'source': r'openmicroscopy.*\.zip',
                 'win': r'OMERO\.clients.*\.win\.zip',
                 'linux': r'OMERO\.clients.*\.linux\.zip',
                 'mac': r'OMERO\.clients.*\.mac\.zip',
