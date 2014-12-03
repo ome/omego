@@ -78,7 +78,7 @@ def read(url, **kwargs):
         response.close()
 
 
-def download(url, filename=None, print_progress=0, delete_fail=False,
+def download(url, filename=None, print_progress=0, delete_fail=True,
              **kwargs):
     """
     Download a file, optionally printing a simple progress bar
