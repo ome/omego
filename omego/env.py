@@ -4,7 +4,7 @@
 import os
 import argparse
 import platform
-import subprocess
+import socket
 
 
 ###########################################################################
@@ -12,10 +12,7 @@ import subprocess
 ###########################################################################
 
 WINDOWS = platform.system() == "Windows"
-p = subprocess.Popen(["hostname"], stdout=subprocess.PIPE)
-HOSTNAME = p.communicate()[0].strip()
-del p
-
+HOSTNAME = socket.gethostname()
 IS_JENKINS_JOB = all([key in os.environ for key in
                       ["JOB_NAME", "BUILD_NUMBER", "BUILD_URL"]])
 if IS_JENKINS_JOB:
