@@ -6,8 +6,6 @@ import shutil
 import tempfile
 import logging
 
-import smtplib
-
 from artifacts import Artifacts
 from db import DbAdmin
 from external import External

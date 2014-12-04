@@ -4,7 +4,6 @@
 import os
 import argparse
 import platform
-import socket
 
 
 ###########################################################################
