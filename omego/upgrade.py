@@ -15,38 +15,8 @@ from yaclifw.framework import Command, Stop
 import fileutils
 from env import EnvDefault, DbParser, FileUtilsParser, JenkinsParser
 from env import WINDOWS
-from env import HOSTNAME
 
 log = logging.getLogger("omego.upgrade")
-
-
-class Email(object):
-
-    def __init__(self, artifacts, args):
-
-        TO = args.recipients
-        FROM = args.sender
-        text = "The OMERO.server on %s has been upgraded. \n" \
-               "=========================\n" \
-               "THIS SERVER REQUIRES VPN!\n" \
-               "=========================\n" \
-               "Please download suitable clients from: \n " \
-               "\n - Windows: \n %s\n " \
-               "\n - MAC: \n %s\n " \
-               "\n - Linux: \n %s\n " \
-               "\n - Webclient available on %s. \n \n " %\
-               (args.server, artifacts.win, artifacts.mac,
-                artifacts.linux, args.weburl)
-        BODY = "\r\n".join(("From: %s" % FROM,
-                            "To: %s" % TO,
-                            "Subject: %s" % args.subject,
-                            "",
-                            text))
-        server = smtplib.SMTP(args.smtp_server)
-        server.sendmail(FROM, args.recipients, BODY)
-        server.quit()
-
-        log.info("Mail was sent to: %s", args.recipients)
 
 
 class Install(object):
@@ -375,22 +345,6 @@ class InstallBaseCommand(Command):
     def __init__(self, sub_parsers):
         super(InstallBaseCommand, self).__init__(sub_parsers)
 
-        # TODO: these are very internal values and should be refactored out
-        # to a configure file.
-        skipemail = "false"
-        name = HOSTNAME
-        if HOSTNAME == "gretzky":
-            address = "gretzky.openmicroscopy.org.uk"
-        elif HOSTNAME == "howe":
-            address = "howe.openmicroscopy.org.uk"
-        elif HOSTNAME == "ome-dev-svr":
-            name = "win-2k8"
-            address = "bp.openmicroscopy.org.uk"
-        else:
-            address = HOSTNAME
-            # Don't send emails if we're not on a known host.
-            skipemail = "true"
-
         self.parser.add_argument("-n", "--dry-run", action="store_true")
         self.parser.add_argument(
             "server", nargs="?", help="The server directory, or a server-zip, "
@@ -409,10 +363,6 @@ class InstallBaseCommand(Command):
         self.parser = FileUtilsParser(self.parser)
 
         Add = EnvDefault.add
-        Add(self.parser, "hostname", HOSTNAME)
-        Add(self.parser, "name", name)
-        Add(self.parser, "address", address)
-        Add(self.parser, "skipemail", skipemail)
 
         # Ports
         Add(self.parser, "prefix", "")
@@ -420,18 +370,7 @@ class InstallBaseCommand(Command):
         Add(self.parser, "tcp", "%(prefix)s4063")
         Add(self.parser, "ssl", "%(prefix)s4064")
 
-        # new_server.py
         Add(self.parser, "sym", "OMERO-CURRENT")
-
-        # send_email.py
-        Add(self.parser, "subject", "OMERO - %(name)s was upgraded")
-        Add(self.parser, "sender", "sysadmin@openmicroscopy.org")
-        Add(self.parser, "recipients",
-            "ome-nitpick@lists.openmicroscopy.org.uk",
-            help="Comma-separated list of recipients")
-        Add(self.parser, "server", "%(name)s (%(address)s)")
-        Add(self.parser, "smtp_server", "smtp.dundee.ac.uk")
-        Add(self.parser, "weburl", "http://%(address)s/omero/webclient/")
 
         Add(self.parser, "skipweb", "false")
         Add(self.parser, "skipdelete", "true")
@@ -469,12 +408,6 @@ class InstallBaseCommand(Command):
             WindowsInstall(self.NAME, args)
         else:
             UnixInstall(self.NAME, args)
-
-        if "false" == args.skipemail.lower():
-            artifacts = Artifacts(args)
-            Email(artifacts, args)
-        else:
-            log.info("Skipping email")
 
 
 class InstallCommand(InstallBaseCommand):
