@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from datetime import datetime
 import os
 import logging
 import re
 import urllib2
+import tempfile
 from zipfile import ZipFile
 
 log = logging.getLogger("omego.fileutils")
@@ -76,12 +78,15 @@ def read(url, **kwargs):
         response.close()
 
 
-def download(url, filename=None, print_progress=0, **kwargs):
+def download(url, filename=None, print_progress=0, delete_fail=True,
+             **kwargs):
     """
     Download a file, optionally printing a simple progress bar
     url: The URL to download
     filename: The filename to save to, default is to use the URL basename
     print_progress: The length of the progress bar, use 0 to disable
+    delete_fail: If True delete the file if the download was not successful,
+      default is to keep the temporary file
     return: The downloaded filename
     """
     blocksize = 1024 * 1024
@@ -94,22 +99,28 @@ def download(url, filename=None, print_progress=0, **kwargs):
     if not filename:
         filename = os.path.basename(url)
 
+    output = None
     try:
         total = int(response.headers['Content-Length'])
 
         if print_progress:
             progress = ProgressBar(print_progress, total)
 
-        with open(filename, 'wb') as output:
+        with tempfile.NamedTemporaryFile(
+                prefix=filename + '.', dir='.', delete=False) as output:
             while downloaded < total:
                 block = response.read(blocksize)
                 output.write(block)
                 downloaded += len(block)
                 if progress:
                     progress.update(downloaded)
+        os.rename(output.name, filename)
+        output = None
         return filename
     finally:
         response.close()
+        if delete_fail and output:
+            os.unlink(output.name)
 
 
 def rename_backup(name, suffix='.bak'):
@@ -125,6 +136,17 @@ def rename_backup(name, suffix='.bak'):
     log.info('Renaming %s to %s', name, newname)
     os.rename(name, newname)
     return newname
+
+
+def timestamp_filename(basename, ext=None):
+    """
+    Return a string of the form [basename-TIMESTAMP.ext]
+    where TIMESTAMP is of the form YYYYMMDD-HHMMSS-MILSEC
+    """
+    dt = datetime.now().strftime('%Y%m%d-%H%M%S-%f')
+    if ext:
+        return '%s-%s.%s' % (basename, dt, ext)
+    return '%s-%s' % (basename, dt)
 
 
 def is_archive(filename):
