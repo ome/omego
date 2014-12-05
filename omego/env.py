@@ -4,7 +4,6 @@
 import os
 import argparse
 import platform
-import subprocess
 
 
 ###########################################################################
@@ -12,10 +11,6 @@ import subprocess
 ###########################################################################
 
 WINDOWS = platform.system() == "Windows"
-p = subprocess.Popen(["hostname"], stdout=subprocess.PIPE)
-HOSTNAME = p.communicate()[0].strip()
-del p
-
 IS_JENKINS_JOB = all([key in os.environ for key in
                       ["JOB_NAME", "BUILD_NUMBER", "BUILD_URL"]])
 if IS_JENKINS_JOB:
@@ -82,7 +77,7 @@ class DbParser(argparse.ArgumentParser):
             'Arguments related to administering the database')
 
         Add = EnvDefault.add
-        Add(group, "dbhost", HOSTNAME,
+        Add(group, "dbhost", 'localhost',
             help="Hostname of the OMERO database server")
         # No default dbname to prevent inadvertent upgrading of databases
         Add(group, "dbname", None,
