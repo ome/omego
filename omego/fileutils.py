@@ -224,8 +224,9 @@ def unzip(filename, match_dir=False, destdir=None):
     for info in z.infolist():
         log.debug('Extracting %s to %s', info.filename, destdir)
         z.extract(info, destdir)
-        os.chmod(os.path.join(destdir, info.filename),
-                 info.external_attr >> 16 & 4095)
+        perms = info.external_attr >> 16 & 4095
+        if perms > 0:
+            os.chmod(os.path.join(destdir, info.filename), perms)
 
     return os.path.join(destdir, unzipped)
 
