@@ -36,6 +36,7 @@ from upgrade import InstallCommand
 from upgrade import UpgradeCommand
 from artifacts import DownloadCommand
 from db import DbCommand
+from cross import CrossCommand
 
 
 class OmegoVersion(Version):
@@ -54,6 +55,7 @@ def entry_point():
             (ConvertCommand.NAME, ConvertCommand),
             (DownloadCommand.NAME, DownloadCommand),
             (DbCommand.NAME, DbCommand),
+            (CrossCommand.NAME, CrossCommand),
             (Version.NAME, OmegoVersion)])
     except Stop, stop:
         if stop.rc != 0:
