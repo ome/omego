@@ -31,10 +31,11 @@ import sys
 
 class PyTest(TestCommand):
     user_options = TestCommand.user_options + \
-        [('test-pythonpath=', 'p', "prepend 'pythonpath' to PYTHONPATH"),
+        [('test-path=', 't', "base dir for test collection"),
+         ('test-pythonpath=', 'p', "prepend 'pythonpath' to PYTHONPATH"),
          ('test-string=', 'k', "only run tests including 'string'"),
          ('test-marker=', 'm', "only run tests including 'marker'"),
-         ('test-path=', 's', "base dir for test collection"),
+         ('test-no-capture', 's', "don't suppress test output"),
          ('test-failfast', 'x', "Exit on first error"),
          ('test-verbose', 'v', "more verbose output"),
          ('test-quiet', 'q', "less verbose output"),
