@@ -141,9 +141,10 @@ class Artifacts(object):
     def get_artifacts_list(self):
         return {'server': r'OMERO\.server.*\.zip',
                 'source': r'openmicroscopy.*\.zip',
-                'win': r'OMERO\.clients.*\.win\.zip',
-                'linux': r'OMERO\.clients.*\.linux\.zip',
-                'mac': r'OMERO\.clients.*\.mac\.zip',
+                'win': r'OMERO\.insight.*-win\.zip',
+                'linux': r'OMERO\.insight.*-linux\.zip',
+                'mac': r'OMERO\.insight.*-mac_Java7\+\.zip',
+                'mac6': r'OMERO\.insight.*-mac_Java6\.zip',
                 'matlab': r'OMERO\.matlab.*\.zip',
                 'cpp': r'OMERO\.cpp.*\.zip',
                 'python': r'OMERO\.py.*\.zip',
