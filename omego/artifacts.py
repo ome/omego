@@ -53,7 +53,7 @@ class Artifacts(object):
         for artifact in artifacts:
             filename = artifact.find("fileName").text
 
-            for key, value in patterns.iteritems():
+            for key, value in patterns:
                 if re.compile(value).match(filename):
                     rel_path = base_url + artifact.find("relativePath").text
                     setattr(self, key, rel_path)
@@ -139,15 +139,17 @@ class Artifacts(object):
 
     @classmethod
     def get_artifacts_list(self):
-        return {'server': r'OMERO\.server.*\.zip',
-                'source': r'openmicroscopy.*\.zip',
-                'win': r'OMERO\.clients.*\.win\.zip',
-                'linux': r'OMERO\.clients.*\.linux\.zip',
-                'mac': r'OMERO\.clients.*\.mac\.zip',
-                'matlab': r'OMERO\.matlab.*\.zip',
-                'cpp': r'OMERO\.cpp.*\.zip',
-                'python': r'OMERO\.py.*\.zip',
-                }
+        return [
+            ('win', r'OMERO\.insight.*-win\.zip'),
+            ('mac', r'OMERO\.insight.*-mac_Java7\+\.zip'),
+            ('mac6', r'OMERO\.insight.*-mac_Java6\.zip'),
+            ('linux', r'OMERO\.insight.*-linux\.zip'),
+            ('matlab', r'OMERO\.matlab.*\.zip'),
+            ('server', r'OMERO\.server.*\.zip'),
+            ('python', r'OMERO\.py.*\.zip'),
+            ('source', r'openmicroscopy.*\.zip'),
+            ('cpp', r'OMERO\.cpp.*\.zip'),
+            ]
 
     def download(self, component):
         if not hasattr(self, component) or getattr(self, component) is None:
@@ -200,7 +202,7 @@ class DownloadCommand(Command):
         self.parser.add_argument("-n", "--dry-run", action="store_true")
         self.parser.add_argument(
             "artifact",
-            choices=Artifacts.get_artifacts_list().keys(),
+            choices=[kv[0] for kv in Artifacts.get_artifacts_list()],
             help="The artifact to download from the CI server")
 
         self.parser = JenkinsParser(self.parser)
