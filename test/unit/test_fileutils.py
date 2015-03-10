@@ -52,14 +52,6 @@ class TestFileutils(object):
         def close(self):
             pass
 
-    class MockZipfile(object):
-
-        def infolist(self):
-            pass
-
-        def extract(self):
-            pass
-
     # TODO
     # def test_open_url
 
@@ -203,8 +195,7 @@ class TestFileutils(object):
         self.mox.StubOutWithMock(os, 'walk')
         self.mox.StubOutWithMock(os.path, 'isfile')
 
-        files = ['test', 'test/a', 'test/b', 'test/b/c']
-
+        # files = ['test', 'test/a', 'test/b', 'test/b/c']
         os.walk('test').AndReturn([
             ('test', ['b'], ['a']), ('test/b', [], ['c'])])
         os.path.isfile('test').AndReturn(False)
@@ -216,7 +207,7 @@ class TestFileutils(object):
         mockzip.close()
 
         self.mox.ReplayAll()
-        archive = fileutils.zip('path/to/test.zip', ['test'], 'test')
+        fileutils.zip('path/to/test.zip', ['test'], 'test')
         self.mox.VerifyAll()
 
     @pytest.mark.parametrize('exists', [True, False])
