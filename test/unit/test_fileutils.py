@@ -198,6 +198,27 @@ class TestFileutils(object):
 
         self.mox.VerifyAll()
 
+    def test_zip(self):
+        self.mox.StubOutClassWithMocks(zipfile, 'ZipFile')
+        self.mox.StubOutWithMock(os, 'walk')
+        self.mox.StubOutWithMock(os.path, 'isfile')
+
+        files = ['test', 'test/a', 'test/b', 'test/b/c']
+
+        os.walk('test').AndReturn([
+            ('test', ['b'], ['a']), ('test/b', [], ['c'])])
+        os.path.isfile('test').AndReturn(False)
+
+        mockzip = zipfile.ZipFile(
+            'path/to/test.zip', 'w', zipfile.ZIP_DEFLATED)
+        mockzip.write('test/a', 'a')
+        mockzip.write('test/b/c', 'b/c')
+        mockzip.close()
+
+        self.mox.ReplayAll()
+        archive = fileutils.zip('path/to/test.zip', ['test'], 'test')
+        self.mox.VerifyAll()
+
     @pytest.mark.parametrize('exists', [True, False])
     @pytest.mark.parametrize('remote', [True, False])
     @pytest.mark.parametrize('overwrite', ['error', 'backup', 'keep'])

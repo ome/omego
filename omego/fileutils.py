@@ -252,6 +252,8 @@ def zip(filename, paths, strip_prefix=''):
         arcname = f
         if arcname.startswith(strip_prefix):
             arcname = arcname[len(strip_prefix):]
+        if arcname.startswith(os.path.sep):
+            arcname = arcname[1:]
         z.write(f, arcname)
 
     z.close()
