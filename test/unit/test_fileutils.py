@@ -24,6 +24,7 @@ import mox
 
 import os
 import re
+import zipfile
 
 from omego import fileutils
 
@@ -173,14 +174,14 @@ class TestFileutils(object):
                 self.filename = name
                 self.external_attr = perms << 16
 
-        self.mox.StubOutClassWithMocks(fileutils, 'ZipFile')
+        self.mox.StubOutClassWithMocks(zipfile, 'ZipFile')
         self.mox.StubOutWithMock(os, 'chmod')
 
         files = ['test/', 'test/a', 'test/b/', 'test/b/c']
         perms = [0755, 0644, 0755, 0550]
         infos = [MockZipInfo(f, p) for (f, p) in zip(files, perms)]
 
-        mockzip = fileutils.ZipFile('path/to/test.zip')
+        mockzip = zipfile.ZipFile('path/to/test.zip')
         mockzip.namelist().AndReturn(files)
         mockzip.infolist().AndReturn(infos)
         for n in xrange(4):

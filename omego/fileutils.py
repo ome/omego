@@ -7,7 +7,7 @@ import logging
 import re
 import urllib2
 import tempfile
-from zipfile import ZipFile
+import zipfile
 
 log = logging.getLogger("omego.fileutils")
 
@@ -207,7 +207,7 @@ def unzip(filename, match_dir=False, destdir=None):
     if not destdir:
         destdir = '.'
 
-    z = ZipFile(filename)
+    z = zipfile.ZipFile(filename)
     unzipped = '.'
 
     if match_dir:
@@ -229,6 +229,32 @@ def unzip(filename, match_dir=False, destdir=None):
             os.chmod(os.path.join(destdir, info.filename), perms)
 
     return os.path.join(destdir, unzipped)
+
+
+def zip(filename, paths, strip_prefix=''):
+    """
+    Create a new zip archive containing files
+    filename: The name of the zip file to be created
+    paths: A list of files or directories
+    strip_dir: Remove this prefix from all file-paths before adding to zip
+    """
+    filelist = set()
+    for p in paths:
+        if os.path.isfile(p):
+            filelist.add(p)
+        else:
+            for root, dirs, files in os.walk(p):
+                for f in files:
+                    filelist.add(os.path.join(root, f))
+
+    z = zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED)
+    for f in sorted(filelist):
+        arcname = f
+        if arcname.startswith(strip_prefix):
+            arcname = arcname[len(strip_prefix):]
+        z.write(f, arcname)
+
+    z.close()
 
 
 def get_as_local_path(path, overwrite, progress=0,
