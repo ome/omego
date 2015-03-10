@@ -58,6 +58,7 @@ class Install(object):
 
         if not newinstall:
             self.stop()
+            self.archive_logs()
 
         copyold = not newinstall and not args.ignoreconfig
         self.configure(copyold, args.prestartfile)
@@ -162,6 +163,17 @@ class Install(object):
         self.run(["admin", "ports", "--skipcheck", "--registry",
                  self.args.registry, "--tcp",
                  self.args.tcp, "--ssl", self.args.ssl])
+
+    def archive_logs(self):
+        if self.args.archivelogs:
+            logdir = os.path.join(self.args.sym, 'var', 'log')
+            if isinstance(self.args.archivelogs, int):
+                archive = fileutils.timestamp_filename('logs', 'zip')
+            else:
+                archive = self.args.archivelogs
+            fileutils.zip(self.logzip, logdir, os.path.join(
+                self.args.sym, 'var'))
+            return archive
 
     def directories(self):
         if self.samedir(self.dir, self.args.sym):
@@ -432,3 +444,7 @@ class UpgradeCommand(InstallBaseCommand):
         super(UpgradeCommand, self).__init__(sub_parsers)
         self.parser.add_argument(
             "--upgradedb", action="store_true", help="Upgrade the database")
+        self.parser.add_argument(
+            "--archivelogs", nargs="?", const=1, help=(
+                "Archive the logs directory (if no filename given use "
+                "logs-TIMESTAMP.zip)"))
