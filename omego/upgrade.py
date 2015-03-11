@@ -171,8 +171,8 @@ class Install(object):
                 archive = fileutils.timestamp_filename('logs', 'zip')
             else:
                 archive = self.args.archivelogs
-            fileutils.zip(self.logzip, logdir, os.path.join(
-                self.args.sym, 'var'))
+            log.info('Archiving logs to %s', archive)
+            fileutils.zip(archive, logdir, os.path.join(self.args.sym, 'var'))
             return archive
 
     def directories(self):

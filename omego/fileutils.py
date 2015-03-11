@@ -238,6 +238,9 @@ def zip(filename, paths, strip_prefix=''):
     paths: A list of files or directories
     strip_dir: Remove this prefix from all file-paths before adding to zip
     """
+    if isinstance(paths, basestring):
+        paths = [paths]
+
     filelist = set()
     for p in paths:
         if os.path.isfile(p):
@@ -254,6 +257,7 @@ def zip(filename, paths, strip_prefix=''):
             arcname = arcname[len(strip_prefix):]
         if arcname.startswith(os.path.sep):
             arcname = arcname[1:]
+        log.debug('Adding %s to %s[%s]', f, filename, arcname)
         z.write(f, arcname)
 
     z.close()
