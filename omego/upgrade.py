@@ -226,7 +226,7 @@ class Install(object):
         Runs a command as if from the command-line
         without the need for using popen or subprocess
         """
-        if isinstance(command, str):
+        if isinstance(command, basestring):
             command = command.split()
         else:
             command = list(command)
@@ -237,7 +237,7 @@ class Install(object):
         Runs the omero command-line client with an array of arguments using the
         old environment
         """
-        if isinstance(command, str):
+        if isinstance(command, basestring):
             command = command.split()
         self.external.omero_bin(command)
 
@@ -406,7 +406,7 @@ class InstallBaseCommand(Command):
             if dest in ("help", "verbose", "quiet"):
                 continue
             value = getattr(args, dest)
-            if value and isinstance(value, (str, unicode)):
+            if value and isinstance(value, basestring):
                 replacement = value % dict(args._get_kwargs())
                 log.debug("% 20s => %s" % (dest, replacement))
                 setattr(args, dest, replacement)
