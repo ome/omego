@@ -18,6 +18,8 @@ except ImportError:
 
 log = logging.getLogger("omego.artifacts")
 
+downloads_latest = 'http://downloads.openmicroscopy.org/latest'
+
 
 class ArtifactException(Exception):
 
@@ -31,6 +33,68 @@ class ArtifactException(Exception):
 
 
 class Artifacts(object):
+
+    def __init__(self, args):
+        self.args = args
+        if args.release:
+            self.artifacts = ReleaseArtifacts(args)
+        else:
+            self.artifacts = JenkinsArtifacts(args)
+
+    @classmethod
+    def get_artifacts_list(self):
+        return [
+            'win',
+            'mac',
+            'mac6',
+            'linux',
+            'matlab',
+            'server',
+            'python',
+            'source',
+            'cpp',
+            ]
+
+    def download(self, component):
+        if (not hasattr(self.artifacts, component) or
+                not getattr(self.artifacts, component)):
+            raise Exception("No %s found" % component)
+
+        componenturl = getattr(self.artifacts, component)
+        filename = os.path.basename(componenturl)
+        unzipped = filename.replace(".zip", "")
+
+        if self.args.dry_run:
+            return
+
+        if os.path.exists(unzipped):
+            return unzipped
+
+        log.info("Checking %s", componenturl)
+        progress = 0
+        if self.args.verbose:
+            progress = 20
+        ptype, localpath = fileutils.get_as_local_path(
+            componenturl, self.args.overwrite, progress=progress,
+            httpuser=self.args.httpuser, httppassword=self.args.httppassword)
+        if ptype != 'file' or not localpath.endswith('.zip'):
+            raise ArtifactException('Expected local zip file', localpath)
+
+        if not self.args.skipunzip:
+            try:
+                log.info('Unzipping %s', localpath)
+                unzipped = fileutils.unzip(
+                    localpath, match_dir=True, destdir=self.args.unzipdir)
+                return unzipped
+            except Exception as e:
+                log.error('Unzip failed: %s', e)
+                print e
+                raise Stop(20, 'Unzip failed, try unzipping manually')
+
+        return localpath
+
+
+class JenkinsArtifacts(object):
 
     def __init__(self, args):
 
@@ -151,42 +215,39 @@ class Artifacts(object):
             ('cpp', r'OMERO\.cpp.*\.zip'),
             ]
 
-    def download(self, component):
-        if not hasattr(self, component) or getattr(self, component) is None:
-            raise Exception("No %s found" % component)
 
-        componenturl = getattr(self, component)
-        filename = os.path.basename(componenturl)
-        unzipped = filename.replace(".zip", "")
+class ReleaseArtifacts(object):
 
-        if self.args.dry_run:
-            return
+    def __init__(self, args):
+        self.args = args
+        latestfiles = self.get_artifacts_list()
+        ver = ''
+        if args.release != '0':
+            ver = args.release
+        for key, value in latestfiles:
+            if key:
+                url = '%s/omero%s/%s' % (downloads_latest, ver, value)
+                log.warn('Checking %s', url)
+                try:
+                    finalurl = fileutils.dereference_url(url)
+                    setattr(self, key, finalurl)
+                except HTTPError as e:
+                    log.error('Failed to check %s %s: %s', value, url, e)
+                    setattr(self, key, '')
 
-        if os.path.exists(unzipped):
-            return unzipped
-
-        log.info("Checking %s", componenturl)
-        progress = 0
-        if self.args.verbose:
-            progress = 20
-        ptype, localpath = fileutils.get_as_local_path(
-            componenturl, self.args.overwrite, progress=progress,
-            httpuser=self.args.httpuser, httppassword=self.args.httppassword)
-        if ptype != 'file' or not localpath.endswith('.zip'):
-            raise ArtifactException('Expected local zip file', localpath)
-
-        if not self.args.skipunzip:
-            try:
-                log.info('Unzipping %s', localpath)
-                unzipped = fileutils.unzip(
-                    localpath, match_dir=True, destdir=self.args.unzipdir)
-                return unzipped
-            except Exception as e:
-                log.error('Unzip failed: %s', e)
-                print e
-                raise Stop(20, 'Unzip failed, try unzipping manually')
-
-        return localpath
+    @classmethod
+    def get_artifacts_list(self):
+        return [
+            ('win', 'insight-win.zip'),
+            ('mac', 'insight-mac.zip'),
+            ('mac6', ''),
+            ('linux', 'insight-linux.zip'),
+            ('matlab', 'matlab.zip'),
+            ('server', 'server.zip'),
+            ('python', 'py.zip'),
+            ('source', 'source.zip'),
+            ('cpp', ''),
+            ]
 
 
 class DownloadCommand(Command):
@@ -202,7 +263,7 @@ class DownloadCommand(Command):
         self.parser.add_argument("-n", "--dry-run", action="store_true")
         self.parser.add_argument(
             "artifact",
-            choices=[kv[0] for kv in Artifacts.get_artifacts_list()],
+            choices=Artifacts.get_artifacts_list(),
             help="The artifact to download from the CI server")
 
         self.parser = JenkinsParser(self.parser)

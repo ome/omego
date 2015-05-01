@@ -67,6 +67,18 @@ def open_url(url, httpuser=None, httppassword=None):
     return opener.open(url)
 
 
+def dereference_url(url):
+    """
+    Makes a HEAD request to find the final destination of a URL after
+    following any redirects
+    """
+    req = urllib2.Request(url)
+    req.get_method = lambda: 'HEAD'
+    res = urllib2.urlopen(req)
+    res.close()
+    return res.url
+
+
 def read(url, **kwargs):
     """
     Read the contents of a URL into memory, return

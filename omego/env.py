@@ -116,6 +116,10 @@ class JenkinsParser(argparse.ArgumentParser):
         Add(group, "labels", "ICE=3.5",
             help="Comma separated list of labels for matrix builds")
 
+        Add(group, "release", "",
+            help="The release series to download e.g. 5, 5.0, 5.1. "
+            "Use 0 to get the latest")
+
     def __getattr__(self, key):
         return getattr(self.parser, key)
 
