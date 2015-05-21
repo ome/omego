@@ -6,6 +6,9 @@ python:
 virtualenv:
   system_site_packages: true
 
+addons:
+  postgresql: "9.3"
+
 env:
     - USER_AGENT=Travis TEST=install
     - USER_AGENT=Travis TEST=upgrade
