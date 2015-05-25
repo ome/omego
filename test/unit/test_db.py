@@ -86,6 +86,7 @@ class TestDb(object):
         self.mox.StubOutWithMock(db, 'psql')
         self.mox.StubOutWithMock(omego.fileutils, 'timestamp_filename')
         self.mox.StubOutWithMock(os.path, 'exists')
+        self.mox.StubOutWithMock(db, 'upgrade')
 
         if sqlfile == 'notprovided':
             omerosql = 'omero-00000000-000000-000000.sql'
@@ -97,6 +98,9 @@ class TestDb(object):
         if sqlfile == 'notprovided' and not dryrun:
             ext.omero_cli([
                 'db', 'script', '-f', omerosql, '', '', args.rootpass])
+
+        if sqlfile == 'exists':
+            db.upgrade()
 
         if sqlfile != 'missing' and not dryrun:
             db.psql('-f', omerosql)

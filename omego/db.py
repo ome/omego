@@ -53,6 +53,7 @@ class DbAdmin(object):
 
     def initialise(self):
         omerosql = self.args.omerosql
+        autoupgrade = False
         if not omerosql:
             omerosql = fileutils.timestamp_filename('omero', 'sql')
             log.info('Creating SQL: %s', omerosql)
@@ -62,6 +63,7 @@ class DbAdmin(object):
                      self.args.rootpass])
         elif os.path.exists(omerosql):
             log.info('Using existing SQL: %s', omerosql)
+            autoupgrade = True
         else:
             log.error('SQL file not found: %s', omerosql)
             raise Stop(40, 'SQL file not found')
@@ -69,6 +71,9 @@ class DbAdmin(object):
         log.info('Creating database using %s', omerosql)
         if not self.args.dry_run:
             self.psql('-f', omerosql)
+
+        if autoupgrade:
+            self.upgrade()
 
     def sort_schema(self, versions):
         # E.g. OMERO3__0 OMERO3A__10 OMERO4__0 OMERO4.4__0 OMERO5.1DEV__0
