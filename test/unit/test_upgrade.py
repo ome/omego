@@ -135,6 +135,20 @@ class TestUpgrade(object):
         upgrade.configure_ports()
         self.mox.VerifyAll()
 
+    @pytest.mark.parametrize('archivelogs', [None, 'archivelogs.zip'])
+    def test_archive_logs(self, archivelogs):
+        self.mox.StubOutWithMock(fileutils, 'zip')
+        if archivelogs:
+            fileutils.zip(
+                archivelogs, os.path.join('sym', 'var', 'log'),
+                os.path.join('sym', 'var'))
+        self.mox.ReplayAll()
+
+        args = self.Args({'archivelogs': archivelogs})
+        upgrade = self.PartialMockUnixInstall(args, None)
+        upgrade.archive_logs()
+        self.mox.VerifyAll()
+
     @pytest.mark.parametrize('skipweb', [True, False])
     def test_start(self, skipweb):
         ext = self.mox.CreateMock(External)
