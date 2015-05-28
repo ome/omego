@@ -167,10 +167,7 @@ class Install(object):
     def archive_logs(self):
         if self.args.archivelogs:
             logdir = os.path.join(self.args.sym, 'var', 'log')
-            if isinstance(self.args.archivelogs, int):
-                archive = fileutils.timestamp_filename('logs', 'zip')
-            else:
-                archive = self.args.archivelogs
+            archive = self.args.archivelogs
             log.info('Archiving logs to %s', archive)
             fileutils.zip(archive, logdir, os.path.join(self.args.sym, 'var'))
             return archive
@@ -445,6 +442,6 @@ class UpgradeCommand(InstallBaseCommand):
         self.parser.add_argument(
             "--upgradedb", action="store_true", help="Upgrade the database")
         self.parser.add_argument(
-            "--archivelogs", nargs="?", const=1, help=(
-                "Archive the logs directory (if no filename given use "
-                "logs-TIMESTAMP.zip)"))
+            "--archivelogs", default=None, help=(
+                "Archive the logs directory to this zip file, "
+                "overwriting if it exists"))
