@@ -222,7 +222,7 @@ class DownloadCommand(Command):
             if dest in ("help", "verbose", "quiet"):
                 continue
             value = getattr(args, dest)
-            if value and isinstance(value, (str, unicode)):
+            if value and isinstance(value, basestring):
                 replacement = value % dict(args._get_kwargs())
                 log.debug("% 20s => %s" % (dest, replacement))
                 setattr(args, dest, replacement)

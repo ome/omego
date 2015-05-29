@@ -24,6 +24,7 @@ import mox
 
 import os
 import re
+import zipfile
 
 from omego import fileutils
 
@@ -49,14 +50,6 @@ class TestFileutils(object):
             return 'x' * r
 
         def close(self):
-            pass
-
-    class MockZipfile(object):
-
-        def infolist(self):
-            pass
-
-        def extract(self):
             pass
 
     # TODO
@@ -173,14 +166,14 @@ class TestFileutils(object):
                 self.filename = name
                 self.external_attr = perms << 16
 
-        self.mox.StubOutClassWithMocks(fileutils, 'ZipFile')
+        self.mox.StubOutClassWithMocks(zipfile, 'ZipFile')
         self.mox.StubOutWithMock(os, 'chmod')
 
         files = ['test/', 'test/a', 'test/b/', 'test/b/c']
         perms = [0755, 0644, 0755, 0550]
         infos = [MockZipInfo(f, p) for (f, p) in zip(files, perms)]
 
-        mockzip = fileutils.ZipFile('path/to/test.zip')
+        mockzip = zipfile.ZipFile('path/to/test.zip')
         mockzip.namelist().AndReturn(files)
         mockzip.infolist().AndReturn(infos)
         for n in xrange(4):
@@ -195,6 +188,26 @@ class TestFileutils(object):
             unzipped = fileutils.unzip('path/to/test.zip', True, destdir)
         assert unzipped == os.path.join(destdir, 'test')
 
+        self.mox.VerifyAll()
+
+    def test_zip(self):
+        self.mox.StubOutClassWithMocks(zipfile, 'ZipFile')
+        self.mox.StubOutWithMock(os, 'walk')
+        self.mox.StubOutWithMock(os.path, 'isfile')
+
+        # files = ['test', 'test/a', 'test/b', 'test/b/c']
+        os.walk('test').AndReturn([
+            ('test', ['b'], ['a']), ('test/b', [], ['c'])])
+        os.path.isfile('test').AndReturn(False)
+
+        mockzip = zipfile.ZipFile(
+            'path/to/test.zip', 'w', zipfile.ZIP_DEFLATED)
+        mockzip.write('test/a', 'a')
+        mockzip.write('test/b/c', 'b/c')
+        mockzip.close()
+
+        self.mox.ReplayAll()
+        fileutils.zip('path/to/test.zip', ['test'], 'test')
         self.mox.VerifyAll()
 
     @pytest.mark.parametrize('exists', [True, False])
