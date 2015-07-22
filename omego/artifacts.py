@@ -4,6 +4,7 @@
 import os
 import logging
 
+from HTMLParser import HTMLParser
 from urllib2 import HTTPError
 import re
 
@@ -17,8 +18,6 @@ except ImportError:
     from elementtree.ElementTree import XML
 
 log = logging.getLogger("omego.artifacts")
-
-downloads_latest = 'http://downloads.openmicroscopy.org/latest'
 
 
 class ArtifactException(Exception):
@@ -37,7 +36,11 @@ class Artifacts(object):
     def __init__(self, args):
         self.args = args
         if args.release:
-            self.artifacts = ReleaseArtifacts(args)
+            # If version has two dots assume it's a full version spec
+            if len(args.release.split('.')) > 2:
+                self.artifacts = ReleaseArtifacts(args)
+            else:
+                self.artifacts = LatestReleaseArtifacts(args)
         else:
             self.artifacts = JenkinsArtifacts(args)
 
@@ -216,18 +219,117 @@ class JenkinsArtifacts(object):
             ]
 
 
+class HtmlHrefParser(HTMLParser):
+
+    def __init__(self):
+        HTMLParser.__init__(self)
+        self.hrefs = set()
+
+    def handle_starttag(self, tag, attrs):
+        if tag == 'a':
+            for k, v in attrs:
+                if k == 'href':
+                    self.hrefs.add(v)
+
+
 class ReleaseArtifacts(object):
+    """
+    Fetch artifacts from the download pages created for each release
+    """
+
+    def __init__(self, args):
+        self.args = args
+        ver = ''
+        if args.release != '0':
+            ver = args.release
+
+        self.args = args
+        dl_url = '%s/omero/%s/' % (args.downloadurl, ver)
+
+        dl_icever = self.read_downloads(dl_url)
+        # TODO: add an ice version parameter (and replace the LABELS ICE=3.5
+        # parameter in upgrade.py)
+        # For now just take the most recent Ice
+        artifacts = dl_icever[sorted(dl_icever.keys())[-1]]
+
+        if len(artifacts) <= 0:
+            raise AttributeError(
+                "No artifacts, please check the downloads page.")
+
+        patterns = self.get_artifacts_list()
+        for artifact in artifacts:
+            for key, value in patterns:
+                if re.search(value, artifact):
+                    setattr(self, key, artifact)
+
+    def read_downloads(self, dlurl):
+
+        url = None
+        parser = HtmlHrefParser()
+        try:
+            url = fileutils.open_url(dlurl)
+            log.debug('Fetching html from %s code:%d', url.url, url.code)
+            if url.code != 200:
+                log.error('Failed to get HTML from %s (code %d)',
+                          url.url, url.code)
+                raise Stop(
+                    20, 'Downloads page failed, is the version correct?')
+            parser.feed(url.read())
+        except HTTPError as e:
+            log.error('Failed to get HTML (%s)', e)
+            raise Stop(20, 'Downloads page failed, is the version correct?')
+        finally:
+            if url:
+                url.close()
+
+        dl_icever = {}
+        for href in parser.hrefs:
+            try:
+                icever = re.search('-(ice\d+).*zip$', href).group(1)
+                if re.match('\w+://', href):
+                    fullurl = href
+                else:
+                    fullurl = dlurl + href
+                try:
+                    dl_icever[icever].append(fullurl)
+                except KeyError:
+                    dl_icever[icever] = [fullurl]
+                log.debug('Found artifact: %s', fullurl)
+            except AttributeError:
+                pass
+
+        return dl_icever
+
+    @classmethod
+    def get_artifacts_list(self):
+        return [(k, 'artifacts/' + v)
+                for k, v in JenkinsArtifacts.get_artifacts_list()]
+
+
+class LatestReleaseArtifacts(object):
+    """
+    Fetch artifacts from the latest redirects
+    """
 
     def __init__(self, args):
         self.args = args
         latestfiles = self.get_artifacts_list()
         ver = ''
-        if args.release != '0':
+        if args.release != 'latest':
             ver = args.release
+
+        try:
+            latesturl = '%s/latest/omero%s' % (args.downloadurl, ver)
+            finalurl = fileutils.dereference_url(latesturl)
+            log.debug('Checked %s: %s', latesturl, finalurl)
+        except HTTPError as e:
+            log.error('Invalid URL %s: %s', latesturl, e)
+            raise Stop(20, 'Invalid latest URL, is the version correct?')
+
         for key, value in latestfiles:
-            if key:
-                url = '%s/omero%s/%s' % (downloads_latest, ver, value)
-                log.warn('Checking %s', url)
+            if value:
+                url = '%s/%s' % (latesturl, value)
+                log.debug('Checking %s', url)
                 try:
                     finalurl = fileutils.dereference_url(url)
                     setattr(self, key, finalurl)

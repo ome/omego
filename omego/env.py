@@ -117,8 +117,11 @@ class JenkinsParser(argparse.ArgumentParser):
             help="Comma separated list of labels for matrix builds")
 
         Add(group, "release", "",
-            help="The release series to download e.g. 5, 5.0, 5.1. "
-            "Use 0 to get the latest")
+            help="The release series to download e.g. 5, 5.1, 5.1.2, "
+            "use 'latest' to get the latest")
+        Add(group, "downloadurl",
+            "http://downloads.openmicroscopy.org",
+            help="Base URL of the downloads server")
 
     def __getattr__(self, key):
         return getattr(self.parser, key)
