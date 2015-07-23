@@ -67,13 +67,13 @@ class Artifacts(object):
         filename = os.path.basename(componenturl)
         unzipped = filename.replace(".zip", "")
 
-        if self.args.dry_run:
-            return
-
         if os.path.exists(unzipped):
             return unzipped
 
         log.info("Checking %s", componenturl)
+        if self.args.dry_run:
+            return
+
         progress = 0
         if self.args.verbose:
             progress = 20
