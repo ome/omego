@@ -55,6 +55,7 @@ class Artifacts(object):
             'python',
             'source',
             'cpp',
+            '...'
             ]
 
     def download(self, component):
@@ -96,6 +97,31 @@ class Artifacts(object):
         return localpath
 
 
+def set_artifacts_map(cls, artifacturls):
+    patterns = [
+        ('win', r'OMERO\.insight.*-win\.zip$'),
+        ('mac', r'OMERO\.insight.*-mac_Java7\+\.zip$'),
+        ('mac6', r'OMERO\.insight.*-mac_Java6\.zip$'),
+        ('linux', r'OMERO\.insight.*-linux\.zip$'),
+        ('python', r'OMERO\.py.*\.zip$'),
+        ('source', r'openmicroscopy.*\.zip$'),
+    ]
+    defaultpat = r'OMERO\.(\w+).*\.zip$'
+
+    for artifact in artifacturls:
+        filename = artifact.split('/')[-1]
+        m = re.match(defaultpat, filename)
+        if m:
+            setattr(cls, m.group(1), artifact)
+            log.debug('Set %s=%s', m.group(1), artifact)
+
+        for key, value in patterns:
+            if re.match(value, filename):
+                setattr(cls, key, artifact)
+                log.debug('Set %s=%s', key, artifact)
+                break
+
+
 class JenkinsArtifacts(object):
 
     def __init__(self, args):
@@ -115,15 +141,9 @@ class JenkinsArtifacts(object):
             raise AttributeError(
                 "No artifacts, please check build on the CI server.")
 
-        patterns = self.get_artifacts_list()
-        for artifact in artifacts:
-            filename = artifact.find("fileName").text
-
-            for key, value in patterns:
-                if re.compile(value).match(filename):
-                    rel_path = base_url + artifact.find("relativePath").text
-                    setattr(self, key, rel_path)
-                    pass
+        artifacturls = [
+            base_url + a.find("relativePath").text for a in artifacts]
+        set_artifacts_map(self, artifacturls)
 
     def read_xml(self, buildurl):
         url = None
@@ -203,20 +223,6 @@ class JenkinsArtifacts(object):
             slabels.remove('')
         return slabels
 
-    @classmethod
-    def get_artifacts_list(self):
-        return [
-            ('win', r'OMERO\.insight.*-win\.zip'),
-            ('mac', r'OMERO\.insight.*-mac_Java7\+\.zip'),
-            ('mac6', r'OMERO\.insight.*-mac_Java6\.zip'),
-            ('linux', r'OMERO\.insight.*-linux\.zip'),
-            ('matlab', r'OMERO\.matlab.*\.zip'),
-            ('server', r'OMERO\.server.*\.zip'),
-            ('python', r'OMERO\.py.*\.zip'),
-            ('source', r'openmicroscopy.*\.zip'),
-            ('cpp', r'OMERO\.cpp.*\.zip'),
-            ]
-
 
 class HtmlHrefParser(HTMLParser):
 
@@ -249,17 +255,12 @@ class ReleaseArtifacts(object):
         # TODO: add an ice version parameter (and replace the LABELS ICE=3.5
         # parameter in upgrade.py)
         # For now just take the most recent Ice
-        artifacts = dl_icever[sorted(dl_icever.keys())[-1]]
+        artifacturls = dl_icever[sorted(dl_icever.keys())[-1]]
 
-        if len(artifacts) <= 0:
+        if len(artifacturls) <= 0:
             raise AttributeError(
                 "No artifacts, please check the downloads page.")
-
-        patterns = self.get_artifacts_list()
-        for artifact in artifacts:
-            for key, value in patterns:
-                if re.search(value, artifact):
-                    setattr(self, key, artifact)
+        set_artifacts_map(self, artifacturls)
 
     def follow_latest_redirect(self, args):
         ver = ''
@@ -313,11 +314,6 @@ class ReleaseArtifacts(object):
 
         return dl_icever
 
-    @classmethod
-    def get_artifacts_list(self):
-        return [(k, 'artifacts/' + v)
-                for k, v in JenkinsArtifacts.get_artifacts_list()]
-
 
 class DownloadCommand(Command):
     """
@@ -332,8 +328,8 @@ class DownloadCommand(Command):
         self.parser.add_argument("-n", "--dry-run", action="store_true")
         self.parser.add_argument(
             "artifact",
-            choices=Artifacts.get_artifacts_list(),
-            help="The artifact to download from the CI server")
+            help="The artifact to download e.g. {%s}" %
+            ','.join(Artifacts.get_artifacts_list()))
 
         self.parser = JenkinsParser(self.parser)
         self.parser = FileUtilsParser(self.parser)
