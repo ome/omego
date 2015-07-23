@@ -37,10 +37,8 @@ class Artifacts(object):
         self.args = args
         if re.match('[A-Za-z]\w+-\w+', args.branch):
             self.artifacts = JenkinsArtifacts(args)
-        elif re.match('[0-9]+\.[0-9]+\.[0-9]+', args.branch):
-            self.artifacts = ReleaseArtifacts(args)
         elif re.match('[0-9]+|latest$', args.branch):
-            self.artifacts = LatestReleaseArtifacts(args)
+            self.artifacts = ReleaseArtifacts(args)
         else:
             log.error('Invalid release or job name: %s', args.branch)
             raise Stop(20, 'Invalid release or job name: %s', args.branch)
@@ -240,10 +238,12 @@ class ReleaseArtifacts(object):
 
     def __init__(self, args):
         self.args = args
-        ver = args.branch
 
-        self.args = args
-        dl_url = '%s/omero/%s/' % (args.downloadurl, ver)
+        if re.match('[0-9]+\.[0-9]+\.[0-9]+', args.branch):
+            ver = args.branch
+            dl_url = '%s/omero/%s/' % (args.downloadurl, ver)
+        elif re.match('[0-9]+|latest$', args.branch):
+            dl_url = self.follow_latest_redirect(args)
 
         dl_icever = self.read_downloads(dl_url)
         # TODO: add an ice version parameter (and replace the LABELS ICE=3.5
@@ -260,6 +260,20 @@ class ReleaseArtifacts(object):
             for key, value in patterns:
                 if re.search(value, artifact):
                     setattr(self, key, artifact)
+
+    def follow_latest_redirect(self, args):
+        ver = ''
+        if args.branch != 'latest':
+            ver = args.branch
+
+        try:
+            latesturl = '%s/latest/omero%s' % (args.downloadurl, ver)
+            finalurl = fileutils.dereference_url(latesturl)
+            log.debug('Checked %s: %s', latesturl, finalurl)
+        except HTTPError as e:
+            log.error('Invalid URL %s: %s', latesturl, e)
+            raise Stop(20, 'Invalid latest URL, is the version correct?')
+        return finalurl
 
     def read_downloads(self, dlurl):
 
@@ -303,52 +317,6 @@ class ReleaseArtifacts(object):
     def get_artifacts_list(self):
         return [(k, 'artifacts/' + v)
                 for k, v in JenkinsArtifacts.get_artifacts_list()]
-
-
-class LatestReleaseArtifacts(object):
-    """
-    Fetch artifacts from the latest redirects
-    """
-
-    def __init__(self, args):
-        self.args = args
-        latestfiles = self.get_artifacts_list()
-        ver = ''
-        if args.branch != 'latest':
-            ver = args.branch
-
-        try:
-            latesturl = '%s/latest/omero%s' % (args.downloadurl, ver)
-            finalurl = fileutils.dereference_url(latesturl)
-            log.debug('Checked %s: %s', latesturl, finalurl)
-        except HTTPError as e:
-            log.error('Invalid URL %s: %s', latesturl, e)
-            raise Stop(20, 'Invalid latest URL, is the version correct?')
-
-        for key, value in latestfiles:
-            if value:
-                url = '%s/%s' % (latesturl, value)
-                log.debug('Checking %s', url)
-                try:
-                    finalurl = fileutils.dereference_url(url)
-                    setattr(self, key, finalurl)
-                except HTTPError as e:
-                    log.error('Failed to check %s %s: %s', value, url, e)
-                    setattr(self, key, '')
-
-    @classmethod
-    def get_artifacts_list(self):
-        return [
-            ('win', 'insight-win.zip'),
-            ('mac', 'insight-mac.zip'),
-            ('mac6', ''),
-            ('linux', 'insight-linux.zip'),
-            ('matlab', 'matlab.zip'),
-            ('server', 'server.zip'),
-            ('python', 'py.zip'),
-            ('source', 'source.zip'),
-            ('cpp', ''),
-            ]
 
 
 class DownloadCommand(Command):
