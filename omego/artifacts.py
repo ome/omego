@@ -290,7 +290,7 @@ class ReleaseArtifacts(object):
                     20, 'Downloads page failed, is the version correct?')
             parser.feed(url.read())
         except HTTPError as e:
-            log.error('Failed to get HTML (%s)', e)
+            log.error('Failed to get HTML from %s (%s)', dlurl, e)
             raise Stop(20, 'Downloads page failed, is the version correct?')
         finally:
             if url:
