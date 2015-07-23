@@ -35,14 +35,15 @@ class Artifacts(object):
 
     def __init__(self, args):
         self.args = args
-        if args.release:
-            # If version has two dots assume it's a full version spec
-            if len(args.release.split('.')) > 2:
-                self.artifacts = ReleaseArtifacts(args)
-            else:
-                self.artifacts = LatestReleaseArtifacts(args)
-        else:
+        if re.match('[A-Za-z]\w+-\w+', args.branch):
             self.artifacts = JenkinsArtifacts(args)
+        elif re.match('[0-9]+\.[0-9]+\.[0-9]+', args.branch):
+            self.artifacts = ReleaseArtifacts(args)
+        elif re.match('[0-9]+|latest$', args.branch):
+            self.artifacts = LatestReleaseArtifacts(args)
+        else:
+            log.error('Invalid release or job name: %s', args.branch)
+            raise Stop(20, 'Invalid release or job name: %s', args.branch)
 
     @classmethod
     def get_artifacts_list(self):
@@ -239,9 +240,7 @@ class ReleaseArtifacts(object):
 
     def __init__(self, args):
         self.args = args
-        ver = ''
-        if args.release != '0':
-            ver = args.release
+        ver = args.branch
 
         self.args = args
         dl_url = '%s/omero/%s/' % (args.downloadurl, ver)
@@ -315,8 +314,8 @@ class LatestReleaseArtifacts(object):
         self.args = args
         latestfiles = self.get_artifacts_list()
         ver = ''
-        if args.release != 'latest':
-            ver = args.release
+        if args.branch != 'latest':
+            ver = args.branch
 
         try:
             latesturl = '%s/latest/omero%s' % (args.downloadurl, ver)
