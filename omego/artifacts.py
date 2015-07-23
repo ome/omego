@@ -276,8 +276,8 @@ class ReleaseArtifacts(object):
             raise Stop(20, 'Invalid latest URL, is the version correct?')
         return finalurl
 
-    def read_downloads(self, dlurl):
-
+    @staticmethod
+    def read_downloads(dlurl):
         url = None
         parser = HtmlHrefParser()
         try:

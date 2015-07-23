@@ -23,7 +23,7 @@ import pytest
 import mox
 
 from yaclifw.framework import Stop
-from omego.artifacts import Artifacts, JenkinsArtifacts
+from omego.artifacts import Artifacts, JenkinsArtifacts, ReleaseArtifacts
 # Import whatever XML module was imported in omego.artifacts to avoid dealing
 # with different versions
 from omego.artifacts import XML
@@ -64,6 +64,34 @@ class MockUrl(object):
         pass
 
 
+class MockDownloadUrl(object):
+    downloadurl = 'http://example.org'
+    latesturl = 'http://example.org/latest/omero'
+    pageurl = 'http://example.org/omero/0.0.0/'
+    artifactnames = [
+        'OMERO.server-0.0.0-ice34-b1.zip', 'OMERO.server-0.0.0-ice35-b1.zip']
+    artifactpath = './artifacts/'
+
+    def __init__(self, page):
+        self.code = 200
+        if page:
+            self.url = self.pageurl
+        else:
+            self.url = '%s%s%s' % (
+                self.pageurl, self.artifactpath, self.artifactnames[1])
+
+    def read(self):
+        return (
+            '<html><body><a href="%s%s">%s</a>'
+            '<a href="%s%s">%s</a></body></html>' % (
+                self.artifactpath, self.artifactnames[0],
+                self.artifactnames[0], self.artifactpath,
+                self.artifactnames[1], self.artifactnames[1]))
+
+    def close(self):
+        pass
+
+
 class Args(object):
     def __init__(self, matrix):
         if matrix:
@@ -79,6 +107,8 @@ class Args(object):
         self.overwrite = 'error'
         self.httpuser = None
         self.httppassword = None
+        self.branch = None
+        self.downloadurl = MockDownloadUrl.downloadurl
 
 
 class MoxBase(object):
@@ -93,7 +123,7 @@ class MoxBase(object):
 class TestJenkinsArtifacts(MoxBase):
 
     def partial_mock_artifacts(self, matrix):
-        # Artifacts.__init__ does a lot of work, so we can't just
+        # JenkinsArtifacts.__init__ does a lot of work, so we can't just
         # stubout methods after constructing it
         self.mox.StubOutWithMock(fileutils, 'open_url')
         if matrix:
@@ -152,6 +182,55 @@ class TestJenkinsArtifacts(MoxBase):
         labels = a.label_list_parser(
             'http://example.org/x/ICE=3.5,label=foo/y')
         assert labels == set(['ICE=3.5', 'label=foo'])
+        self.mox.VerifyAll()
+
+
+class TestReleaseArtifacts(MoxBase):
+
+    def partial_mock_artifacts(self, release):
+        # ReleaseArtifacts.__init__ does a lot of work, so we can't just
+        # stubout methods after constructing it
+        self.mox.StubOutWithMock(fileutils, 'dereference_url')
+        if release == 'latest':
+            fileutils.dereference_url(MockDownloadUrl.latesturl).AndReturn(
+                MockDownloadUrl.pageurl)
+        if release == '0.0':
+            fileutils.dereference_url(
+                MockDownloadUrl.latesturl + '0.0').AndReturn(
+                    MockDownloadUrl.pageurl)
+
+        self.mox.StubOutWithMock(fileutils, 'open_url')
+        fileutils.open_url(
+            MockDownloadUrl.pageurl).AndReturn(
+            MockDownloadUrl(True))
+        self.mox.ReplayAll()
+        args = Args(False)
+        args.branch = release
+        return ReleaseArtifacts(args)
+
+    @pytest.mark.parametrize('release', ['latest', '0.0', '0.0.0'])
+    def test_init(self, release):
+        # Also tests follow_latest_redirect
+        a = self.partial_mock_artifacts(release)
+        assert hasattr(a, 'server')
+        assert a.server == '%s%s%s' % (
+            MockDownloadUrl.pageurl, MockDownloadUrl.artifactpath,
+            MockDownloadUrl.artifactnames[1])
+        self.mox.VerifyAll()
+
+    def test_read_downloads(self):
+        self.mox.StubOutWithMock(fileutils, 'open_url')
+        fileutils.open_url(
+            MockDownloadUrl.pageurl).AndReturn(
+            MockDownloadUrl(True))
+        self.mox.ReplayAll()
+
+        fullpath = '%s%s' % (
+            MockDownloadUrl.pageurl, MockDownloadUrl.artifactpath)
+        assert ReleaseArtifacts.read_downloads(MockDownloadUrl.pageurl) == {
+            'ice34': [fullpath + MockDownloadUrl.artifactnames[0]],
+            'ice35': [fullpath + MockDownloadUrl.artifactnames[1]]
+            }
         self.mox.VerifyAll()
 
 

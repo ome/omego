@@ -50,3 +50,10 @@ class TestDownload(object):
         with tmpdir.as_cwd():
             self.download('--unzipdir', 'OMERO.cpp')
             assert tmpdir.ensure('OMERO.cpp', dir=True)
+
+    def testDownloadRelease(self, tmpdir):
+        self.artifact = 'python'
+        with tmpdir.as_cwd():
+            self.download('--release', 'latest')
+            files = tmpdir.listdir()
+            assert len(files) == 2
