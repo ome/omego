@@ -23,63 +23,65 @@ import pytest
 import mox
 
 from yaclifw.framework import Stop
-from omego.artifacts import Artifacts
+from omego.artifacts import Artifacts, JenkinsArtifacts
 # Import whatever XML module was imported in omego.artifacts to avoid dealing
 # with different versions
 from omego.artifacts import XML
 from omego import fileutils
 
 
-class TestArtifacts(object):
+class MockUrl(object):
+    build = 1
+    oldbuild = 0
+    labelledurl = 'http://example.org/jenkins/ICE=3.5,label=foo/1/'
+    oldlabelledurl = 'http://example.org/jenkins/ICE=3.5,label=foo/0/'
+    unlabelledurl = 'http://example.org/jenkins/1/'
+    artifactname = 'OMERO.server-0.0.0-ice35-b1.zip'
+    artifactpath = 'a/OMERO.server-0.0.0-ice35-b1.zip'
 
-    class MockUrl(object):
-        build = 1
-        oldbuild = 0
-        labelledurl = 'http://example.org/jenkins/ICE=3.5,label=foo/1/'
-        oldlabelledurl = 'http://example.org/jenkins/ICE=3.5,label=foo/0/'
-        unlabelledurl = 'http://example.org/jenkins/1/'
-        artifactname = 'OMERO.server-0.0.0-ice35-b1.zip'
-        artifactpath = 'a/OMERO.server-0.0.0-ice35-b1.zip'
+    def __init__(self, matrix):
+        self.code = 200
+        self.matrix = matrix
+        self.url = self.unlabelledurl if matrix else self.labelledurl
 
-        def __init__(self, matrix):
-            self.code = 200
-            self.matrix = matrix
-            self.url = self.unlabelledurl if matrix else self.labelledurl
-
-        def read(self):
-            if self.matrix:
-                return (
-                    '<matrixBuild>'
-                    '<url>%s</url>'
-                    '<run><number>%d</number><url>%s</url></run>'
-                    '<run><number>%d</number><url>%s</url></run>'
-                    '</matrixBuild>' % (
-                        self.unlabelledurl,
-                        self.oldbuild, self.oldlabelledurl,
-                        self.build, self.labelledurl))
+    def read(self):
+        if self.matrix:
             return (
-                '<root><artifact><fileName>%s</fileName><relativePath>'
-                '%s</relativePath></artifact></root>' %
-                (self.artifactname, self.artifactpath))
+                '<matrixBuild>'
+                '<url>%s</url>'
+                '<run><number>%d</number><url>%s</url></run>'
+                '<run><number>%d</number><url>%s</url></run>'
+                '</matrixBuild>' % (
+                    self.unlabelledurl,
+                    self.oldbuild, self.oldlabelledurl,
+                    self.build, self.labelledurl))
+        return (
+            '<root><artifact><fileName>%s</fileName><relativePath>'
+            '%s</relativePath></artifact></root>' %
+            (self.artifactname, self.artifactpath))
 
-        def close(self):
-            pass
+    def close(self):
+        pass
 
-    class Args(object):
-        def __init__(self, matrix):
-            if matrix:
-                self.labels = 'label=foo,ICE=3.5'
-                self.build = TestArtifacts.MockUrl.unlabelledurl
-            else:
-                self.labels = ''
-                self.build = TestArtifacts.MockUrl.labelledurl
-            self.dry_run = False
-            self.verbose = False
-            self.skipunzip = False
-            self.unzipdir = 'unzip/dir'
-            self.overwrite = 'error'
-            self.httpuser = None
-            self.httppassword = None
+
+class Args(object):
+    def __init__(self, matrix):
+        if matrix:
+            self.labels = 'label=foo,ICE=3.5'
+            self.build = MockUrl.unlabelledurl
+        else:
+            self.labels = ''
+            self.build = MockUrl.labelledurl
+        self.dry_run = False
+        self.verbose = False
+        self.skipunzip = False
+        self.unzipdir = 'unzip/dir'
+        self.overwrite = 'error'
+        self.httpuser = None
+        self.httppassword = None
+
+
+class MoxBase(object):
 
     def setup_method(self, method):
         self.mox = mox.Mox()
@@ -87,19 +89,22 @@ class TestArtifacts(object):
     def teardown_method(self, method):
         self.mox.UnsetStubs()
 
+
+class TestJenkinsArtifacts(MoxBase):
+
     def partial_mock_artifacts(self, matrix):
         # Artifacts.__init__ does a lot of work, so we can't just
         # stubout methods after constructing it
         self.mox.StubOutWithMock(fileutils, 'open_url')
         if matrix:
             fileutils.open_url(
-                self.MockUrl.unlabelledurl + 'api/xml').AndReturn(
-                self.MockUrl(True))
+                MockUrl.unlabelledurl + 'api/xml').AndReturn(
+                MockUrl(True))
         fileutils.open_url(
-            self.MockUrl.labelledurl + 'api/xml').AndReturn(
-            self.MockUrl(False))
+            MockUrl.labelledurl + 'api/xml').AndReturn(
+            MockUrl(False))
         self.mox.ReplayAll()
-        return Artifacts(self.Args(matrix))
+        return JenkinsArtifacts(Args(matrix))
 
     @pytest.mark.parametrize('matrix', [True, False])
     def test_init(self, matrix):
@@ -107,15 +112,15 @@ class TestArtifacts(object):
         a = self.partial_mock_artifacts(matrix)
         assert hasattr(a, 'server')
         assert a.server == '%sartifact/%s' % (
-            self.MockUrl.labelledurl, self.MockUrl.artifactpath)
+            MockUrl.labelledurl, MockUrl.artifactpath)
         self.mox.VerifyAll()
 
     def test_get_latest_runs(self):
         a = self.partial_mock_artifacts(True)
-        root = XML(self.MockUrl(True).read())
+        root = XML(MockUrl(True).read())
         runs = a.get_latest_runs(root)
 
-        assert runs == [self.MockUrl.labelledurl]
+        assert runs == [MockUrl.labelledurl]
 
     def test_find_label_matches(self):
         a = self.partial_mock_artifacts(True)
@@ -149,10 +154,21 @@ class TestArtifacts(object):
         assert labels == set(['ICE=3.5', 'label=foo'])
         self.mox.VerifyAll()
 
+
+class TestArtifacts(MoxBase):
+
+    class MockArtifacts(Artifacts):
+        def __init__(self, component, url):
+            class A(object):
+                pass
+
+            self.args = Args(False)
+            self.artifacts = A()
+            setattr(self.artifacts, component, url)
+
     def test_download(self):
-        a = self.partial_mock_artifacts(True)
         url = 'http://example.org/test/component-0.0.0.zip'
-        setattr(a, 'testcomponent', url)
+        a = self.MockArtifacts('testcomponent', url)
 
         self.mox.StubOutWithMock(fileutils, 'get_as_local_path')
         self.mox.StubOutWithMock(fileutils, 'unzip')
