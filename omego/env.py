@@ -109,7 +109,7 @@ class JenkinsParser(argparse.ArgumentParser):
         Add(group, "ci", "ci.openmicroscopy.org",
             help="Base url of the continuous integration server")
         group.add_argument(
-            "--branch", "--release", default="OMERO-5.0-latest",
+            "--branch", "--release", default="latest",
             help="The release series to download e.g. 5, 5.1, 5.1.2, "
             "use 'latest' to get the latest release. "
             "Alternatively the name of a Jenkins job e.g. OMERO-5.1-latest.")
