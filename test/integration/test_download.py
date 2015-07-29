@@ -28,7 +28,8 @@ from omego.artifacts import DownloadCommand
 class TestDownload(object):
 
     def setup_class(self):
-        self.artifact = 'cpp'
+        self.artifact = 'python'
+        self.branch = 'OMERO-5.1-latest'
 
     def download(self, *args):
         args = ["download", self.artifact] + list(args)
@@ -36,23 +37,22 @@ class TestDownload(object):
 
     def testDownloadNoUnzip(self, tmpdir):
         with tmpdir.as_cwd():
-            self.download('--skipunzip')
+            self.download('--skipunzip', '--branch', self.branch)
             files = tmpdir.listdir()
             assert len(files) == 1
 
     def testDownloadUnzip(self, tmpdir):
         with tmpdir.as_cwd():
-            self.download()
+            self.download('--branch', self.branch)
             files = tmpdir.listdir()
             assert len(files) == 2
 
     def testDownloadUnzipDir(self, tmpdir):
         with tmpdir.as_cwd():
-            self.download('--unzipdir', 'OMERO.cpp')
+            self.download('--unzipdir', 'OMERO.cpp', '--branch', self.branch)
             assert tmpdir.ensure('OMERO.cpp', dir=True)
 
     def testDownloadRelease(self, tmpdir):
-        self.artifact = 'python'
         with tmpdir.as_cwd():
             self.download('--release', 'latest')
             files = tmpdir.listdir()
