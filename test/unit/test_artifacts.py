@@ -24,7 +24,6 @@ import mox
 
 from yaclifw.framework import Stop
 from omego.artifacts import Artifacts, JenkinsArtifacts, ReleaseArtifacts
-from omego.artifacts import SingleDirectArtifact
 # Import whatever XML module was imported in omego.artifacts to avoid dealing
 # with different versions
 from omego.artifacts import XML
@@ -232,27 +231,6 @@ class TestReleaseArtifacts(MoxBase):
             'ice34': [fullpath + MockDownloadUrl.artifactnames[0]],
             'ice35': [fullpath + MockDownloadUrl.artifactnames[1]]
             }
-        self.mox.VerifyAll()
-
-
-class TestSingleDirectArtifact(MoxBase):
-
-    def partial_mock_artifacts(self, url):
-        # DirectArtifact.__init__ does a lot of work, so we can't just
-        # stubout methods after constructing it
-        self.mox.StubOutWithMock(fileutils, 'dereference_url')
-        fileutils.dereference_url(url).AndReturn(
-            url.replace('example', 'example2'))
-        self.mox.ReplayAll()
-        args = Args(False)
-        args.branch = url
-        return SingleDirectArtifact(args)
-
-    def test_init(self):
-        url = 'http://example.org/OMERO.server-0.zip'
-        a = self.partial_mock_artifacts(url)
-        assert hasattr(a, 'server')
-        assert a.server == 'http://example2.org/OMERO.server-0.zip'
         self.mox.VerifyAll()
 
 

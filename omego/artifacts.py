@@ -35,9 +35,7 @@ class Artifacts(object):
 
     def __init__(self, args):
         self.args = args
-        if re.match('\w+://.*zip$', args.branch):
-            self.artifacts = SingleDirectArtifact(args)
-        elif re.match('[A-Za-z]\w+-\w+', args.branch):
+        if re.match('[A-Za-z]\w+-\w+', args.branch):
             self.artifacts = JenkinsArtifacts(args)
         elif re.match('[0-9]+|latest$', args.branch):
             self.artifacts = ReleaseArtifacts(args)
@@ -315,24 +313,6 @@ class ReleaseArtifacts(object):
                 pass
 
         return dl_icever
-
-
-class SingleDirectArtifact(object):
-    """
-    A URL to a single artifact, for convenience when testing
-    """
-
-    def __init__(self, args):
-        self.args = args
-
-        try:
-            finalurl = fileutils.dereference_url(args.branch)
-            log.debug('Checked %s: %s', args.branch, finalurl)
-        except HTTPError as e:
-            log.error('Invalid URL %s: %s', args.branch, e)
-            raise Stop(20, 'Invalid artifact URL')
-
-        set_artifacts_map(self, [finalurl])
 
 
 class DownloadCommand(Command):
