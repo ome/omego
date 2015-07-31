@@ -25,15 +25,18 @@ from yaclifw.framework import main
 from omego.artifacts import DownloadCommand
 
 
-class TestDownload(object):
-
-    def setup_class(self):
-        self.artifact = 'python'
-        self.branch = 'OMERO-5.1-latest'
+class Downloader(object):
 
     def download(self, *args):
         args = ["download", self.artifact] + list(args)
         main("omego", args=args, items=[("download", DownloadCommand)])
+
+
+class TestDownload(Downloader):
+
+    def setup_class(self):
+        self.artifact = 'python'
+        self.branch = 'OMERO-5.1-latest'
 
     def testDownloadNoUnzip(self, tmpdir):
         with tmpdir.as_cwd():
@@ -57,3 +60,30 @@ class TestDownload(object):
             self.download('--release', 'latest')
             files = tmpdir.listdir()
             assert len(files) == 2
+
+
+class TestDownloadBioFormats(Downloader):
+
+    def setup_class(self):
+        self.artifact = 'ij'
+        self.branch = 'BIOFORMATS-5.1-latest'
+
+    def testDownloadBioformatsJar(self, tmpdir):
+        with tmpdir.as_cwd():
+            self.download('--branch', self.branch)
+            files = tmpdir.listdir()
+            assert len(files) == 1
+            assert files[0].basename == 'ij.jar'
+
+
+class TestDownloadList(Downloader):
+
+    def setup_class(self):
+        self.artifact = ''
+        self.branch = 'latest'
+
+    def testDownloadList(self, tmpdir):
+        with tmpdir.as_cwd():
+            self.download('--branch', self.branch)
+            files = tmpdir.listdir()
+            assert len(files) == 0
