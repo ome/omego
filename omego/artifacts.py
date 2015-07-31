@@ -64,19 +64,22 @@ class Artifacts(object):
         ptype, localpath = fileutils.get_as_local_path(
             componenturl, self.args.overwrite, progress=progress,
             httpuser=self.args.httpuser, httppassword=self.args.httppassword)
-        if ptype != 'file' or not localpath.endswith('.zip'):
-            raise ArtifactException('Expected local zip file', localpath)
+        if ptype != 'file':
+            raise ArtifactException('Expected local file', localpath)
 
         if not self.args.skipunzip:
-            try:
-                log.info('Unzipping %s', localpath)
-                unzipped = fileutils.unzip(
-                    localpath, match_dir=True, destdir=self.args.unzipdir)
-                return unzipped
-            except Exception as e:
-                log.error('Unzip failed: %s', e)
-                print e
-                raise Stop(20, 'Unzip failed, try unzipping manually')
+            if localpath.endswith('.zip'):
+                try:
+                    log.info('Unzipping %s', localpath)
+                    unzipped = fileutils.unzip(
+                        localpath, match_dir=True, destdir=self.args.unzipdir)
+                    return unzipped
+                except Exception as e:
+                    log.error('Unzip failed: %s', e)
+                    print e
+                    raise Stop(20, 'Unzip failed, try unzipping manually')
+            else:
+                log.warn('Not unzipping %s', localpath)
 
         return localpath
 
