@@ -145,12 +145,6 @@ class ArtifactsList(object):
 
         raise ArtifactException('No match for component', component)
 
-    @staticmethod
-    def componentdict_str(d, prefix=''):
-        kvfmt = '%%s\n%s  %%s' % prefix
-        joinstr = '\n%s' % prefix
-        return joinstr.join(kvfmt % kv for kv in d.iteritems())
-
     def __str__(self):
         s = ''
         if self.namedcomponents:
