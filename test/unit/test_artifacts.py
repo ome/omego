@@ -23,11 +23,63 @@ import pytest
 import mox
 
 from yaclifw.framework import Stop
+from omego.artifacts import ArtifactException, ArtifactsList
 from omego.artifacts import Artifacts, JenkinsArtifacts, ReleaseArtifacts
 # Import whatever XML module was imported in omego.artifacts to avoid dealing
 # with different versions
 from omego.artifacts import XML
 from omego import fileutils
+
+
+class TestArtifactsList(object):
+
+    def setup_class(self):
+        self.urls = (
+            'http://example.org/0.0.0/a/OMERO.insight-0.0.0.zip',
+            'http://example.org/0.0.0/a/OMERO.insight-ij-0.0.0.zip',
+            'http://example.org/0.0.0/a/OMERO.insight-0.0.0-mac_Java7+.zip',
+            'http://example.org/0.0.0/a/GIT_INFO',
+            'http://example.org/0.0.0/a/bioformats-0.0.0-DEV.zip',
+            'http://example.org/0.0.0/a/bio-formats_plugins.jar',
+            'http://example.org/0.0.0/a/bio-formats-tools.jar',
+            'http://example.org/0.0.0/a/OMERO.server-0.0.0-DEV.zip',
+        )
+
+    def test_find_artifacts(self):
+        a = ArtifactsList()
+        a.find_artifacts(self.urls)
+
+        assert a.get('insight') == self.urls[0]
+        assert a.get('insight-ij') == self.urls[1]
+        assert a.get('mac') == self.urls[2]
+        with pytest.raises(ArtifactException):
+            a.get('GIT_INFO')
+        assert a.get('bio') == self.urls[4]
+        assert a.get('bio-formats') == self.urls[6]
+
+    def test_list(self):
+        a = ArtifactsList()
+        a.find_artifacts(self.urls)
+        s = str(a)
+        expected = """namedcomponents
+  mac
+  server
+omerozips
+  insight-0.0.0
+  insight-0.0.0-mac_Java7+
+  insight-ij-0.0.0
+  server-0.0.0-DEV
+zips
+  OMERO.insight-0.0.0
+  OMERO.insight-0.0.0-mac_Java7+
+  OMERO.insight-ij-0.0.0
+  OMERO.server-0.0.0-DEV
+  bioformats-0.0.0-DEV
+jars
+  bio-formats-tools
+  bio-formats_plugins"""
+
+        assert s == expected
 
 
 class MockUrl(object):
@@ -140,8 +192,7 @@ class TestJenkinsArtifacts(MoxBase):
     def test_init(self, matrix):
         # Also tests read_xml
         a = self.partial_mock_artifacts(matrix)
-        assert hasattr(a, 'server')
-        assert a.server == '%sartifact/%s' % (
+        assert a.get('server') == '%sartifact/%s' % (
             MockUrl.labelledurl, MockUrl.artifactpath)
         self.mox.VerifyAll()
 
@@ -212,8 +263,7 @@ class TestReleaseArtifacts(MoxBase):
     def test_init(self, release):
         # Also tests follow_latest_redirect
         a = self.partial_mock_artifacts(release)
-        assert hasattr(a, 'server')
-        assert a.server == '%s%s%s' % (
+        assert a.get('server') == '%s%s%s' % (
             MockDownloadUrl.pageurl, MockDownloadUrl.artifactpath,
             MockDownloadUrl.artifactnames[1])
         self.mox.VerifyAll()
@@ -239,11 +289,12 @@ class TestArtifacts(MoxBase):
     class MockArtifacts(Artifacts):
         def __init__(self, component, url):
             class A(object):
-                pass
+                def get(self, c):
+                    assert c == component
+                    return url
 
             self.args = Args(False)
             self.artifacts = A()
-            setattr(self.artifacts, component, url)
 
     def test_download(self):
         url = 'http://example.org/test/component-0.0.0.zip'

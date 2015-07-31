@@ -59,11 +59,10 @@ class Artifacts(object):
             ]
 
     def download(self, component):
-        if (not hasattr(self.artifacts, component) or
-                not getattr(self.artifacts, component)):
+        componenturl = self.artifacts.get(component)
+        if not componenturl:
             raise Exception("No %s found" % component)
 
-        componenturl = getattr(self.artifacts, component)
         filename = os.path.basename(componenturl)
         unzipped = filename.replace(".zip", "")
 
@@ -97,34 +96,90 @@ class Artifacts(object):
         return localpath
 
 
-def set_artifacts_map(cls, artifacturls):
-    patterns = [
-        ('win', r'OMERO\.insight.*-win\.zip$'),
-        ('mac', r'OMERO\.insight.*-mac_Java7\+\.zip$'),
-        ('mac6', r'OMERO\.insight.*-mac_Java6\.zip$'),
-        ('linux', r'OMERO\.insight.*-linux\.zip$'),
-        ('python', r'OMERO\.py.*\.zip$'),
-        ('source', r'openmicroscopy.*\.zip$'),
-    ]
-    defaultpat = r'OMERO\.(\w+).*\.zip$'
+class ArtifactsList(object):
+    """
+    Searches for an artifact matching {NAME} using the following rules:
+    1. Explicitly named matches
+    2. OMERO.{NAME}*.zip (shortest match)
+    3. {NAME}*.zip (shortest match)
+    4. {NAME}*.jar (shortest match)
+    """
 
-    for artifact in artifacturls:
-        filename = artifact.split('/')[-1]
-        m = re.match(defaultpat, filename)
-        if m:
-            setattr(cls, m.group(1), artifact)
-            log.debug('Set %s=%s', m.group(1), artifact)
+    def __init__(self):
+        self.namedcomponents = {}
+        self.omerozips = {}
+        self.zips = {}
+        self.jars = {}
 
-        for key, value in patterns:
-            if re.match(value, filename):
-                setattr(cls, key, artifact)
-                log.debug('Set %s=%s', key, artifact)
-                break
+        self.namedpatterns = (
+            ('win', r'OMERO\.insight.*-win\.zip$'),
+            ('mac', r'OMERO\.insight.*-mac_Java7\+\.zip$'),
+            ('mac6', r'OMERO\.insight.*-mac_Java6\.zip$'),
+            ('linux', r'OMERO\.insight.*-linux\.zip$'),
+            ('matlab', r'OMERO\.matlab.*\.zip$'),
+            ('server', r'OMERO\.server.*\.zip$'),
+            ('python', r'OMERO\.py.*\.zip$'),
+            ('source', r'openmicroscopy.*\.zip$'),
+        )
+        self.generalpatterns = (
+            ('omerozips', r'OMERO\.(.*)\.zip$'),
+            ('zips', r'(.*)\.zip$'),
+            ('jars', r'(.*)\.jar$'),
+        )
+
+    def get(self, component):
+        try:
+            return self.namedcomponents[component]
+        except KeyError:
+            pass
+
+        for genname, pattern in self.generalpatterns:
+            matches = []
+            gengroup = getattr(self, genname)
+            matchnames = tuple(gengroup.keys())
+            matches = [m for m in matchnames if m.startswith(component)]
+            if matches:
+                shortest = min(matches, key=len)
+                return gengroup[shortest]
+
+        raise ArtifactException('No match for component', component)
+
+    @staticmethod
+    def componentdict_str(d, prefix=''):
+        kvfmt = '%%s\n%s  %%s' % prefix
+        joinstr = '\n%s' % prefix
+        return joinstr.join(kvfmt % kv for kv in d.iteritems())
+
+    def __str__(self):
+        s = 'namedcomponents\n  ' + '\n  '.join(
+            k for k in sorted(self.namedcomponents.keys()))
+        for genname, v in self.generalpatterns:
+            d = getattr(self, genname)
+            s += '\n%s\n  ' % genname + '\n  '.join(sorted(d.keys()))
+        return s
+
+    def find_artifacts(self, artifacturls):
+
+        for artifact in artifacturls:
+            filename = artifact.split('/')[-1]
+
+            for name, pattern in self.namedpatterns:
+                if re.match(pattern, filename):
+                    self.namedcomponents[name] = artifact
+                    log.debug('Set %s=%s', name, artifact)
+                    break
+
+            for genname, pattern in self.generalpatterns:
+                m = re.match(pattern, filename)
+                if m:
+                    getattr(self, genname)[m.group(1)] = artifact
+                    log.debug('Set %s %s=%s', genname, m.group(1), artifact)
 
 
-class JenkinsArtifacts(object):
+class JenkinsArtifacts(ArtifactsList):
 
     def __init__(self, args):
+        super(JenkinsArtifacts, self).__init__()
 
         self.args = args
         buildurl = args.build
@@ -143,7 +198,7 @@ class JenkinsArtifacts(object):
 
         artifacturls = [
             base_url + a.find("relativePath").text for a in artifacts]
-        set_artifacts_map(self, artifacturls)
+        self.find_artifacts(artifacturls)
 
     def read_xml(self, buildurl):
         url = None
@@ -237,12 +292,13 @@ class HtmlHrefParser(HTMLParser):
                     self.hrefs.add(v)
 
 
-class ReleaseArtifacts(object):
+class ReleaseArtifacts(ArtifactsList):
     """
     Fetch artifacts from the download pages created for each release
     """
 
     def __init__(self, args):
+        super(ReleaseArtifacts, self).__init__()
         self.args = args
 
         if re.match('[0-9]+\.[0-9]+\.[0-9]+', args.branch):
@@ -260,7 +316,7 @@ class ReleaseArtifacts(object):
         if len(artifacturls) <= 0:
             raise AttributeError(
                 "No artifacts, please check the downloads page.")
-        set_artifacts_map(self, artifacturls)
+        self.find_artifacts(artifacturls)
 
     def follow_latest_redirect(self, args):
         ver = ''
