@@ -84,8 +84,13 @@ class Artifacts(object):
         return localpath
 
     def list(self):
-        print 'Artifacts available for download:'
-        print str(self.artifacts)
+        s = ('Artifacts available for download. '
+             'Initial partial matching is supported for all except '
+             'named-components). '
+             'Alternatively a full filename can be specified to download '
+             'any artifact, including those not listed.\n' +
+             str(self.artifacts))
+        print s
 
 
 class ArtifactsList(object):
@@ -159,7 +164,7 @@ class ArtifactsList(object):
     def __str__(self):
         s = ''
         if self.namedcomponents:
-            s += 'namedcomponents:\n  ' + '\n  '.join(
+            s += 'named-components:\n  ' + '\n  '.join(
                 k for k in sorted(self.namedcomponents.keys()))
         for genname, v in self.generalpatterns():
             d = getattr(self, genname)
@@ -394,7 +399,7 @@ class DownloadCommand(Command):
         self.parser.add_argument("-n", "--dry-run", action="store_true")
         self.parser.add_argument("artifact", nargs='?', default='', help=(
             "The artifact to download e.g. {%s}. "
-            "Omit this argument to list all supported artifacts" %
+            "Omit this argument to list all zip and jar artifacts" %
             ','.join(ArtifactsList.get_artifacts_list())))
 
         self.parser = JenkinsParser(self.parser)

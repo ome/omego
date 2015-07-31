@@ -63,7 +63,7 @@ class TestArtifactsList(object):
     def test_str(self):
         a = ArtifactsList()
         a.find_artifacts(self.urls)
-        expected = """namedcomponents:
+        expected = """named-components:
   mac
   server
 omerozips:
