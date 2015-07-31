@@ -80,6 +80,10 @@ class Artifacts(object):
 
         return localpath
 
+    def list(self):
+        print 'Artifacts available for download:'
+        print str(self.artifacts)
+
 
 class ArtifactsList(object):
     """
@@ -145,11 +149,11 @@ class ArtifactsList(object):
         return joinstr.join(kvfmt % kv for kv in d.iteritems())
 
     def __str__(self):
-        s = 'namedcomponents\n  ' + '\n  '.join(
+        s = 'namedcomponents:\n  ' + '\n  '.join(
             k for k in sorted(self.namedcomponents.keys()))
         for genname, v in self.generalpatterns():
             d = getattr(self, genname)
-            s += '\n%s\n  ' % genname + '\n  '.join(sorted(d.keys()))
+            s += '\n%s:\n  ' % genname + '\n  '.join(sorted(d.keys()))
         return s
 
     def find_artifacts(self, artifacturls):
@@ -376,10 +380,10 @@ class DownloadCommand(Command):
         super(DownloadCommand, self).__init__(sub_parsers)
 
         self.parser.add_argument("-n", "--dry-run", action="store_true")
-        self.parser.add_argument(
-            "artifact",
-            help="The artifact to download e.g. {%s}" %
-            ','.join(ArtifactsList.get_artifacts_list()))
+        self.parser.add_argument("artifact", nargs='?', default='', help=(
+            "The artifact to download e.g. {%s}. "
+            "Omit this argument to list all supported artifacts" %
+            ','.join(ArtifactsList.get_artifacts_list())))
 
         self.parser = JenkinsParser(self.parser)
         self.parser = FileUtilsParser(self.parser)
@@ -404,4 +408,7 @@ class DownloadCommand(Command):
                 setattr(args, dest, replacement)
 
         artifacts = Artifacts(args)
-        artifacts.download(args.artifact)
+        if args.artifact:
+            artifacts.download(args.artifact)
+        else:
+            artifacts.list()

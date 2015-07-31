@@ -57,29 +57,28 @@ class TestArtifactsList(object):
         assert a.get('bio') == self.urls[4]
         assert a.get('bio-formats') == self.urls[6]
 
-    def test_list(self):
+    def test_str(self):
         a = ArtifactsList()
         a.find_artifacts(self.urls)
-        s = str(a)
-        expected = """namedcomponents
+        expected = """namedcomponents:
   mac
   server
-omerozips
+omerozips:
   insight-0.0.0
   insight-0.0.0-mac_Java7+
   insight-ij-0.0.0
   server-0.0.0-DEV
-zips
+zips:
   OMERO.insight-0.0.0
   OMERO.insight-0.0.0-mac_Java7+
   OMERO.insight-ij-0.0.0
   OMERO.server-0.0.0-DEV
   bioformats-0.0.0-DEV
-jars
+jars:
   bio-formats-tools
   bio-formats_plugins"""
 
-        assert s == expected
+        assert str(a) == expected
 
 
 class MockUrl(object):
