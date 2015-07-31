@@ -149,11 +149,14 @@ class ArtifactsList(object):
         return joinstr.join(kvfmt % kv for kv in d.iteritems())
 
     def __str__(self):
-        s = 'namedcomponents:\n  ' + '\n  '.join(
-            k for k in sorted(self.namedcomponents.keys()))
+        s = ''
+        if self.namedcomponents:
+            s += 'namedcomponents:\n  ' + '\n  '.join(
+                k for k in sorted(self.namedcomponents.keys()))
         for genname, v in self.generalpatterns():
             d = getattr(self, genname)
-            s += '\n%s:\n  ' % genname + '\n  '.join(sorted(d.keys()))
+            if d:
+                s += '\n%s:\n  ' % genname + '\n  '.join(sorted(d.keys()))
         return s
 
     def find_artifacts(self, artifacturls):
