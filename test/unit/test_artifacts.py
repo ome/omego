@@ -50,12 +50,15 @@ class TestArtifactsList(object):
         a.find_artifacts(self.urls)
 
         assert a.get('insight') == self.urls[0]
+        assert a.get('OMERO.insight-0.0.0.zip') == self.urls[0]
         assert a.get('insight-ij') == self.urls[1]
         assert a.get('mac') == self.urls[2]
-        with pytest.raises(ArtifactException):
-            a.get('GIT_INFO')
+        assert a.get('GIT_INFO') == self.urls[3]
         assert a.get('bio') == self.urls[4]
         assert a.get('bio-formats') == self.urls[6]
+
+        with pytest.raises(ArtifactException):
+            a.get('non-existent')
 
     def test_str(self):
         a = ArtifactsList()

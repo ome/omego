@@ -27,6 +27,9 @@ from omego.artifacts import DownloadCommand
 
 class Downloader(object):
 
+    def setup_class(self):
+        self.artifact = None
+
     def download(self, *args):
         args = ["download", self.artifact] + list(args)
         main("omego", args=args, items=[("download", DownloadCommand)])
@@ -52,8 +55,8 @@ class TestDownload(Downloader):
 
     def testDownloadUnzipDir(self, tmpdir):
         with tmpdir.as_cwd():
-            self.download('--unzipdir', 'OMERO.cpp', '--branch', self.branch)
-            assert tmpdir.ensure('OMERO.cpp', dir=True)
+            self.download('--unzipdir', 'OMERO.py', '--branch', self.branch)
+            assert tmpdir.ensure('OMERO.py', dir=True)
 
     def testDownloadRelease(self, tmpdir):
         with tmpdir.as_cwd():
@@ -65,10 +68,18 @@ class TestDownload(Downloader):
 class TestDownloadBioFormats(Downloader):
 
     def setup_class(self):
-        self.artifact = 'ij'
         self.branch = 'BIOFORMATS-5.1-latest'
 
-    def testDownloadBioformatsJar(self, tmpdir):
+    def testDownloadJar(self, tmpdir):
+        self.artifact = 'ij'
+        with tmpdir.as_cwd():
+            self.download('--branch', self.branch)
+            files = tmpdir.listdir()
+            assert len(files) == 1
+            assert files[0].basename == 'ij.jar'
+
+    def testDownloadFullFilename(self, tmpdir):
+        self.artifact = 'ij.jar'
         with tmpdir.as_cwd():
             self.download('--branch', self.branch)
             files = tmpdir.listdir()

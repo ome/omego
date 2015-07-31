@@ -91,13 +91,16 @@ class Artifacts(object):
 class ArtifactsList(object):
     """
     Searches for an artifact matching {NAME} using the following rules:
-    1. Explicitly named matches
-    2. OMERO.{NAME}*.zip (shortest match)
-    3. {NAME}*.zip (shortest match)
-    4. {NAME}*.jar (shortest match)
+    1. Exact match to full filename
+    2. Explicitly named matches
+    3. OMERO.{NAME}*.zip
+    4. {NAME}*.zip
+    5. {NAME}*.jar
+    Partial initial matching can be used except for full filenames
     """
 
     def __init__(self):
+        self.filenames = {}
         self.namedcomponents = {}
         self.omerozips = {}
         self.zips = {}
@@ -129,19 +132,27 @@ class ArtifactsList(object):
         return [n[0] for n in self.namedpatterns()] + ['...']
 
     def get(self, component):
-        try:
-            return self.namedcomponents[component]
-        except KeyError:
-            pass
-
-        for genname, pattern in self.generalpatterns():
-            matches = []
-            gengroup = getattr(self, genname)
-            matchnames = tuple(gengroup.keys())
+        def matchdict(d, component):
+            matchnames = tuple(d.keys())
             matches = [m for m in matchnames if m.startswith(component)]
             if matches:
                 shortest = min(matches, key=len)
-                return gengroup[shortest]
+                return d[shortest]
+
+        try:
+            return self.filenames[component]
+        except KeyError:
+            pass
+
+        match = matchdict(self.namedcomponents, component)
+        if match:
+            return match
+
+        for genname, pattern in self.generalpatterns():
+            gengroup = getattr(self, genname)
+            match = matchdict(gengroup, component)
+            if match:
+                return match
 
         raise ArtifactException('No match for component', component)
 
@@ -160,6 +171,7 @@ class ArtifactsList(object):
 
         for artifact in artifacturls:
             filename = artifact.split('/')[-1]
+            self.filenames[filename] = artifact
 
             for name, pattern in self.namedpatterns():
                 if re.match(pattern, filename):
