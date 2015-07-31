@@ -43,21 +43,6 @@ class Artifacts(object):
             log.error('Invalid release or job name: %s', args.branch)
             raise Stop(20, 'Invalid release or job name: %s', args.branch)
 
-    @classmethod
-    def get_artifacts_list(self):
-        return [
-            'win',
-            'mac',
-            'mac6',
-            'linux',
-            'matlab',
-            'server',
-            'python',
-            'source',
-            'cpp',
-            '...'
-            ]
-
     def download(self, component):
         componenturl = self.artifacts.get(component)
         if not componenturl:
@@ -111,7 +96,9 @@ class ArtifactsList(object):
         self.zips = {}
         self.jars = {}
 
-        self.namedpatterns = (
+    @staticmethod
+    def namedpatterns():
+        return (
             ('win', r'OMERO\.insight.*-win\.zip$'),
             ('mac', r'OMERO\.insight.*-mac_Java7\+\.zip$'),
             ('mac6', r'OMERO\.insight.*-mac_Java6\.zip$'),
@@ -121,11 +108,18 @@ class ArtifactsList(object):
             ('python', r'OMERO\.py.*\.zip$'),
             ('source', r'openmicroscopy.*\.zip$'),
         )
-        self.generalpatterns = (
+
+    @staticmethod
+    def generalpatterns():
+        return (
             ('omerozips', r'OMERO\.(.*)\.zip$'),
             ('zips', r'(.*)\.zip$'),
             ('jars', r'(.*)\.jar$'),
         )
+
+    @classmethod
+    def get_artifacts_list(self):
+        return [n[0] for n in self.namedpatterns()] + ['...']
 
     def get(self, component):
         try:
@@ -133,7 +127,7 @@ class ArtifactsList(object):
         except KeyError:
             pass
 
-        for genname, pattern in self.generalpatterns:
+        for genname, pattern in self.generalpatterns():
             matches = []
             gengroup = getattr(self, genname)
             matchnames = tuple(gengroup.keys())
@@ -153,7 +147,7 @@ class ArtifactsList(object):
     def __str__(self):
         s = 'namedcomponents\n  ' + '\n  '.join(
             k for k in sorted(self.namedcomponents.keys()))
-        for genname, v in self.generalpatterns:
+        for genname, v in self.generalpatterns():
             d = getattr(self, genname)
             s += '\n%s\n  ' % genname + '\n  '.join(sorted(d.keys()))
         return s
@@ -163,13 +157,13 @@ class ArtifactsList(object):
         for artifact in artifacturls:
             filename = artifact.split('/')[-1]
 
-            for name, pattern in self.namedpatterns:
+            for name, pattern in self.namedpatterns():
                 if re.match(pattern, filename):
                     self.namedcomponents[name] = artifact
                     log.debug('Set %s=%s', name, artifact)
                     break
 
-            for genname, pattern in self.generalpatterns:
+            for genname, pattern in self.generalpatterns():
                 m = re.match(pattern, filename)
                 if m:
                     getattr(self, genname)[m.group(1)] = artifact
@@ -385,7 +379,7 @@ class DownloadCommand(Command):
         self.parser.add_argument(
             "artifact",
             help="The artifact to download e.g. {%s}" %
-            ','.join(Artifacts.get_artifacts_list()))
+            ','.join(ArtifactsList.get_artifacts_list()))
 
         self.parser = JenkinsParser(self.parser)
         self.parser = FileUtilsParser(self.parser)
