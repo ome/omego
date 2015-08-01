@@ -1,12 +1,21 @@
 language: python
 
-python:
-  - "2.7"
+python: "2.7"
 
 virtualenv:
   system_site_packages: true
 
+# This (sudo: false) is needed to "run on container-based infrastructure" on
+# which cache: is available
+# http://docs.travis-ci.com/user/workers/container-based-infrastructure/
+sudo: false
+
+cache: pip
+
 addons:
+  apt_packages:
+    - ice34-services
+    - python-zeroc-ice
   postgresql: "9.3"
 
 env:
@@ -14,11 +23,8 @@ env:
     - USER_AGENT=Travis TEST=upgrade
 
 before_install:
-  - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install argparse; fi
   - pip install -r requirements.txt
   - pip install flake8
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq ice34-services python-zeroc-ice
   - flake8 -v omego test
 
 before_script:
