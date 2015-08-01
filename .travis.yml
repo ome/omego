@@ -31,13 +31,13 @@ before_script:
     - psql -c "create user omero with password 'omero';" -U postgres
     - psql -c "create database omero with owner omero;" -U postgres
     - psql -c "select 1;" -U omero -h localhost omero
-    - sudo mkdir /OMERO
-    - sudo chown $USER:$USER /OMERO
+    - mkdir $HOME/OMERO
     - if [ $TEST == upgrade ]; then wget --user-agent $USER_AGENT https://downloads.openmicroscopy.org/omero/4.4.11/artifacts/OMERO.server-4.4.11-ice34-b114.zip; fi
     - if [ $TEST == upgrade ]; then unzip -qq OMERO.server-4.4.11-ice34-b114.zip; fi
     - if [ $TEST == upgrade ]; then ln -s OMERO.server-4.4.11-ice34-b114 OMERO-CURRENT; fi
     - if [ $TEST == upgrade ]; then OMERO-CURRENT/bin/omero db script "" "" ome -f OMERO.sql; fi
     - if [ $TEST == upgrade ]; then psql -q -h localhost -U omero omero < OMERO.sql; fi
+    - if [ $TEST == upgrade ]; then OMERO-CURRENT/bin/omero config set omero.data.dir $HOME/OMERO; fi
     - if [ $TEST == upgrade ]; then OMERO-CURRENT/bin/omero admin start; fi
 
 script:
