@@ -17,6 +17,7 @@ fi
 #Test a multistage DB upgrade (4.4 -> 5.1DEV) as part of the server upgrade
 if [ $TEST = upgrade ]; then
   wget --user-agent $USER_AGENT https://downloads.openmicroscopy.org/omero/4.4.11/artifacts/OMERO.server-4.4.11-ice34-b114.zip;
+  unzip -qq OMERO.server-4.4.11-ice34-b114.zip;
   ln -s OMERO.server-4.4.11-ice34-b114 OMERO-CURRENT;
   OMERO-CURRENT/bin/omero db script "" "" ome -f OMERO.sql;
   psql -q -h localhost -U omero omero < OMERO.sql;
