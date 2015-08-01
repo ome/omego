@@ -9,7 +9,18 @@ pip install dist/*.tar.gz
 omego -h
 
 #Install a new server
-if [ $TEST = install ]; then omego install --initdb --dbhost localhost --dbname omero -v http://downloads.openmicroscopy.org/omero/5.0.0-rc1/artifacts/OMERO.server-5.0.0-rc1-ice34-b10.zip; fi
+if [ $TEST = install ]; then
+  
+  omego install --initdb --dbhost localhost --dbname omero --prestartfile $HOME/config.omero -v http://downloads.openmicroscopy.org/omero/5.0.0-rc1/artifacts/OMERO.server-5.0.0-rc1-ice34-b10.zip;
+fi
 
-#Test a multistage DB upgrade (4.4 -> 5.1DEV) as part fo the server upgrade
-if [ $TEST = upgrade ]; then omego upgrade --branch=OMERO-5.1-latest --labels=ICE=3.4 --upgradedb --dbhost localhost --dbname omero -v; fi
+#Test a multistage DB upgrade (4.4 -> 5.1DEV) as part of the server upgrade
+if [ $TEST = upgrade ]; then
+  wget --user-agent $USER_AGENT https://downloads.openmicroscopy.org/omero/4.4.11/artifacts/OMERO.server-4.4.11-ice34-b114.zip;
+  ln -s OMERO.server-4.4.11-ice34-b114 OMERO-CURRENT;
+  OMERO-CURRENT/bin/omero db script "" "" ome -f OMERO.sql;
+  psql -q -h localhost -U omero omero < OMERO.sql;
+  OMERO-CURRENT/bin/omero config set omero.data.dir $HOME/OMERO;
+  OMERO-CURRENT/bin/omero admin start;
+  omego upgrade --branch=OMERO-5.1-latest --labels=ICE=3.4 --upgradedb --dbhost localhost --dbname omero -v;
+fi
