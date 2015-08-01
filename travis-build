@@ -21,7 +21,7 @@ if [ $TEST = upgrade ]; then
   ln -s OMERO.server-4.4.11-ice34-b114 OMERO-CURRENT;
   OMERO-CURRENT/bin/omero db script "" "" ome -f OMERO.sql;
   psql -q -h localhost -U omero omero < OMERO.sql;
-  OMERO-CURRENT/bin/omero config load $HOME/config.omero;
+  OMERO-CURRENT/bin/omero load $HOME/config.omero;
   OMERO-CURRENT/bin/omero admin start;
   omego upgrade --branch=OMERO-5.1-latest --labels=ICE=3.4 --upgradedb --dbhost localhost --dbname omero -v;
 fi
