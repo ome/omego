@@ -25,28 +25,76 @@ from yaclifw.framework import main
 from omego.artifacts import DownloadCommand
 
 
-class TestDownload(object):
+class Downloader(object):
 
     def setup_class(self):
-        self.artifact = 'cpp'
+        self.artifact = None
 
     def download(self, *args):
         args = ["download", self.artifact] + list(args)
         main("omego", args=args, items=[("download", DownloadCommand)])
 
+
+class TestDownload(Downloader):
+
+    def setup_class(self):
+        self.artifact = 'python'
+        self.branch = 'OMERO-5.1-latest'
+
     def testDownloadNoUnzip(self, tmpdir):
         with tmpdir.as_cwd():
-            self.download('--skipunzip')
+            self.download('--skipunzip', '--branch', self.branch)
             files = tmpdir.listdir()
             assert len(files) == 1
 
     def testDownloadUnzip(self, tmpdir):
         with tmpdir.as_cwd():
-            self.download()
+            self.download('--branch', self.branch)
             files = tmpdir.listdir()
             assert len(files) == 2
 
     def testDownloadUnzipDir(self, tmpdir):
         with tmpdir.as_cwd():
-            self.download('--unzipdir', 'OMERO.cpp')
-            assert tmpdir.ensure('OMERO.cpp', dir=True)
+            self.download('--unzipdir', 'OMERO.py', '--branch', self.branch)
+            assert tmpdir.ensure('OMERO.py', dir=True)
+
+    def testDownloadRelease(self, tmpdir):
+        with tmpdir.as_cwd():
+            self.download('--release', 'latest')
+            files = tmpdir.listdir()
+            assert len(files) == 2
+
+
+class TestDownloadBioFormats(Downloader):
+
+    def setup_class(self):
+        self.branch = 'BIOFORMATS-5.1-latest'
+
+    def testDownloadJar(self, tmpdir):
+        self.artifact = 'ij'
+        with tmpdir.as_cwd():
+            self.download('--branch', self.branch)
+            files = tmpdir.listdir()
+            assert len(files) == 1
+            assert files[0].basename == 'ij.jar'
+
+    def testDownloadFullFilename(self, tmpdir):
+        self.artifact = 'ij.jar'
+        with tmpdir.as_cwd():
+            self.download('--branch', self.branch)
+            files = tmpdir.listdir()
+            assert len(files) == 1
+            assert files[0].basename == 'ij.jar'
+
+
+class TestDownloadList(Downloader):
+
+    def setup_class(self):
+        self.artifact = ''
+        self.branch = 'latest'
+
+    def testDownloadList(self, tmpdir):
+        with tmpdir.as_cwd():
+            self.download('--branch', self.branch)
+            files = tmpdir.listdir()
+            assert len(files) == 0
