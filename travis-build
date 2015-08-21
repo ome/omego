@@ -6,6 +6,7 @@ python setup.py test -t test/unit -v
 python setup.py test -t test/integration -v -m "not slowtest"
 python setup.py sdist install
 pip install dist/*.tar.gz
+omego version
 omego -h
 
 #Install a new server
