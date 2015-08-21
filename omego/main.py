@@ -28,18 +28,13 @@ will be presented to the user.
 import sys
 
 from yaclifw.framework import main, Stop
-from yaclifw.version import Version
 
-from omego import __file__ as module_file
+from artifacts import DownloadCommand
 from convert import ConvertCommand
+from db import DbCommand
 from upgrade import InstallCommand
 from upgrade import UpgradeCommand
-from artifacts import DownloadCommand
-from db import DbCommand
-
-
-class OmegoVersion(Version):
-    FILE = module_file
+from version import Version
 
 
 def entry_point():
@@ -54,7 +49,7 @@ def entry_point():
             (ConvertCommand.NAME, ConvertCommand),
             (DownloadCommand.NAME, DownloadCommand),
             (DbCommand.NAME, DbCommand),
-            (Version.NAME, OmegoVersion)])
+            (Version.NAME, Version)])
     except Stop, stop:
         if stop.rc != 0:
             print "ERROR:", stop
