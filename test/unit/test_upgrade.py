@@ -36,7 +36,8 @@ class TestUpgrade(object):
     class Args(object):
         def __init__(self, args):
             self.sym = 'sym'
-            self.skipweb = 'false'
+            self.no_start = False
+            self.no_web = False
             self.skipdelete = 'false'
             self.skipdeletezip = 'false'
             self.verbose = False
@@ -100,19 +101,18 @@ class TestUpgrade(object):
 
         self.mox.VerifyAll()
 
-    @pytest.mark.parametrize('skipweb', [True, False])
-    def test_stop(self, skipweb):
+    @pytest.mark.parametrize('noweb', [True, False])
+    def test_stop(self, noweb):
         ext = self.mox.CreateMock(External)
         ext.omero_bin(['admin', 'status', '--nodeonly'])
         ext.omero_bin(['admin', 'stop'])
-        if not skipweb:
+        if not noweb:
             ext.omero_bin(['web', 'stop'])
         self.mox.ReplayAll()
 
-        args = self.Args({'skipweb': str(skipweb)})
+        args = self.Args({'no_web': noweb})
         upgrade = self.PartialMockUnixInstall(args, ext)
         print '*** %s' % upgrade.args.__dict__
-        print upgrade.web()
         upgrade.stop()
         self.mox.VerifyAll()
 
@@ -134,15 +134,17 @@ class TestUpgrade(object):
         upgrade.archive_logs()
         self.mox.VerifyAll()
 
-    @pytest.mark.parametrize('skipweb', [True, False])
-    def test_start(self, skipweb):
+    @pytest.mark.parametrize('nostart', [True, False])
+    @pytest.mark.parametrize('noweb', [True, False])
+    def test_start(self, nostart, noweb):
         ext = self.mox.CreateMock(External)
-        ext.omero_cli(['admin', 'start'])
-        if not skipweb:
-            ext.omero_cli(['web', 'start'])
+        if not nostart:
+            ext.omero_cli(['admin', 'start'])
+            if not noweb:
+                ext.omero_cli(['web', 'start'])
         self.mox.ReplayAll()
 
-        args = self.Args({'skipweb': str(skipweb)})
+        args = self.Args({'no_web': noweb, 'no_start': nostart})
         upgrade = self.PartialMockUnixInstall(args, ext)
         upgrade.start()
         self.mox.VerifyAll()
@@ -167,13 +169,6 @@ class TestUpgrade(object):
         upgrade = self.PartialMockUnixInstall({}, ext)
         upgrade.bin('a b')
         upgrade.bin(['a', 'b'])
-        self.mox.VerifyAll()
-
-    @pytest.mark.parametrize('skipweb', [True, False])
-    def test_web(self, skipweb):
-        args = self.Args({'skipweb': str(skipweb)})
-        upgrade = self.PartialMockUnixInstall(args, None)
-        assert upgrade.web() != skipweb
         self.mox.VerifyAll()
 
     @pytest.mark.parametrize('skipdelete', [True, False])

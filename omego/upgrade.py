@@ -110,7 +110,7 @@ class Install(object):
         except Exception as e:
             log.error('Error whilst stopping server: %s', e)
 
-        if self.web():
+        if not self.args.no_web:
             try:
                 log.info("Stopping web")
                 self.stopweb()
@@ -205,8 +205,12 @@ class Install(object):
             DbAdmin(self.dir, 'upgrade', self.args, self.external)
 
     def start(self):
+        if self.args.no_start:
+            log.debug('Not starting OMERO')
+            return
+
         self.run("admin start")
-        if self.web():
+        if not self.args.no_web:
             log.info("Starting web")
             self.startweb()
 
@@ -229,9 +233,6 @@ class Install(object):
         if isinstance(command, basestring):
             command = command.split()
         self.external.omero_bin(command)
-
-    def web(self):
-        return "false" == self.args.skipweb.lower()
 
 
 class UnixInstall(Install):
@@ -365,7 +366,14 @@ class InstallBaseCommand(Command):
 
         Add(self.parser, "sym", "OMERO-CURRENT")
 
-        Add(self.parser, "skipweb", "false")
+        self.parser.add_argument(
+            "--no-start", action="store_true",
+            help="Don't start any omero components")
+
+        self.parser.add_argument(
+            "--no-web", action="store_true",
+            help="Ignore OMERO.web, don't start or stop")
+
         Add(self.parser, "skipdelete", "true")
         Add(self.parser, "skipdeletezip", "false")
 
