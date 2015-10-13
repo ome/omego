@@ -38,8 +38,8 @@ class TestUpgrade(object):
             self.sym = 'sym'
             self.no_start = False
             self.no_web = False
-            self.skipdelete = 'false'
-            self.skipdeletezip = 'false'
+            self.delete_old = False
+            self.keep_old_zip = False
             self.verbose = False
             for k, v in args.iteritems():
                 setattr(self, k, v)
@@ -171,11 +171,11 @@ class TestUpgrade(object):
         upgrade.bin(['a', 'b'])
         self.mox.VerifyAll()
 
-    @pytest.mark.parametrize('skipdelete', [True, False])
-    @pytest.mark.parametrize('skipdeletezip', [True, False])
-    def test_directories(self, skipdelete, skipdeletezip):
-        args = self.Args({'skipdelete': str(skipdelete),
-                          'skipdeletezip': str(skipdeletezip)})
+    @pytest.mark.parametrize('deleteold', [True, False])
+    @pytest.mark.parametrize('keepoldzip', [True, False])
+    def test_directories(self, deleteold, keepoldzip):
+        args = self.Args({'delete_old': deleteold,
+                          'keep_old_zip': keepoldzip})
         upgrade = self.PartialMockUnixInstall(args, None)
         upgrade.dir = 'new'
 
@@ -187,9 +187,9 @@ class TestUpgrade(object):
 
         os.path.samefile('new', 'sym').AndReturn(False)
         os.readlink('sym').AndReturn('old/')
-        if not skipdelete:
+        if deleteold:
             shutil.rmtree('old')
-        if not skipdeletezip:
+        if not keepoldzip:
             os.unlink('old.zip')
         os.unlink('sym')
         upgrade.symlink('new', 'sym')

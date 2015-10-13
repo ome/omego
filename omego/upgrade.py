@@ -177,14 +177,14 @@ class Install(object):
             target = None
             targetzip = None
 
-        if "false" == self.args.skipdelete.lower() and target:
+        if self.args.delete_old and target:
             try:
                 log.info("Deleting %s", target)
                 shutil.rmtree(target)
             except OSError as e:
                 log.error("Failed to delete %s: %s", target, e)
 
-        if "false" == self.args.skipdeletezip.lower() and targetzip:
+        if not self.args.keep_old_zip and targetzip:
             try:
                 log.info("Deleting %s", targetzip)
                 os.unlink(targetzip)
@@ -374,8 +374,12 @@ class InstallBaseCommand(Command):
             "--no-web", action="store_true",
             help="Ignore OMERO.web, don't start or stop")
 
-        Add(self.parser, "skipdelete", "true")
-        Add(self.parser, "skipdeletezip", "false")
+        self.parser.add_argument(
+            "--delete-old", action="store_true",
+            help="Delete the old server directory")
+        self.parser.add_argument(
+            "--keep-old-zip", action="store_true",
+            help="Don't delete the old server zip")
 
         # Record the values of these environment variables in a file
         envvars = "ICE_HOME PATH DYLD_LIBRARY_PATH LD_LIBRARY_PATH PYTHONPATH"
