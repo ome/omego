@@ -36,9 +36,6 @@ class TestUpgrade(object):
     class Args(object):
         def __init__(self, args):
             self.sym = 'sym'
-            self.registry = '12'
-            self.tcp = '34'
-            self.ssl = '56'
             self.skipweb = 'false'
             self.skipdelete = 'false'
             self.skipdeletezip = 'false'
@@ -122,18 +119,6 @@ class TestUpgrade(object):
     @pytest.mark.skipif(True, reason='Untestable: dynamic module import')
     def test_configure(self):
         pass
-
-    def test_configure_ports(self):
-        ext = self.mox.CreateMock(External)
-        args = self.Args({})
-        ext.omero_cli(
-            ['admin', 'ports', '--skipcheck', '--registry', args.registry,
-             '--tcp', args.tcp, '--ssl', args.ssl])
-        self.mox.ReplayAll()
-
-        upgrade = self.PartialMockUnixInstall(args, ext)
-        upgrade.configure_ports()
-        self.mox.VerifyAll()
 
     @pytest.mark.parametrize('archivelogs', [None, 'archivelogs.zip'])
     def test_archive_logs(self, archivelogs):
