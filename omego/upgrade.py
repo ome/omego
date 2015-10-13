@@ -156,14 +156,6 @@ class Install(object):
                         ftype, f))
                 self.run(['load', fpath])
 
-        self.configure_ports()
-
-    def configure_ports(self):
-        # Set registry, TCP and SSL ports
-        self.run(["admin", "ports", "--skipcheck", "--registry",
-                 self.args.registry, "--tcp",
-                 self.args.tcp, "--ssl", self.args.ssl])
-
     def archive_logs(self):
         if self.args.archivelogs:
             logdir = os.path.join(self.args.sym, 'var', 'log')
@@ -370,12 +362,6 @@ class InstallBaseCommand(Command):
         self.parser = FileUtilsParser(self.parser)
 
         Add = EnvDefault.add
-
-        # Ports
-        Add(self.parser, "prefix", "")
-        Add(self.parser, "registry", "%(prefix)s4061")
-        Add(self.parser, "tcp", "%(prefix)s4063")
-        Add(self.parser, "ssl", "%(prefix)s4064")
 
         Add(self.parser, "sym", "OMERO-CURRENT")
 

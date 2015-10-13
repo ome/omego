@@ -33,8 +33,8 @@ class EnvDefault(argparse.Action):
     argparse Action which can be used to also read values
     from the current environment. Additionally, it will
     replace any values in string replacement syntax that
-    have already been set in the environment (e.g. %%(prefix)4064
-    becomes 14064 if --prefix=1 was set)
+    have already been set in the environment (e.g. %%(xxx)234
+    becomes 1234 if --xxx=1 was set)
 
     Usage:
 
