@@ -66,8 +66,8 @@ class Install(object):
 
         if newinstall:
             self.init_db()
-        else:
-            self.upgrade_db()
+
+        self.upgrade_db()
 
         self.external.save_env_vars(args.savevarsfile, args.savevars.split())
         self.start()
@@ -426,8 +426,11 @@ class InstallCommand(InstallBaseCommand):
 
     def __init__(self, sub_parsers):
         super(InstallCommand, self).__init__(sub_parsers)
-        self.parser.add_argument(
+        group = self.parser.parser.add_mutually_exclusive_group()
+        group.add_argument(
             "--initdb", action="store_true", help="Initialise the database")
+        group.add_argument(
+            "--upgradedb", action="store_true", help="Upgrade the database")
 
 
 class UpgradeCommand(InstallBaseCommand):
