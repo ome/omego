@@ -8,6 +8,9 @@ from glob import glob
 import re
 
 import fileutils
+import itertools
+import random
+
 from external import External, RunException
 from yaclifw.framework import Command, Stop
 from env import EnvDefault, DbParser
@@ -137,22 +140,34 @@ class CrossCommand(Command):
         self.parser.add_argument(
             "spec",
             default=("?",),
-            nargs="+",
             help='Specifies which build target to generate')
+
+    def forall(self):
+        for k in itertools.product(
+            Platform.VALUES.keys(),
+            Python.VALUES.keys(),
+            Web.VALUES.keys(),
+            Postgres.VALUES.keys(),
+            Java.VALUES.keys()):
+            yield "".join(k)
 
     def __call__(self, args):
         super(CrossCommand, self).__call__(args)
         self.configure_logging(args)
 
         builds = set()
-        specs = list(args.spec)
-        for spec in specs:
-            if spec == "*":
-                self.log.debug("Building all...")
-            elif spec == "?":
-                self.log.debug("Building random...")
-            elif spec.startswith("B"):
-                self.log.debug("Building base spec...")
-            elif spec.startswith("S"):
-                self.log.debug("Building server spec...")
+        spec = str(args.spec)
+        if spec == "*":
+            self.log.debug("Building all...")
+            for spec in self.forall():
+                print Spec(spec)
+        elif spec == "?":
+            self.log.debug("Building random...")
+            spec = random.choice(list(self.forall()))
+            print Spec(spec)
+        elif spec.startswith("B"):
+            self.log.debug("Building base spec...")
+        elif spec.startswith("S"):
+            self.log.debug("Building server spec...")
+        else:
             print Spec(spec)
