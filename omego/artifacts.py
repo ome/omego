@@ -4,6 +4,7 @@
 import os
 import logging
 
+from HTMLParser import HTMLParser
 from urllib2 import HTTPError
 import re
 
@@ -33,6 +34,167 @@ class ArtifactException(Exception):
 class Artifacts(object):
 
     def __init__(self, args):
+        self.args = args
+        if re.match('[A-Za-z]\w+-\w+', args.branch):
+            self.artifacts = JenkinsArtifacts(args)
+        elif re.match('[0-9]+|latest$', args.branch):
+            self.artifacts = ReleaseArtifacts(args)
+        else:
+            log.error('Invalid release or job name: %s', args.branch)
+            raise Stop(20, 'Invalid release or job name: %s', args.branch)
+
+    def download(self, component):
+        componenturl = self.artifacts.get(component)
+        if not componenturl:
+            raise Exception("No %s found" % component)
+
+        filename = os.path.basename(componenturl)
+        unzipped = filename.replace(".zip", "")
+
+        if os.path.exists(unzipped):
+            return unzipped
+
+        log.info("Checking %s", componenturl)
+        if self.args.dry_run:
+            return
+
+        progress = 0
+        if self.args.verbose:
+            progress = 20
+        ptype, localpath = fileutils.get_as_local_path(
+            componenturl, self.args.overwrite, progress=progress,
+            httpuser=self.args.httpuser, httppassword=self.args.httppassword)
+        if ptype != 'file':
+            raise ArtifactException('Expected local file', localpath)
+
+        if not self.args.skipunzip:
+            if localpath.endswith('.zip'):
+                try:
+                    log.info('Unzipping %s', localpath)
+                    unzipped = fileutils.unzip(
+                        localpath, match_dir=True, destdir=self.args.unzipdir)
+                    return unzipped
+                except Exception as e:
+                    log.error('Unzip failed: %s', e)
+                    print e
+                    raise Stop(20, 'Unzip failed, try unzipping manually')
+            else:
+                log.warn('Not unzipping %s', localpath)
+
+        return localpath
+
+    def list(self):
+        s = ('Artifacts available for download. '
+             'Initial partial matching is supported for all except '
+             'named-components). '
+             'Alternatively a full filename can be specified to download '
+             'any artifact, including those not listed.\n' +
+             str(self.artifacts))
+        print s
+
+
+class ArtifactsList(object):
+    """
+    Searches for an artifact matching {NAME} using the following rules:
+    1. Exact match to full filename
+    2. Explicitly named matches
+    3. OMERO.{NAME}*.zip
+    4. {NAME}*.zip
+    5. {NAME}*.jar
+    Partial initial matching can be used except for full filenames
+    """
+
+    def __init__(self):
+        self.filenames = {}
+        self.namedcomponents = {}
+        self.omerozips = {}
+        self.zips = {}
+        self.jars = {}
+
+    @staticmethod
+    def namedpatterns():
+        return (
+            ('win', r'OMERO\.insight.*-win\.zip$'),
+            ('mac', r'OMERO\.insight.*-mac_Java7\+\.zip$'),
+            ('mac6', r'OMERO\.insight.*-mac_Java6\.zip$'),
+            ('linux', r'OMERO\.insight.*-linux\.zip$'),
+            ('matlab', r'OMERO\.matlab.*\.zip$'),
+            ('server', r'OMERO\.server.*\.zip$'),
+            ('python', r'OMERO\.py.*\.zip$'),
+            ('source', r'openmicroscopy.*\.zip$'),
+        )
+
+    @staticmethod
+    def generalpatterns():
+        return (
+            ('omerozips', r'OMERO\.(.*)\.zip$'),
+            ('zips', r'(.*)\.zip$'),
+            ('jars', r'(.*)\.jar$'),
+        )
+
+    @classmethod
+    def get_artifacts_list(self):
+        return [n[0] for n in self.namedpatterns()] + ['...']
+
+    def get(self, component):
+        def matchdict(d, component):
+            matchnames = tuple(d.keys())
+            matches = [m for m in matchnames if m.startswith(component)]
+            if matches:
+                shortest = min(matches, key=len)
+                return d[shortest]
+
+        try:
+            return self.filenames[component]
+        except KeyError:
+            pass
+
+        match = matchdict(self.namedcomponents, component)
+        if match:
+            return match
+
+        for genname, pattern in self.generalpatterns():
+            gengroup = getattr(self, genname)
+            match = matchdict(gengroup, component)
+            if match:
+                return match
+
+        raise ArtifactException('No match for component', component)
+
+    def __str__(self):
+        s = ''
+        if self.namedcomponents:
+            s += 'named-components:\n  ' + '\n  '.join(
+                k for k in sorted(self.namedcomponents.keys()))
+        for genname, v in self.generalpatterns():
+            d = getattr(self, genname)
+            if d:
+                s += '\n%s:\n  ' % genname + '\n  '.join(sorted(d.keys()))
+        return s
+
+    def find_artifacts(self, artifacturls):
+
+        for artifact in artifacturls:
+            filename = artifact.split('/')[-1]
+            self.filenames[filename] = artifact
+
+            for name, pattern in self.namedpatterns():
+                if re.match(pattern, filename):
+                    self.namedcomponents[name] = artifact
+                    log.debug('Set %s=%s', name, artifact)
+                    break
+
+            for genname, pattern in self.generalpatterns():
+                m = re.match(pattern, filename)
+                if m:
+                    getattr(self, genname)[m.group(1)] = artifact
+                    log.debug('Set %s %s=%s', genname, m.group(1), artifact)
+
+
+class JenkinsArtifacts(ArtifactsList):
+
+    def __init__(self, args):
+        super(JenkinsArtifacts, self).__init__()
 
         self.args = args
         buildurl = args.build
@@ -49,15 +211,9 @@ class Artifacts(object):
             raise AttributeError(
                 "No artifacts, please check build on the CI server.")
 
-        patterns = self.get_artifacts_list()
-        for artifact in artifacts:
-            filename = artifact.find("fileName").text
-
-            for key, value in patterns.iteritems():
-                if re.compile(value).match(filename):
-                    rel_path = base_url + artifact.find("relativePath").text
-                    setattr(self, key, rel_path)
-                    pass
+        artifacturls = [
+            base_url + a.find("relativePath").text for a in artifacts]
+        self.find_artifacts(artifacturls)
 
     def read_xml(self, buildurl):
         url = None
@@ -137,54 +293,97 @@ class Artifacts(object):
             slabels.remove('')
         return slabels
 
-    @classmethod
-    def get_artifacts_list(self):
-        return {'server': r'OMERO\.server.*\.zip',
-                'source': r'openmicroscopy.*\.zip',
-                'win': r'OMERO\.clients.*\.win\.zip',
-                'linux': r'OMERO\.clients.*\.linux\.zip',
-                'mac': r'OMERO\.clients.*\.mac\.zip',
-                'matlab': r'OMERO\.matlab.*\.zip',
-                'cpp': r'OMERO\.cpp.*\.zip',
-                'python': r'OMERO\.py.*\.zip',
-                }
 
-    def download(self, component):
-        if not hasattr(self, component) or getattr(self, component) is None:
-            raise Exception("No %s found" % component)
+class HtmlHrefParser(HTMLParser):
 
-        componenturl = getattr(self, component)
-        filename = os.path.basename(componenturl)
-        unzipped = filename.replace(".zip", "")
+    def __init__(self):
+        HTMLParser.__init__(self)
+        self.hrefs = set()
 
-        if self.args.dry_run:
-            return
+    def handle_starttag(self, tag, attrs):
+        if tag == 'a':
+            for k, v in attrs:
+                if k == 'href':
+                    self.hrefs.add(v)
 
-        if os.path.exists(unzipped):
-            return unzipped
 
-        log.info("Checking %s", componenturl)
-        progress = 0
-        if self.args.verbose:
-            progress = 20
-        ptype, localpath = fileutils.get_as_local_path(
-            componenturl, self.args.overwrite, progress=progress,
-            httpuser=self.args.httpuser, httppassword=self.args.httppassword)
-        if ptype != 'file' or not localpath.endswith('.zip'):
-            raise ArtifactException('Expected local zip file', localpath)
+class ReleaseArtifacts(ArtifactsList):
+    """
+    Fetch artifacts from the download pages created for each release
+    """
 
-        if not self.args.skipunzip:
+    def __init__(self, args):
+        super(ReleaseArtifacts, self).__init__()
+        self.args = args
+
+        if re.match('[0-9]+\.[0-9]+\.[0-9]+', args.branch):
+            ver = args.branch
+            dl_url = '%s/omero/%s/' % (args.downloadurl, ver)
+        elif re.match('[0-9]+|latest$', args.branch):
+            dl_url = self.follow_latest_redirect(args)
+
+        dl_icever = self.read_downloads(dl_url)
+        # TODO: add an ice version parameter (and replace the LABELS ICE=3.5
+        # parameter in upgrade.py)
+        # For now just take the most recent Ice
+        artifacturls = dl_icever[sorted(dl_icever.keys())[-1]]
+
+        if len(artifacturls) <= 0:
+            raise AttributeError(
+                "No artifacts, please check the downloads page.")
+        self.find_artifacts(artifacturls)
+
+    def follow_latest_redirect(self, args):
+        ver = ''
+        if args.branch != 'latest':
+            ver = args.branch
+
+        try:
+            latesturl = '%s/latest/omero%s' % (args.downloadurl, ver)
+            finalurl = fileutils.dereference_url(latesturl)
+            log.debug('Checked %s: %s', latesturl, finalurl)
+        except HTTPError as e:
+            log.error('Invalid URL %s: %s', latesturl, e)
+            raise Stop(20, 'Invalid latest URL, is the version correct?')
+        return finalurl
+
+    @staticmethod
+    def read_downloads(dlurl):
+        url = None
+        parser = HtmlHrefParser()
+        try:
+            url = fileutils.open_url(dlurl)
+            log.debug('Fetching html from %s code:%d', url.url, url.code)
+            if url.code != 200:
+                log.error('Failed to get HTML from %s (code %d)',
+                          url.url, url.code)
+                raise Stop(
+                    20, 'Downloads page failed, is the version correct?')
+            parser.feed(url.read())
+        except HTTPError as e:
+            log.error('Failed to get HTML from %s (%s)', dlurl, e)
+            raise Stop(20, 'Downloads page failed, is the version correct?')
+        finally:
+            if url:
+                url.close()
+
+        dl_icever = {}
+        for href in parser.hrefs:
             try:
-                log.info('Unzipping %s', localpath)
-                unzipped = fileutils.unzip(
-                    localpath, match_dir=True, destdir=self.args.unzipdir)
-                return unzipped
-            except Exception as e:
-                log.error('Unzip failed: %s', e)
-                print e
-                raise Stop(20, 'Unzip failed, try unzipping manually')
+                icever = re.search('-(ice\d+).*zip$', href).group(1)
+                if re.match('\w+://', href):
+                    fullurl = href
+                else:
+                    fullurl = dlurl + href
+                try:
+                    dl_icever[icever].append(fullurl)
+                except KeyError:
+                    dl_icever[icever] = [fullurl]
+                log.debug('Found artifact: %s', fullurl)
+            except AttributeError:
+                pass
 
-        return localpath
+        return dl_icever
 
 
 class DownloadCommand(Command):
@@ -198,10 +397,10 @@ class DownloadCommand(Command):
         super(DownloadCommand, self).__init__(sub_parsers)
 
         self.parser.add_argument("-n", "--dry-run", action="store_true")
-        self.parser.add_argument(
-            "artifact",
-            choices=Artifacts.get_artifacts_list().keys(),
-            help="The artifact to download from the CI server")
+        self.parser.add_argument("artifact", nargs='?', default='', help=(
+            "The artifact to download e.g. {%s}. "
+            "Omit this argument to list all zip and jar artifacts" %
+            ','.join(ArtifactsList.get_artifacts_list())))
 
         self.parser = JenkinsParser(self.parser)
         self.parser = FileUtilsParser(self.parser)
@@ -220,10 +419,13 @@ class DownloadCommand(Command):
             if dest in ("help", "verbose", "quiet"):
                 continue
             value = getattr(args, dest)
-            if value and isinstance(value, (str, unicode)):
+            if value and isinstance(value, basestring):
                 replacement = value % dict(args._get_kwargs())
                 log.debug("% 20s => %s" % (dest, replacement))
                 setattr(args, dest, replacement)
 
         artifacts = Artifacts(args)
-        artifacts.download(args.artifact)
+        if args.artifact:
+            artifacts.download(args.artifact)
+        else:
+            artifacts.list()

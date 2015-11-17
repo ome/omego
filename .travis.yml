@@ -1,36 +1,38 @@
 language: python
 
-python:
-  - "2.7"
+python: "2.7"
 
 virtualenv:
   system_site_packages: true
+
+# This (sudo: false) is needed to "run on container-based infrastructure" on
+# which cache: is available
+# http://docs.travis-ci.com/user/workers/container-based-infrastructure/
+sudo: false
+
+cache: pip
+
+addons:
+  apt_packages:
+    - ice34-services
+    - python-zeroc-ice
+  postgresql: "9.3"
 
 env:
     - USER_AGENT=Travis TEST=install
     - USER_AGENT=Travis TEST=upgrade
 
 before_install:
-  - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install argparse; fi
   - pip install -r requirements.txt
   - pip install flake8
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq ice34-services python-zeroc-ice
   - flake8 -v omego test
 
 before_script:
     - psql -c "create user omero with password 'omero';" -U postgres
     - psql -c "create database omero with owner omero;" -U postgres
     - psql -c "select 1;" -U omero -h localhost omero
-    - sudo mkdir /OMERO
-    - sudo chown $USER:$USER /OMERO
-    - if [ $TEST == upgrade ]; then wget --user-agent $USER_AGENT https://downloads.openmicroscopy.org/omero/4.4.11/artifacts/OMERO.server-4.4.11-ice34-b114.zip; fi
-    - if [ $TEST == upgrade ]; then unzip -qq OMERO.server-4.4.11-ice34-b114.zip; fi
-    - if [ $TEST == upgrade ]; then ln -s OMERO.server-4.4.11-ice34-b114 OMERO-CURRENT; fi
-    - if [ $TEST == upgrade ]; then OMERO-CURRENT/bin/omero db script "" "" ome -f OMERO.sql; fi
-    - if [ $TEST == upgrade ]; then psql -q -h localhost -U omero omero < OMERO.sql; fi
-    - if [ $TEST == upgrade ]; then OMERO-CURRENT/bin/omero admin start; fi
-
+    - mkdir $HOME/OMERO
+    - echo "config set omero.data.dir $HOME/OMERO" > $HOME/config.omero
 script:
     - sh travis-build
 

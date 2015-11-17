@@ -58,6 +58,7 @@ class Install(object):
 
         if not newinstall:
             self.stop()
+            self.archive_logs()
 
         copyold = not newinstall and not args.ignoreconfig
         self.configure(copyold, args.prestartfile)
@@ -65,8 +66,8 @@ class Install(object):
 
         if newinstall:
             self.init_db()
-        else:
-            self.upgrade_db()
+
+        self.upgrade_db()
 
         self.external.save_env_vars(args.savevarsfile, args.savevars.split())
         self.start()
@@ -163,6 +164,14 @@ class Install(object):
                  self.args.registry, "--tcp",
                  self.args.tcp, "--ssl", self.args.ssl])
 
+    def archive_logs(self):
+        if self.args.archivelogs:
+            logdir = os.path.join(self.args.sym, 'var', 'log')
+            archive = self.args.archivelogs
+            log.info('Archiving logs to %s', archive)
+            fileutils.zip(archive, logdir, os.path.join(self.args.sym, 'var'))
+            return archive
+
     def directories(self):
         if self.samedir(self.dir, self.args.sym):
             log.warn("Upgraded server was the same, not deleting")
@@ -214,7 +223,7 @@ class Install(object):
         Runs a command as if from the command-line
         without the need for using popen or subprocess
         """
-        if isinstance(command, str):
+        if isinstance(command, basestring):
             command = command.split()
         else:
             command = list(command)
@@ -225,7 +234,7 @@ class Install(object):
         Runs the omero command-line client with an array of arguments using the
         old environment
         """
-        if isinstance(command, str):
+        if isinstance(command, basestring):
             command = command.split()
         self.external.omero_bin(command)
 
@@ -394,7 +403,7 @@ class InstallBaseCommand(Command):
             if dest in ("help", "verbose", "quiet"):
                 continue
             value = getattr(args, dest)
-            if value and isinstance(value, (str, unicode)):
+            if value and isinstance(value, basestring):
                 replacement = value % dict(args._get_kwargs())
                 log.debug("% 20s => %s" % (dest, replacement))
                 setattr(args, dest, replacement)
@@ -417,8 +426,11 @@ class InstallCommand(InstallBaseCommand):
 
     def __init__(self, sub_parsers):
         super(InstallCommand, self).__init__(sub_parsers)
-        self.parser.add_argument(
+        group = self.parser.parser.add_mutually_exclusive_group()
+        group.add_argument(
             "--initdb", action="store_true", help="Initialise the database")
+        group.add_argument(
+            "--upgradedb", action="store_true", help="Upgrade the database")
 
 
 class UpgradeCommand(InstallBaseCommand):
@@ -432,3 +444,7 @@ class UpgradeCommand(InstallBaseCommand):
         super(UpgradeCommand, self).__init__(sub_parsers)
         self.parser.add_argument(
             "--upgradedb", action="store_true", help="Upgrade the database")
+        self.parser.add_argument(
+            "--archivelogs", default=None, help=(
+                "Archive the logs directory to this zip file, "
+                "overwriting if it exists"))
