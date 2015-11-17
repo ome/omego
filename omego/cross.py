@@ -15,10 +15,104 @@ from env import EnvDefault, DbParser
 log = logging.getLogger("omego.x")
 
 
+class BadSpec(Exception):
+
+    def __init__(self, spec):
+        self.spec = spec
+        super(Exception, self).__init__("Bad spec: %s" % spec)
+
+class Base(object):
+
+    def __init__(self, name):
+        self.errors = 0
+        self.value = self.VALUES.get(name, "UNKNOWN")
+        if self.value == "UNKNOWN":
+            self.errors += 1
+
+    def __str__(self):
+        return self.value
+
+
+class Platform(Base):
+
+    VALUES = {
+        "c": "centos6",
+        "C": "centos7",
+        "u": "ubuntu1404",
+        "U": "ubuntu1504",
+    }
+
+
+class Python(Base):
+
+    VALUES = {
+        "p": "python2.6",
+        "P": "python2.7",
+    }
+
+
+class Web(Base):
+
+    VALUES = {
+        "n": "nginx",
+        "N": "nginx",
+        "a": "apache2.2",
+        "A": "apache2.4",
+    }
+
+
+class Postgres(Base):
+
+    VALUES = {
+        "p": "postgres9.2",
+        "P": "postgres9.4",
+    }
+
+
+class Java(Base):
+
+    VALUES = {
+        "j": "jdk7",
+        "J": "jdk8",
+    }
+
+
+class Spec(object):
+
+    def __init__(self, spec):
+        if len(spec) != 5:
+            raise BadSpec(spec)
+
+        self.platform = Platform(spec[0])
+        self.python = Python(spec[1])
+        self.web = Web(spec[2])
+        self.postgres = Postgres(spec[3])
+        self.java = Java(spec[4])
+        self.errors = 0
+        for x in self.foreach():
+            self.errors += x.errors
+
+    def foreach(self):
+        yield self.platform
+        yield self.python
+        yield self.web
+        yield self.postgres
+        yield self.java
+
+    def __str__(self):
+        return "%s-%s-%s-%s-%s" % tuple(self.foreach())
+
+
 class CrossCommand(Command):
     """
     Build-generation command for producing a cross-product
     of various OMERO requirements.
+
+    Examples:
+
+        cpnpj - minimal support CentOS6 configuration
+        CPNPJ - maximal suppoer CentOS7 configuration
+
     """
 
     NAME = "x"
@@ -61,3 +155,4 @@ class CrossCommand(Command):
                 self.log.debug("Building base spec...")
             elif spec.startswith("S"):
                 self.log.debug("Building server spec...")
+            print Spec(spec)
