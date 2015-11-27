@@ -74,7 +74,7 @@ class TestDb(object):
 
     @pytest.mark.parametrize('sqlfile', ['exists', 'missing', 'notprovided'])
     @pytest.mark.parametrize('dryrun', [True, False])
-    def test_initialise(self, sqlfile, dryrun):
+    def test_init(self, sqlfile, dryrun):
         ext = self.mox.CreateMock(External)
         if sqlfile != 'notprovided':
             omerosql = 'omero.sql'
@@ -109,10 +109,10 @@ class TestDb(object):
 
         if sqlfile == 'missing':
             with pytest.raises(Stop) as excinfo:
-                db.initialise()
+                db.init()
             assert str(excinfo.value) == 'SQL file not found'
         else:
-            db.initialise()
+            db.init()
         self.mox.VerifyAll()
 
     def test_sort_schema(self):

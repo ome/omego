@@ -49,7 +49,7 @@ class DbAdmin(object):
             log.error(e)
             raise Stop(30, 'Database connection check failed')
 
-    def initialise(self):
+    def init(self):
         omerosql = self.args.omerosql
         autoupgrade = False
         if not omerosql:
