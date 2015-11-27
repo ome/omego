@@ -86,6 +86,9 @@ class DbParser(argparse.ArgumentParser):
             help="Username for connecting to the OMERO database")
         Add(group, "dbpass", "omero",
             help="Password for connecting to the OMERO database")
+        group.add_argument(
+            "--use-db-config", action="store_true",
+            help="Get the database settings from omero config")
         # TODO Admin credentials: dbauser, dbapass
 
         Add(group, "omerosql", None,

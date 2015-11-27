@@ -10,7 +10,7 @@ import re
 import fileutils
 from external import External, RunException
 from yaclifw.framework import Command, Stop
-from env import EnvDefault, DbParser
+from env import DbParser
 
 log = logging.getLogger("omego.db")
 
@@ -30,17 +30,15 @@ class DbAdmin(object):
         if not os.path.exists(dir):
             raise Exception("%s does not exist!" % dir)
 
+        self.external = external
+
         psqlv = self.psql('--version')
         log.info('psql version: %s', psqlv)
 
-        self.external = external
-
         self.check_connection()
 
-        if command == 'init':
-            self.initialise()
-        elif command == 'upgrade':
-            self.upgrade()
+        if command in ('init', 'upgrade', 'dump'):
+            getattr(self, command)()
         else:
             raise Stop('Invalid db command: %s', command)
 
@@ -161,18 +159,74 @@ class DbAdmin(object):
         log.info('Current omero db version: %s', v)
         return v
 
+    def dump(self):
+        """
+        Dump the database using the postgres custom format
+        """
+        dumpfile = self.args.dumpfile
+        if not dumpfile:
+            db, env = self.get_db_args_env()
+            dumpfile = fileutils.timestamp_filename(
+                'omero-database-%s' % db['name'], 'pgdump')
+
+        log.info('Dumping database to %s', dumpfile)
+        if not self.args.dry_run:
+            self.pgdump('-Fc', '-f', dumpfile)
+
+    def get_db_args_env(self):
+        """
+        Get a dictionary of database connection parameters, and create an
+        environment for running postgres commands.
+        Falls back to omego defaults.
+        """
+        db = {
+            'name': self.args.dbname,
+            'host': self.args.dbhost,
+            'user': self.args.dbuser,
+            'pass': self.args.dbpass
+            }
+
+        if self.args.use_db_config:
+            c = self.external.get_config()
+            for k in db:
+                try:
+                    db[k] = c['omero.db.%s' % k]
+                except KeyError:
+                    log.info(
+                        'Failed to lookup parameter omero.db.%s, using %s',
+                        k, db[k])
+
+        if not db['name']:
+            raise Exception('Database name required')
+
+        env = os.environ.copy()
+        env['PGPASSWORD'] = db['pass']
+        return db, env
+
     def psql(self, *psqlargs):
         """
         Run a psql command
         """
-        if not self.args.dbname:
-            raise Exception('Database name required')
+        db, env = self.get_db_args_env()
 
-        env = os.environ.copy()
-        env['PGPASSWORD'] = self.args.dbpass
-        args = ['-d', self.args.dbname, '-h', self.args.dbhost, '-U',
-                self.args.dbuser, '-w', '-A', '-t'] + list(psqlargs)
+        args = ['-d', db['name'], '-h', db['host'], '-U', db['user'],
+                '-w', '-A', '-t'] + list(psqlargs)
         stdout, stderr = External.run('psql', args, capturestd=True, env=env)
+        if stderr:
+            log.warn('stderr: %s', stderr)
+        log.debug('stdout: %s', stdout)
+        return stdout
+
+    def pgdump(self, *pgdumpargs):
+        """
+        Run a pg_dump command
+        """
+        db, env = self.get_db_args_env()
+
+        args = ['-d', db['name'], '-h', db['host'], '-U', db['user'], '-w'
+                ] + list(pgdumpargs)
+        stdout, stderr = External.run(
+            'pg_dump', args, capturestd=True, env=env)
         if stderr:
             log.warn('stderr: %s', stderr)
         log.debug('stdout: %s', stdout)
@@ -192,13 +246,14 @@ class DbCommand(Command):
         self.parser = DbParser(self.parser)
         self.parser.add_argument("-n", "--dry-run", action="store_true")
 
-        Add = EnvDefault.add
         # TODO: Kind of duplicates Upgrade args.sym/args.server
-        Add(self.parser, 'serverdir', 'Root directory of the server')
+        self.parser.add_argument(
+            '--serverdir', help='Root directory of the server')
         self.parser.add_argument(
             "dbcommand",
-            choices=['init', 'upgrade'],
+            choices=['init', 'upgrade', 'dump'],
             help='Initialise or upgrade a database')
+        self.parser.add_argument('--dumpfile', help='Database dump file')
 
     def __call__(self, args):
         super(DbCommand, self).__call__(args)
