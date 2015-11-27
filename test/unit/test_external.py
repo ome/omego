@@ -85,6 +85,9 @@ class TestExternal(object):
         tmpdir.ensure('etc', 'grid', 'config.xml')
         assert self.ext.has_config() == configured
 
+    # def test_get_config(self):
+    # Not easily testable since it requires the omero module
+
     # def test_setup_omero_cli(self):
     # Not easily testable since it does a direct import
 

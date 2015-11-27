@@ -203,28 +203,105 @@ class TestDb(object):
         assert db.get_current_db_version() == ('OMERO4.4', '0')
         self.mox.VerifyAll()
 
-    @pytest.mark.parametrize('dbname', ['name', ''])
-    def test_psql(self, dbname):
-        args = self.Args({'dbhost': 'host', 'dbname': dbname,
-                          'dbuser': 'user', 'dbpass': 'pass'})
+    @pytest.mark.parametrize('dumpfile', ['test.pgdump', None])
+    @pytest.mark.parametrize('dryrun', [True, False])
+    def test_dump(self, dumpfile, dryrun):
+        args = self.Args({'dry_run': dryrun, 'dumpfile': dumpfile})
+        db = self.PartialMockDb(args, None)
+        self.mox.StubOutWithMock(omego.fileutils, 'timestamp_filename')
+        self.mox.StubOutWithMock(db, 'get_db_args_env')
+        self.mox.StubOutWithMock(db, 'pgdump')
 
-        self.mox.StubOutWithMock(os.environ, 'copy')
-        self.mox.StubOutWithMock(External, 'run')
+        if not dumpfile:
+            db.get_db_args_env().AndReturn(self.create_db_test_params())
 
-        if dbname:
-            os.environ.copy().AndReturn({'PGPASSWORD': 'incorrect'})
-            psqlargs = ['-d', dbname, '-h', 'host', '-U', 'user',
-                        '-w', '-A', '-t', 'arg1', 'arg2']
-            External.run('psql', psqlargs, capturestd=True,
-                         env={'PGPASSWORD': 'pass'}).AndReturn(('', ''))
+            dumpfile = 'omero-database-name-00000000-000000-000000.pgdump'
+            omego.fileutils.timestamp_filename(
+                'omero-database-name', 'pgdump').AndReturn(dumpfile)
+
+        if not dryrun:
+            db.pgdump('-Fc', '-f', dumpfile).AndReturn('')
+
         self.mox.ReplayAll()
 
-        db = self.PartialMockDb(args, None)
+        db.dump()
+        self.mox.VerifyAll()
+
+    def create_db_test_params(self, prefix=''):
+        db = {
+            'name': '%sname' % prefix,
+            'host': '%shost' % prefix,
+            'user': '%suser' % prefix,
+            'pass': '%spass' % prefix,
+        }
+        env = {'PGPASSWORD': '%spass' % prefix}
+        return db, env
+
+    @pytest.mark.parametrize('dbname', ['name', ''])
+    @pytest.mark.parametrize('useconfig', [True, False])
+    def test_get_db_args_env(self, dbname, useconfig):
+        ext = self.mox.CreateMock(External)
+        args = self.Args({'dbhost': 'host', 'dbname': dbname,
+                          'dbuser': 'user', 'dbpass': 'pass',
+                          'use_db_config': useconfig})
+        db = self.PartialMockDb(args, ext)
+        self.mox.StubOutWithMock(db.external, 'get_config')
+        self.mox.StubOutWithMock(os.environ, 'copy')
+
+        if useconfig:
+            expecteddb, expectedenv = self.create_db_test_params('ext')
+        else:
+            expecteddb, expectedenv = self.create_db_test_params()
+
+        if useconfig:
+            cfg = {
+                'omero.db.host': 'exthost',
+                'omero.db.user': 'extuser',
+                'omero.db.pass': 'extpass',
+            }
+            if dbname:
+                cfg['omero.db.name'] = 'extname'
+
+            db.external.get_config().AndReturn(cfg)
+
+        os.environ.copy().AndReturn({'PGPASSWORD': 'incorrect'})
+
+        self.mox.ReplayAll()
         if dbname:
-            db.psql('arg1', 'arg2')
+            rcfg, renv = db.get_db_args_env()
+            assert rcfg == expecteddb
+            assert renv == expectedenv
         else:
             with pytest.raises(Exception) as excinfo:
-                db.psql('arg1', 'arg2')
+                db.get_db_args_env()
             assert str(excinfo.value) == 'Database name required'
 
+    def test_psql(self):
+        db = self.PartialMockDb(None, None)
+        self.mox.StubOutWithMock(db, 'get_db_args_env')
+        self.mox.StubOutWithMock(External, 'run')
+
+        psqlargs = ['-d', 'name', '-h', 'host', '-U', 'user',
+                    '-w', '-A', '-t', 'arg1', 'arg2']
+        db.get_db_args_env().AndReturn(self.create_db_test_params())
+        External.run('psql', psqlargs, capturestd=True,
+                     env={'PGPASSWORD': 'pass'}).AndReturn(('', ''))
+        self.mox.ReplayAll()
+
+        db.psql('arg1', 'arg2')
+        self.mox.VerifyAll()
+
+    def test_pgdump(self):
+        db = self.PartialMockDb(None, None)
+        self.mox.StubOutWithMock(db, 'get_db_args_env')
+        self.mox.StubOutWithMock(External, 'run')
+
+        pgdumpargs = ['-d', 'name', '-h', 'host', '-U', 'user',
+                      '-w', 'arg1', 'arg2']
+        db.get_db_args_env().AndReturn(self.create_db_test_params())
+        External.run('pg_dump', pgdumpargs, capturestd=True,
+                     env={'PGPASSWORD': 'pass'}).AndReturn(('', ''))
+        self.mox.ReplayAll()
+
+        db.pgdump('arg1', 'arg2')
         self.mox.VerifyAll()
