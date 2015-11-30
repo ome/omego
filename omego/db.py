@@ -186,7 +186,7 @@ class DbAdmin(object):
             'pass': self.args.dbpass
             }
 
-        if self.args.use_db_config:
+        if not self.args.no_db_config:
             c = self.external.get_config()
             for k in db:
                 try:

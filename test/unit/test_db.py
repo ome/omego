@@ -238,22 +238,22 @@ class TestDb(object):
         return db, env
 
     @pytest.mark.parametrize('dbname', ['name', ''])
-    @pytest.mark.parametrize('useconfig', [True, False])
-    def test_get_db_args_env(self, dbname, useconfig):
+    @pytest.mark.parametrize('noconfig', [True, False])
+    def test_get_db_args_env(self, dbname, noconfig):
         ext = self.mox.CreateMock(External)
         args = self.Args({'dbhost': 'host', 'dbname': dbname,
                           'dbuser': 'user', 'dbpass': 'pass',
-                          'use_db_config': useconfig})
+                          'no_db_config': noconfig})
         db = self.PartialMockDb(args, ext)
         self.mox.StubOutWithMock(db.external, 'get_config')
         self.mox.StubOutWithMock(os.environ, 'copy')
 
-        if useconfig:
-            expecteddb, expectedenv = self.create_db_test_params('ext')
-        else:
+        if noconfig:
             expecteddb, expectedenv = self.create_db_test_params()
+        else:
+            expecteddb, expectedenv = self.create_db_test_params('ext')
 
-        if useconfig:
+        if not noconfig:
             cfg = {
                 'omero.db.host': 'exthost',
                 'omero.db.user': 'extuser',
