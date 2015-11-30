@@ -11,8 +11,7 @@ omego -h
 
 #Install a new server
 if [ $TEST = install ]; then
-  
-  omego install --initdb --dbhost localhost --dbname omero --prestartfile $HOME/config.omero -v http://downloads.openmicroscopy.org/omero/5.0.0-rc1/artifacts/OMERO.server-5.0.0-rc1-ice34-b10.zip;
+  omego install --initdb --dbhost localhost --dbname omero --prestartfile $HOME/config.omero -v http://downloads.openmicroscopy.org/omero/5.0.8/artifacts/OMERO.server-5.0.8-ice34-b60.zip;
 fi
 
 #Test a multistage DB upgrade (4.4 -> 5.1DEV) as part of the server upgrade
