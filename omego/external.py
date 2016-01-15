@@ -77,7 +77,7 @@ class External(object):
         setup_omero_cli() must be called before this method to import the
         correct omero module to minimise the possibility of version conflicts
         """
-        if not self.has_config:
+        if not self.has_config():
             raise Exception('No config file')
 
         c = self._omero.config.ConfigXml(os.path.join(
