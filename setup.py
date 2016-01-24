@@ -122,8 +122,7 @@ setup(name='omego',
       zip_safe=ZIP_SAFE,
       # REQUIREMENTS:
       # These should be kept in sync with requirements.txt
-      # Skipping argparse for Python 2.7 and greater.
-      install_requires=['yaclifw>=0.1.1'],
+      install_requires=['yaclifw>=0.1.1', 'ConfigArgParse>=0.10.0'],
 
       # Using global variables
       long_description=LONG_DESCRIPTION,

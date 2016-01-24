@@ -10,7 +10,7 @@ import re
 import fileutils
 from external import External, RunException
 from yaclifw.framework import Command, Stop
-from env import EnvDefault, DbParser
+from env import Add, DbParser
 
 log = logging.getLogger("omego.db")
 
@@ -192,7 +192,6 @@ class DbCommand(Command):
         self.parser = DbParser(self.parser)
         self.parser.add_argument("-n", "--dry-run", action="store_true")
 
-        Add = EnvDefault.add
         # TODO: Kind of duplicates Upgrade args.sym/args.server
         Add(self.parser, 'serverdir', 'Root directory of the server')
         self.parser.add_argument(
@@ -203,6 +202,7 @@ class DbCommand(Command):
     def __call__(self, args):
         super(DbCommand, self).__call__(args)
         self.configure_logging(args)
+        log.debug(self.parser.format_values())
 
         # Since EnvDefault.__action__ is only called if a user actively passes
         # a variable, there's no way to do the string replacing in the action

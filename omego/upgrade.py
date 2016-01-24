@@ -11,7 +11,7 @@ from db import DbAdmin
 from external import External
 from yaclifw.framework import Command, Stop
 import fileutils
-from env import EnvDefault, DbParser, FileUtilsParser, JenkinsParser
+from env import Add, DbParser, FileUtilsParser, JenkinsParser
 from env import WINDOWS
 
 log = logging.getLogger("omego.upgrade")
@@ -369,8 +369,6 @@ class InstallBaseCommand(Command):
         self.parser = DbParser(self.parser)
         self.parser = FileUtilsParser(self.parser)
 
-        Add = EnvDefault.add
-
         # Ports
         Add(self.parser, "prefix", "")
         Add(self.parser, "registry", "%(prefix)s4061")
@@ -392,6 +390,7 @@ class InstallBaseCommand(Command):
     def __call__(self, args):
         super(InstallBaseCommand, self).__call__(args)
         self.configure_logging(args)
+        log.debug(self.parser.format_values())
 
         # Since EnvDefault.__action__ is only called if a user actively passes
         # a variable, there's no way to do the string replacing in the action

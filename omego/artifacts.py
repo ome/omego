@@ -408,6 +408,7 @@ class DownloadCommand(Command):
     def __call__(self, args):
         super(DownloadCommand, self).__call__(args)
         self.configure_logging(args)
+        log.debug(self.parser.format_values())
 
         # Since EnvDefault.__action__ is only called if a user actively passes
         # a variable, there's no way to do the string replacing in the action

@@ -1,1 +1,2 @@
 yaclifw>=0.1.1
+ConfigArgParse>=0.10.0
