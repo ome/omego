@@ -8,11 +8,11 @@ The omego command provides utilities for installing and managing OME application
 Getting Started
 ---------------
 
-For Python 2.6, you will need to install `argparse`_
+Install `yaclifw`_ and `ConfigArgParse`_:
 
 ::
 
-    $ pip install argparse
+    $ pip install -r requirements.txt
 
 With that, it's possible to execute omego:
 
@@ -38,8 +38,9 @@ omego is released under the GPL.
 Copyright
 ---------
 
-2013-2014, The Open Microscopy Environment
+2013-2015, The Open Microscopy Environment
 
-.. _argparse: http://pypi.python.org/pypi/argparse
+.. _yaclifw: https://pypi.python.org/pypi/yaclifw
+.. _ConfigArgParse: https://pypi.python.org/pypi/ConfigArgParse
 .. |Build Status| image:: https://travis-ci.org/ome/omego.png
    :target: http://travis-ci.org/ome/omego
