@@ -80,9 +80,15 @@ class External(object):
         if not self.has_config():
             raise Exception('No config file')
 
-        c = self._omero.config.ConfigXml(os.path.join(
-            self.dir, 'etc', 'grid', 'config.xml'),
-            exclusive=False, read_only=True)
+        configxml = os.path.join(self.dir, 'etc', 'grid', 'config.xml')
+        try:
+            # Attempt to open config.xml read-only, though this flag is not
+            # present in early versions of OMERO 5.0
+            c = self._omero.config.ConfigXml(
+                configxml, exclusive=False, read_only=True)
+        except TypeError:
+            c = self._omero.config.ConfigXml(configxml, exclusive=False)
+
         try:
             return c.as_map()
         finally:
