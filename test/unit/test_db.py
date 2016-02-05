@@ -256,17 +256,19 @@ class TestDb(object):
             expecteddb, expectedenv = self.create_db_test_params('ext')
 
         if not noconfig:
-            db.external.has_config().AndReturn(hasconfig)
-        if not noconfig and hasconfig:
-            cfg = {
-                'omero.db.host': 'exthost',
-                'omero.db.user': 'extuser',
-                'omero.db.pass': 'extpass',
-            }
-            if dbname:
-                cfg['omero.db.name'] = 'extname'
+            cfg = {}
+            if hasconfig:
+                cfg = {
+                    'omero.db.host': 'exthost',
+                    'omero.db.user': 'extuser',
+                    'omero.db.pass': 'extpass',
+                }
+                if dbname:
+                    cfg['omero.db.name'] = 'extname'
 
-            db.external.get_config().AndReturn(cfg)
+                db.external.get_config(force=True).AndReturn(cfg)
+            else:
+                db.external.get_config().AndRaise(Exception())
 
         os.environ.copy().AndReturn({'PGPASSWORD': 'incorrect'})
 

@@ -186,8 +186,13 @@ class DbAdmin(object):
             'pass': self.args.dbpass
             }
 
-        if not self.args.no_db_config and self.external.has_config():
-            c = self.external.get_config()
+        if not self.args.no_db_config:
+            try:
+                c = self.external.get_config(force=True)
+            except Exception as e:
+                log.warn('config.xml not found: %s', e)
+                c = {}
+
             for k in db:
                 try:
                     db[k] = c['omero.db.%s' % k]
