@@ -33,6 +33,7 @@ before_script:
     - psql -c "select 1;" -U omero -h localhost omero
     - mkdir $HOME/OMERO
     - echo "config set omero.data.dir $HOME/OMERO" > $HOME/config.omero
+    - echo "config set omero.db.name omero" >> $HOME/config.omero
 script:
     - sh travis-build
 
