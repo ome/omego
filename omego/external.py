@@ -49,6 +49,8 @@ class External(object):
         if dir:
             self.set_server_dir(dir)
 
+        self._omero = None
+
     def set_server_dir(self, dir):
         """
         Set the directory of the server to be controlled
@@ -68,13 +70,43 @@ class External(object):
             raise Exception('No server directory set')
         return self.configured
 
+    def get_config(self, force=False):
+        """
+        Returns a dictionary of all config.xml properties
+
+        If `force = True` then ignore any cached state and read config.xml
+        if possible
+
+        setup_omero_cli() must be called before this method to import the
+        correct omero module to minimise the possibility of version conflicts
+        """
+        if not force and not self.has_config():
+            raise Exception('No config file')
+
+        configxml = os.path.join(self.dir, 'etc', 'grid', 'config.xml')
+        if not os.path.exists(configxml):
+            raise Exception('No config file')
+
+        try:
+            # Attempt to open config.xml read-only, though this flag is not
+            # present in early versions of OMERO 5.0
+            c = self._omero.config.ConfigXml(
+                configxml, exclusive=False, read_only=True)
+        except TypeError:
+            c = self._omero.config.ConfigXml(configxml, exclusive=False)
+
+        try:
+            return c.as_map()
+        finally:
+            c.close()
+
     def setup_omero_cli(self):
         """
         Imports the omero CLI module so that commands can be run directly.
         Note Python does not allow a module to be imported multiple times,
         so this will only work with a single omero instance.
 
-        This can have several surprisingly effects, so setup_omero_cli()
+        This can have several surprising effects, so setup_omero_cli()
         must be explcitly called.
         """
         if not self.dir:
@@ -96,6 +128,7 @@ class External(object):
 
         self.cli = omero.cli.CLI()
         self.cli.loadplugins()
+        self._omero = omero
 
     def setup_previous_omero_env(self, olddir, savevarsfile):
         """

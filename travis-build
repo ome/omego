@@ -10,9 +10,17 @@ omego version
 omego -h
 
 #Install a new server
+#Tests rely on a non-zero error code being returned on failure
 if [ $TEST = install ]; then
-  
-  omego install --initdb --dbhost localhost --dbname omero --prestartfile $HOME/config.omero -v http://downloads.openmicroscopy.org/omero/5.0.0-rc1/artifacts/OMERO.server-5.0.0-rc1-ice34-b10.zip;
+  omego install --initdb --dbhost localhost --dbname omero --prestartfile $HOME/config.omero -v http://downloads.openmicroscopy.org/omero/5.0.8/artifacts/OMERO.server-5.0.8-ice34-b60.zip;
+  #TODO: switch to ice 3.5 and pass --release 5.0.8 instead of a URL
+
+  # Check the expected server version was downloaded
+  test $(readlink OMERO-CURRENT) = './OMERO.server-5.0.8-ice34-b60'
+
+  # Check db dump file
+  omego db dump --serverdir OMERO-CURRENT --dumpfile travis-omero.pgdump
+  pg_restore -e travis-omero.pgdump | grep 'CREATE TABLE dbpatch'
 fi
 
 #Test a multistage DB upgrade (4.4 -> 5.1DEV) as part of the server upgrade
@@ -24,5 +32,5 @@ if [ $TEST = upgrade ]; then
   psql -q -h localhost -U omero omero < OMERO.sql;
   OMERO-CURRENT/bin/omero load $HOME/config.omero;
   OMERO-CURRENT/bin/omero admin start;
-  omego upgrade --branch=OMERO-5.1-latest --labels=ICE=3.4 --upgradedb --dbhost localhost --dbname omero -v;
+  omego upgrade --branch=OMERO-5.1-latest --labels=ICE=3.4 --upgradedb -v;
 fi
