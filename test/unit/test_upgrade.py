@@ -36,12 +36,10 @@ class TestUpgrade(object):
     class Args(object):
         def __init__(self, args):
             self.sym = 'sym'
-            self.registry = '12'
-            self.tcp = '34'
-            self.ssl = '56'
-            self.skipweb = 'false'
-            self.skipdelete = 'false'
-            self.skipdeletezip = 'false'
+            self.no_start = False
+            self.no_web = False
+            self.delete_old = False
+            self.keep_old_zip = False
             self.verbose = False
             for k, v in args.iteritems():
                 setattr(self, k, v)
@@ -103,37 +101,24 @@ class TestUpgrade(object):
 
         self.mox.VerifyAll()
 
-    @pytest.mark.parametrize('skipweb', [True, False])
-    def test_stop(self, skipweb):
+    @pytest.mark.parametrize('noweb', [True, False])
+    def test_stop(self, noweb):
         ext = self.mox.CreateMock(External)
         ext.omero_bin(['admin', 'status', '--nodeonly'])
         ext.omero_bin(['admin', 'stop'])
-        if not skipweb:
+        if not noweb:
             ext.omero_bin(['web', 'stop'])
         self.mox.ReplayAll()
 
-        args = self.Args({'skipweb': str(skipweb)})
+        args = self.Args({'no_web': noweb})
         upgrade = self.PartialMockUnixInstall(args, ext)
         print '*** %s' % upgrade.args.__dict__
-        print upgrade.web()
         upgrade.stop()
         self.mox.VerifyAll()
 
     @pytest.mark.skipif(True, reason='Untestable: dynamic module import')
     def test_configure(self):
         pass
-
-    def test_configure_ports(self):
-        ext = self.mox.CreateMock(External)
-        args = self.Args({})
-        ext.omero_cli(
-            ['admin', 'ports', '--skipcheck', '--registry', args.registry,
-             '--tcp', args.tcp, '--ssl', args.ssl])
-        self.mox.ReplayAll()
-
-        upgrade = self.PartialMockUnixInstall(args, ext)
-        upgrade.configure_ports()
-        self.mox.VerifyAll()
 
     @pytest.mark.parametrize('archivelogs', [None, 'archivelogs.zip'])
     def test_archive_logs(self, archivelogs):
@@ -149,15 +134,17 @@ class TestUpgrade(object):
         upgrade.archive_logs()
         self.mox.VerifyAll()
 
-    @pytest.mark.parametrize('skipweb', [True, False])
-    def test_start(self, skipweb):
+    @pytest.mark.parametrize('nostart', [True, False])
+    @pytest.mark.parametrize('noweb', [True, False])
+    def test_start(self, nostart, noweb):
         ext = self.mox.CreateMock(External)
-        ext.omero_cli(['admin', 'start'])
-        if not skipweb:
-            ext.omero_cli(['web', 'start'])
+        if not nostart:
+            ext.omero_cli(['admin', 'start'])
+            if not noweb:
+                ext.omero_cli(['web', 'start'])
         self.mox.ReplayAll()
 
-        args = self.Args({'skipweb': str(skipweb)})
+        args = self.Args({'no_web': noweb, 'no_start': nostart})
         upgrade = self.PartialMockUnixInstall(args, ext)
         upgrade.start()
         self.mox.VerifyAll()
@@ -184,18 +171,11 @@ class TestUpgrade(object):
         upgrade.bin(['a', 'b'])
         self.mox.VerifyAll()
 
-    @pytest.mark.parametrize('skipweb', [True, False])
-    def test_web(self, skipweb):
-        args = self.Args({'skipweb': str(skipweb)})
-        upgrade = self.PartialMockUnixInstall(args, None)
-        assert upgrade.web() != skipweb
-        self.mox.VerifyAll()
-
-    @pytest.mark.parametrize('skipdelete', [True, False])
-    @pytest.mark.parametrize('skipdeletezip', [True, False])
-    def test_directories(self, skipdelete, skipdeletezip):
-        args = self.Args({'skipdelete': str(skipdelete),
-                          'skipdeletezip': str(skipdeletezip)})
+    @pytest.mark.parametrize('deleteold', [True, False])
+    @pytest.mark.parametrize('keepoldzip', [True, False])
+    def test_directories(self, deleteold, keepoldzip):
+        args = self.Args({'delete_old': deleteold,
+                          'keep_old_zip': keepoldzip})
         upgrade = self.PartialMockUnixInstall(args, None)
         upgrade.dir = 'new'
 
@@ -207,9 +187,9 @@ class TestUpgrade(object):
 
         os.path.samefile('new', 'sym').AndReturn(False)
         os.readlink('sym').AndReturn('old/')
-        if not skipdelete:
+        if deleteold:
             shutil.rmtree('old')
-        if not skipdeletezip:
+        if not keepoldzip:
             os.unlink('old.zip')
         os.unlink('sym')
         upgrade.symlink('new', 'sym')

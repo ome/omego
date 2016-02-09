@@ -110,7 +110,7 @@ class Install(object):
         except Exception as e:
             log.error('Error whilst stopping server: %s', e)
 
-        if self.web():
+        if not self.args.no_web:
             try:
                 log.info("Stopping web")
                 self.stopweb()
@@ -156,14 +156,6 @@ class Install(object):
                         ftype, f))
                 self.run(['load', fpath])
 
-        self.configure_ports()
-
-    def configure_ports(self):
-        # Set registry, TCP and SSL ports
-        self.run(["admin", "ports", "--skipcheck", "--registry",
-                 self.args.registry, "--tcp",
-                 self.args.tcp, "--ssl", self.args.ssl])
-
     def archive_logs(self):
         if self.args.archivelogs:
             logdir = os.path.join(self.args.sym, 'var', 'log')
@@ -185,14 +177,14 @@ class Install(object):
             target = None
             targetzip = None
 
-        if "false" == self.args.skipdelete.lower() and target:
+        if self.args.delete_old and target:
             try:
                 log.info("Deleting %s", target)
                 shutil.rmtree(target)
             except OSError as e:
                 log.error("Failed to delete %s: %s", target, e)
 
-        if "false" == self.args.skipdeletezip.lower() and targetzip:
+        if not self.args.keep_old_zip and targetzip:
             try:
                 log.info("Deleting %s", targetzip)
                 os.unlink(targetzip)
@@ -213,8 +205,12 @@ class Install(object):
             DbAdmin(self.dir, 'upgrade', self.args, self.external)
 
     def start(self):
+        if self.args.no_start:
+            log.debug('Not starting OMERO')
+            return
+
         self.run("admin start")
-        if self.web():
+        if not self.args.no_web:
             log.info("Starting web")
             self.startweb()
 
@@ -237,9 +233,6 @@ class Install(object):
         if isinstance(command, basestring):
             command = command.split()
         self.external.omero_bin(command)
-
-    def web(self):
-        return "false" == self.args.skipweb.lower()
 
 
 class UnixInstall(Install):
@@ -371,17 +364,22 @@ class InstallBaseCommand(Command):
 
         Add = EnvDefault.add
 
-        # Ports
-        Add(self.parser, "prefix", "")
-        Add(self.parser, "registry", "%(prefix)s4061")
-        Add(self.parser, "tcp", "%(prefix)s4063")
-        Add(self.parser, "ssl", "%(prefix)s4064")
-
         Add(self.parser, "sym", "OMERO-CURRENT")
 
-        Add(self.parser, "skipweb", "false")
-        Add(self.parser, "skipdelete", "true")
-        Add(self.parser, "skipdeletezip", "false")
+        self.parser.add_argument(
+            "--no-start", action="store_true",
+            help="Don't start any omero components")
+
+        self.parser.add_argument(
+            "--no-web", action="store_true",
+            help="Ignore OMERO.web, don't start or stop")
+
+        self.parser.add_argument(
+            "--delete-old", action="store_true",
+            help="Delete the old server directory")
+        self.parser.add_argument(
+            "--keep-old-zip", action="store_true",
+            help="Don't delete the old server zip")
 
         # Record the values of these environment variables in a file
         envvars = "ICE_HOME PATH DYLD_LIBRARY_PATH LD_LIBRARY_PATH PYTHONPATH"
