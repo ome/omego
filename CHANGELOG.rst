@@ -4,10 +4,11 @@ OMEGO version history
 0.3.0 (February 2016)
 ---------------------
 
- * allow `--upgradedb` for omego install
+ * drops support for OMERO 5.1 and earlier
+ * remove `--ports` support. Use 5.2 properties.
  * add `omero db dump`
  * add `no-start` option
- * remove ports config
+ * add `--upgradedb` for omego install
  * convert boolean string args to flags
 
 0.2.5 (August 2015)
