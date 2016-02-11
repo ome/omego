@@ -4,8 +4,11 @@ OMEGO version history
 0.3.0 (February 2016)
 ---------------------
 
- * drops support for OMERO 5.1 and earlier
- * remove `--ports` support. Use 5.2 properties.
+First large refactoring which reduces
+support for OMERO 5.1 and earlier though
+upgrading a 5.0 server is still possible.
+
+ * remove `--ports` support in favor of 5.2 properties
  * add `omero db dump`
  * add `no-start` option
  * add `--upgradedb` for omego install
@@ -21,7 +24,7 @@ OMEGO version history
 0.2.4 (December 2014)
 ---------------------
 
- * Change `--cfg` to `--prestartfile`
+ * change `--cfg` to `--prestartfile`
 
 0.2.3 (September 2014)
 ----------------------
