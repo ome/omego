@@ -216,10 +216,11 @@ class External(object):
             stderr = errfile.read()
             errfile.close()
 
+        end = time.time()
         if r != 0:
             raise RunException(
-                "Non-zero return code", exe, args, r, stdout, stderr)
-        end = time.time()
+                "Non-zero return code [%s s]" % (end - start), exe, args, r,
+                stdout, stderr)
         log.info("Completed [%s s]",end - start)
         return stdout, stderr
 
