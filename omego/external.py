@@ -217,6 +217,7 @@ class External(object):
         if r != 0:
             raise RunException(
                 "Non-zero return code", exe, args, r, stdout, stderr)
+        log.info("Completed [custom environment]: %s", " ".join(command))
         return stdout, stderr
 
     def get_environment(self, filename=None):
