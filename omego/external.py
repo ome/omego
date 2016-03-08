@@ -221,7 +221,7 @@ class External(object):
             log.error("Failed [%.3f s]", end - start)
             raise RunException(
                 "Non-zero return code", exe, args, r, stdout, stderr)
-        log.info("Completed [%s s]", end - start)
+        log.info("Completed [%.3f s]", end - start)
         return stdout, stderr
 
     def get_environment(self, filename=None):
