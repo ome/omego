@@ -218,7 +218,7 @@ class External(object):
 
         end = time.time()
         if r != 0:
-            log.error("Failed [%s s]", end - start)
+            log.error("Failed [%.3f s]", end - start)
             raise RunException(
                 "Non-zero return code", exe, args, r, stdout, stderr)
         log.info("Completed [%s s]", end - start)
