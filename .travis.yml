@@ -25,7 +25,7 @@ env:
 before_install:
   - pip install -r requirements.txt
   - pip install flake8
-  - flake8 -v omego test
+  - flake8 -v .
 
 before_script:
     - psql -c "create user omero with password 'omero';" -U postgres

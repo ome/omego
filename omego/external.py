@@ -6,6 +6,7 @@ import logging
 import os
 import sys
 import tempfile
+import time
 
 from env import WINDOWS
 
@@ -187,6 +188,7 @@ class External(object):
             log.info("Executing [custom environment]: %s", " ".join(command))
         else:
             log.info("Executing : %s", " ".join(command))
+        start = time.time()
 
         # Temp files will be automatically deleted on close()
         # If run() throws the garbage collector should call close(), so don't
@@ -214,9 +216,12 @@ class External(object):
             stderr = errfile.read()
             errfile.close()
 
+        end = time.time()
         if r != 0:
+            log.error("Failed [%.3f s]", end - start)
             raise RunException(
                 "Non-zero return code", exe, args, r, stdout, stderr)
+        log.info("Completed [%.3f s]", end - start)
         return stdout, stderr
 
     def get_environment(self, filename=None):
