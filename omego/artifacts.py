@@ -334,10 +334,7 @@ class ReleaseArtifacts(ArtifactsList):
                 raise AttributeError(
                     "No artifacts found for ice version: %s" % ice_ver)
 
-        # TODO: add an ice version parameter (and replace the LABELS ICE=3.5
-        # parameter in upgrade.py)
-        # For now just take the most recent Ice
-        artifacturls = dl_icever[sorted(dl_icever.keys())[-1]]
+        artifacturls = dl_icever[ice_ver]
 
         if len(artifacturls) <= 0:
             raise AttributeError(
