@@ -149,11 +149,12 @@ class MockDownloadUrl(object):
 class Args(object):
     def __init__(self, matrix):
         if matrix:
-            self.labels = 'label=foo,ICE=3.5'
+            self.labels = 'label=foo,'
             self.build = MockUrl.unlabelledurl
         else:
             self.labels = ''
             self.build = MockUrl.labelledurl
+        self.ice = None
         self.dry_run = False
         self.verbose = False
         self.skipunzip = False
@@ -212,22 +213,25 @@ class TestJenkinsArtifacts(MoxBase):
             'http://example.org/x/ICE=3.4,label=foo/y',
             'http://example.org/x/ICE=3.5,label=foo/y'
             ]
-        m = a.find_label_matches(urls)
+        m = a.find_label_matches(urls, icever='3.5')
         assert m == urls[1]
+        m = a.find_label_matches(urls, icever='3.4')
+        assert m == urls[0]
 
         urls = [
             'http://example.org/x/ICE=3.3,label=foo,other=a/y',
             'http://example.org/x/ICE=3.3,label=foo,other=b/y'
             ]
         with pytest.raises(Stop):
-            m = a.find_label_matches(urls)
+            m = a.find_label_matches(urls, icever='3.5')
 
         urls = [
             'http://example.org/x/ICE=3.5,label=foo,other=a/y',
             'http://example.org/x/ICE=3.5,label=foo,other=b/y'
             ]
         with pytest.raises(Stop):
-            m = a.find_label_matches(urls)
+            m = a.find_label_matches(urls, icever='3.5')
+
         self.mox.VerifyAll()
 
     def test_label_list_parser(self):
