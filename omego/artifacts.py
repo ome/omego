@@ -329,7 +329,7 @@ class ReleaseArtifacts(ArtifactsList):
         if not args.ice:
             ice_ver = sorted(dl_icever.keys())[-1]
         else:
-            ice_ver = 'ice%s' % args.ice
+            ice_ver = 'ice%s' % args.ice.replace('.', '')
             if ice_ver not in dl_icever.keys():
                 raise AttributeError(
                     "No artifacts found for ice version: %s" % ice_ver)
