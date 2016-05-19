@@ -1,6 +1,14 @@
 OMEGO version history
 =====================
 
+0.4.0 (May 2016)
+----------------
+
+Add `--ice` argument. With the introduction of Ice
+3.6 support in OMERO 5.2.3, some applications
+began getting Ice 3.6 artifacts unintentionally.
+Now the choice is explicit.
+
 0.3.0 (February 2016)
 ---------------------
 
