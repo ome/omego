@@ -119,12 +119,15 @@ class JenkinsParser(argparse.ArgumentParser):
         Add(group, "build",
             "http://%(ci)s/job/%(branch)s/lastSuccessfulBuild/",
             help="Full url of the Jenkins build containing the artifacts")
-        Add(group, "labels", "ICE=3.5",
+        Add(group, "labels", "",
             help="Comma separated list of labels for matrix builds")
 
         Add(group, "downloadurl",
             "http://downloads.openmicroscopy.org",
             help="Base URL of the downloads server")
+
+        Add(group, "ice",
+            "", help="Ice version, default is the latest (release only)")
 
     def __getattr__(self, key):
         return getattr(self.parser, key)

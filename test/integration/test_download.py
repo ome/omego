@@ -40,27 +40,30 @@ class TestDownload(Downloader):
     def setup_class(self):
         self.artifact = 'python'
         self.branch = 'OMERO-5.1-latest'
+        self.ice = '3.5'
 
     def testDownloadNoUnzip(self, tmpdir):
         with tmpdir.as_cwd():
-            self.download('--skipunzip', '--branch', self.branch)
+            self.download('--skipunzip', '--branch', self.branch,
+                          '--ice', self.ice)
             files = tmpdir.listdir()
             assert len(files) == 1
 
     def testDownloadUnzip(self, tmpdir):
         with tmpdir.as_cwd():
-            self.download('--branch', self.branch)
+            self.download('--branch', self.branch, '--ice', self.ice)
             files = tmpdir.listdir()
             assert len(files) == 2
 
     def testDownloadUnzipDir(self, tmpdir):
         with tmpdir.as_cwd():
-            self.download('--unzipdir', 'OMERO.py', '--branch', self.branch)
+            self.download('--unzipdir', 'OMERO.py', '--branch', self.branch,
+                          '--ice', self.ice)
             assert tmpdir.ensure('OMERO.py', dir=True)
 
     def testDownloadRelease(self, tmpdir):
         with tmpdir.as_cwd():
-            self.download('--release', 'latest')
+            self.download('--release', 'latest', '--ice', self.ice)
             files = tmpdir.listdir()
             assert len(files) == 2
 

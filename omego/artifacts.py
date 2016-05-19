@@ -202,7 +202,7 @@ class JenkinsArtifacts(ArtifactsList):
         root = self.read_xml(buildurl)
         if root.tag == "matrixBuild":
             runurls = self.get_latest_runs(root)
-            buildurl = self.find_label_matches(runurls)
+            buildurl = self.find_label_matches(runurls, args.ice)
             root = self.read_xml(buildurl)
 
         artifacts = root.findall("./artifact")
@@ -264,10 +264,13 @@ class JenkinsArtifacts(ArtifactsList):
 
         return runurls
 
-    def find_label_matches(self, urls):
+    def find_label_matches(self, urls, icever=None):
+        # The Ice version is handled as a matrix label in the CI jobs
         required = set(self.args.labels.split(','))
         if '' in required:
             required.remove('')
+        if icever:
+            required.add('ICE=%s' % icever)
         log.debug('Searching for matrix runs matching: %s', required)
         matches = []
         for url in urls:
@@ -323,10 +326,15 @@ class ReleaseArtifacts(ArtifactsList):
             dl_url = self.follow_latest_redirect(args)
 
         dl_icever = self.read_downloads(dl_url)
-        # TODO: add an ice version parameter (and replace the LABELS ICE=3.5
-        # parameter in upgrade.py)
-        # For now just take the most recent Ice
-        artifacturls = dl_icever[sorted(dl_icever.keys())[-1]]
+        if not args.ice:
+            ice_ver = sorted(dl_icever.keys())[-1]
+        else:
+            ice_ver = 'ice%s' % args.ice.replace('.', '')
+            if ice_ver not in dl_icever.keys():
+                raise AttributeError(
+                    "No artifacts found for ice version: %s" % ice_ver)
+
+        artifacturls = dl_icever[ice_ver]
 
         if len(artifacturls) <= 0:
             raise AttributeError(
