@@ -199,6 +199,14 @@ class JenkinsArtifacts(ArtifactsList):
         self.args = args
         buildurl = args.build
 
+        if not buildurl:
+            buildurl = "%s/job/%s/lastSuccessfulBuild/" % (
+                args.ci, args.branch)
+        if not re.match('\w+://', buildurl):
+            buildurl = 'http://%s' % buildurl
+
+        log.debug("buildurl: %s", buildurl)
+
         root = self.read_xml(buildurl)
         if root.tag == "matrixBuild":
             runurls = self.get_latest_runs(root)
