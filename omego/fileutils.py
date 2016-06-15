@@ -82,7 +82,7 @@ def open_url(url, httpuser=None, httppassword=None, method=None):
     if method:
         req.get_method = lambda: method
 
-    return opener.open(url)
+    return opener.open(req)
 
 
 def dereference_url(url):
