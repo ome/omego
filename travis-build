@@ -2,7 +2,8 @@ set -e
 set -u
 set -x
 
-fold start install
+# Install Ice 3.5 from custom build (since VMs are still 12.04 based)
+travis_fold:start:ice.install
 mkdir -p download
 cd download
 wget --user-agent $USER_AGENT http://downloads.openmicroscopy.org/ice/experimental/Ice-3.5.1-b1-ubuntu1204-amd64.tar.xz
@@ -13,7 +14,7 @@ export SLICEPATH="${ICE_HOME}/slice"
 export PATH="${ICE_HOME}/bin:$PATH"
 export LD_LIBRARY_PATH="${ICE_HOME}/lib:$LD_LIBRARY_PATH"
 export PYTHONPATH="${ICE_HOME}/python:$PYTHONPATH"
-fold end install
+travis_fold:end:ice.install
 
 python setup.py test -t test/unit -v
 python setup.py test -t test/integration -v -m "not slowtest"
