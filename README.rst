@@ -1,9 +1,13 @@
 OME, Go (omego)
 ===============
 
-The omego command provides utilities for installing and managing OME applications.
+.. image:: https://travis-ci.org/ome/omego.png
+   :target: http://travis-ci.org/ome/omego
 
-|Build Status|
+.. image:: https://badge.fury.io/py/omego.svg
+    :target: https://badge.fury.io/py/omego
+
+The omego command provides utilities for installing and managing OME applications.
 
 Getting Started
 ---------------
@@ -41,5 +45,3 @@ Copyright
 2013-2014, The Open Microscopy Environment
 
 .. _argparse: http://pypi.python.org/pypi/argparse
-.. |Build Status| image:: https://travis-ci.org/ome/omego.png
-   :target: http://travis-ci.org/ome/omego
