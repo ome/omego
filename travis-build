@@ -2,6 +2,19 @@ set -e
 set -u
 set -x
 
+fold start install
+mkdir -p download
+cd download
+wget --user-agent $USER_AGENT http://downloads.openmicroscopy.org/ice/experimental/Ice-3.5.1-b1-ubuntu1204-amd64.tar.xz
+cd $HOME
+tar -xvf "download/Ice-3.5.1-b1-ubuntu1204-amd64.tar.xz"
+ICE_HOME="$(pwd)/Ice-3.5.1-b1-ubuntu1204-amd64"
+export SLICEPATH="${ICE_HOME}/slice"
+export PATH="${ICE_HOME}/bin:$PATH"
+export LD_LIBRARY_PATH="${ICE_HOME}/lib:$LD_LIBRARY_PATH"
+export PYTHONPATH="${ICE_HOME}/python:$PYTHONPATH"
+fold end install
+
 python setup.py test -t test/unit -v
 python setup.py test -t test/integration -v -m "not slowtest"
 python setup.py sdist install
@@ -12,11 +25,10 @@ omego -h
 #Install a new server
 #Tests rely on a non-zero error code being returned on failure
 if [ $TEST = install ]; then
-  omego install --initdb --dbhost localhost --dbname omero --prestartfile $HOME/config.omero -v http://downloads.openmicroscopy.org/omero/5.0.8/artifacts/OMERO.server-5.0.8-ice34-b60.zip;
-  #TODO: switch to ice 3.5 and pass --release 5.0.8 instead of a URL
+  omego install --initdb --dbhost localhost --dbname omero --prestartfile $HOME/config.omero -v --release 5.0.8 --ice 3.5
 
   # Check the expected server version was downloaded
-  test $(readlink OMERO-CURRENT) = './OMERO.server-5.0.8-ice34-b60'
+  test $(readlink OMERO-CURRENT) = './OMERO.server-5.0.8-ice35-b60'
 
   # Check db dump file
   omego db dump --serverdir OMERO-CURRENT --dumpfile travis-omero.pgdump
@@ -25,12 +37,12 @@ fi
 
 #Test a multistage DB upgrade (4.4 -> 5.1DEV) as part of the server upgrade
 if [ $TEST = upgrade ]; then
-  wget --user-agent $USER_AGENT https://downloads.openmicroscopy.org/omero/4.4.11/artifacts/OMERO.server-4.4.11-ice34-b114.zip;
+  omego download --release 4 --ice 3.5 server
   unzip -qq OMERO.server-4.4.11-ice34-b114.zip;
   ln -s OMERO.server-4.4.11-ice34-b114 OMERO-CURRENT;
   OMERO-CURRENT/bin/omero db script "" "" ome -f OMERO.sql;
   psql -q -h localhost -U omero omero < OMERO.sql;
   OMERO-CURRENT/bin/omero load $HOME/config.omero;
   OMERO-CURRENT/bin/omero admin start;
-  omego upgrade --branch=OMERO-5.1-latest --labels=ICE=3.4 --upgradedb -v;
+  omego upgrade --branch=OMERO-DEV-latest --ice 3.5 --upgradedb -v;
 fi
