@@ -28,7 +28,28 @@ from omego.external import External, RunException
 from yaclifw.framework import Stop
 import omego.db
 import omego.fileutils
-from omego.db import DbAdmin
+from omego.db import DbAdmin, is_schema, sort_schemas
+
+
+@pytest.mark.parametrize('version,expected', [
+    ('OMERO3__0', True), ('OMERO3A__10', True), ('OMERO4.4__0', True),
+    ('OMERO5.1DEV__2', True), ('OMERO5.1DEV__10', True),
+    ('OMERO100.100__100', True), ('OMERO-precheck.sql', False),
+    ('OMERO5.2__precheck.sql', False)])
+def test_is_schema(version, expected):
+    assert is_schema(version) == expected
+
+
+def test_sort_schemas():
+    ordered = ['OMERO3__0', 'OMERO3A__10', 'OMERO4__0', 'OMERO4.4__0',
+               'OMERO5.0__0', 'OMERO5.1DEV__0', 'OMERO5.1DEV__1',
+               'OMERO5.1DEV__2', 'OMERO5.1DEV__10',
+               'OMERO5.1__0']
+
+    ps = [5, 3, 7, 9, 2, 6, 0, 1, 8, 4]
+    permuted = [ordered[p] for p in ps]
+
+    assert sort_schemas(permuted) == ordered
 
 
 class TestDb(object):
@@ -113,19 +134,6 @@ class TestDb(object):
             assert str(excinfo.value) == 'SQL file not found'
         else:
             db.init()
-        self.mox.VerifyAll()
-
-    def test_sort_schema(self):
-        ordered = ['OMERO3__0', 'OMERO3A__10', 'OMERO4__0', 'OMERO4.4__0',
-                   'OMERO5.0__0', 'OMERO5.1DEV__0', 'OMERO5.1DEV__1',
-                   'OMERO5.1DEV__2', 'OMERO5.1DEV__10',
-                   'OMERO5.1__0']
-
-        ps = [5, 3, 7, 9, 2, 6, 0, 1, 8, 4]
-        permuted = [ordered[p] for p in ps]
-
-        db = self.PartialMockDb(None, None)
-        assert db.sort_schema(permuted) == ordered
         self.mox.VerifyAll()
 
     def test_sql_version_matrix(self):

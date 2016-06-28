@@ -14,6 +14,25 @@ from env import DbParser
 
 log = logging.getLogger("omego.db")
 
+# Regexp identifying a SQL upgrade script
+SQL_UPGRADE_REGEXP = re.compile('.*OMERO(\d+)(\.|A)?(\d*)([A-Z]*)__(\d+)$')
+
+
+def is_schema(s):
+    """Return true if the string is a valid SQL upgrade script"""
+    return SQL_UPGRADE_REGEXP.match(s) is not None
+
+
+def sort_schemas(versions):
+    """Sort schemas in order"""
+    def keyfun(v):
+        x = SQL_UPGRADE_REGEXP.match(v).groups()
+        # x3: 'DEV' should come before ''
+        return (int(x[0]), x[1], int(x[2]) if x[2] else None,
+                x[3] if x[3] else 'zzz', int(x[4]))
+
+    return sorted(versions, key=keyfun)
+
 
 class DbAdmin(object):
 
@@ -74,16 +93,7 @@ class DbAdmin(object):
             self.upgrade()
 
     def sort_schema(self, versions):
-        # E.g. OMERO3__0 OMERO3A__10 OMERO4__0 OMERO4.4__0 OMERO5.1DEV__0
-        def keyfun(v):
-            x = re.match(
-                '.*OMERO(\d+)(\.|A)?(\d*)([A-Z]*)__(\d+)$', v).groups()
-            # x3: 'DEV' should come before ''
-            return (int(x[0]), x[1], int(x[2]) if x[2] else None,
-                    x[3] if x[3] else 'zzz', int(x[4]))
-
-        sortedver = sorted(versions, key=keyfun)
-        return sortedver
+        return sort_schemas(versions)
 
     def sql_version_matrix(self):
         def version_pair(f):
@@ -102,7 +112,7 @@ class DbAdmin(object):
         versions = set()
         for f in files:
             versions.update(version_pair(f))
-        versions = self.sort_schema(versions)
+        versions = sort_schemas(versions)
         n = len(versions)
         versionsrev = dict(vi for vi in zip(versions, xrange(n)))
 
