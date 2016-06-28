@@ -34,6 +34,17 @@ def sort_schemas(versions):
     return sorted(versions, key=keyfun)
 
 
+def parse_schema_files(files):
+    """Parse a set of schema files"""
+    f_dict = {}
+    for f in files:
+        vto, vfrom = os.path.split(os.path.splitext(f)[0])
+        vto = os.path.split(vto)[1]
+        if is_schema(vto) and is_schema(vfrom):
+            f_dict[f] = (vfrom, vto)
+    return f_dict
+
+
 class DbAdmin(object):
 
     def __init__(self, dir, command, args, external):
@@ -96,31 +107,24 @@ class DbAdmin(object):
         return sort_schemas(versions)
 
     def sql_version_matrix(self):
-        def version_pair(f):
-            vto, vfrom = os.path.split(os.path.splitext(f)[0])
-            vto = os.path.split(vto)[1]
-            return vfrom, vto
-
+        # Parse all schema files
         files = glob(os.path.join(
             self.dir, 'sql', 'psql', 'OMERO*', 'OMERO*.sql'))
+        f_dict = parse_schema_files(files)
 
-        # Windows is case-insensitive, so need to ignore additional files
-        # such as OMERO4.2__0/omero-4.1-*sql
-        files = [f for f in files if not
-                 os.path.basename(f).startswith('omero-')]
-
+        # Create a set of unique schema versions
         versions = set()
-        for f in files:
-            versions.update(version_pair(f))
+        for v in f_dict.values():
+            versions.update(v)
         versions = sort_schemas(versions)
         n = len(versions)
         versionsrev = dict(vi for vi in zip(versions, xrange(n)))
 
         # M(from,to) = upgrade script for this pair or None
         M = [[None for b in xrange(n)] for a in xrange(n)]
-        for f in files:
-            vfrom, vto = version_pair(f)
-            M[versionsrev[vfrom]][versionsrev[vto]] = f
+        for key, value in f_dict.items():
+            vfrom, vto = value
+            M[versionsrev[vfrom]][versionsrev[vto]] = key
 
         return M, versions
 

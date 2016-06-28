@@ -28,7 +28,7 @@ from omego.external import External, RunException
 from yaclifw.framework import Stop
 import omego.db
 import omego.fileutils
-from omego.db import DbAdmin, is_schema, sort_schemas
+from omego.db import DbAdmin, is_schema, sort_schemas, parse_schema_files
 
 
 @pytest.mark.parametrize('version,expected', [
@@ -50,6 +50,30 @@ def test_sort_schemas():
     permuted = [ordered[p] for p in ps]
 
     assert sort_schemas(permuted) == ordered
+
+
+def test_parse_schema_files():
+    files = [
+        # Parsed schema files
+        'psql/OMERO5.2__0/OMERO5.1__0.sql',
+        'OMERO5.2__0/OMERO5.1__0.sql',
+        'OMERO5.3DEV__3/OMERO5.2__0.sql',
+        'OMERO5.3DEV__3/OMERO5.3DEV__2.sql',
+        # Unparsed schema files
+        'OMERO4.2__0/omero-4.1-all-public.sql',
+        'OMERO5.2__0/data.sql',
+        'OMERO5.2__0/OMERO5.1-precheck.sql',
+        'OMERO5.2__0/OMERO5.1__precheck.sql',
+        'OMERO5.2/OMERO5.1__0.sql',
+        ]
+    d = {}
+    d['psql/OMERO5.2__0/OMERO5.1__0.sql'] = ('OMERO5.1__0', 'OMERO5.2__0')
+    d['OMERO5.2__0/OMERO5.1__0.sql'] = ('OMERO5.1__0', 'OMERO5.2__0')
+    d['OMERO5.3DEV__3/OMERO5.2__0.sql'] = ('OMERO5.2__0', 'OMERO5.3DEV__3')
+    d['OMERO5.3DEV__3/OMERO5.3DEV__2.sql'] = (
+        'OMERO5.3DEV__2', 'OMERO5.3DEV__3')
+
+    assert parse_schema_files(files) == d
 
 
 class TestDb(object):
