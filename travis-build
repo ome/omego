@@ -42,6 +42,7 @@ fi
 if [ $TEST = upgrade ]; then
   omego download --release 4 --ice 3.5 server
   ln -s OMERO.server-4.4.12-ice35-b116 OMERO-CURRENT;
+  pip install --user -r OMERO-CURRENT/share/web/requirements-py27-nginx.txt
   OMERO-CURRENT/bin/omero db script "" "" ome -f OMERO.sql;
   psql -q -h localhost -U omero omero < OMERO.sql;
   OMERO-CURRENT/bin/omero load $HOME/config.omero;
