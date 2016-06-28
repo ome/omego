@@ -9,7 +9,7 @@ echo -e "travis_fold:start:ice.install\r"
 mkdir -p download
 cd download
 wget --user-agent $USER_AGENT http://downloads.openmicroscopy.org/ice/experimental/Ice-3.5.1-b1-ubuntu1204-amd64.tar.xz
-cd $HOME
+cd ..
 tar -xvf "download/Ice-3.5.1-b1-ubuntu1204-amd64.tar.xz"
 ICE_HOME="$(pwd)/Ice-3.5.1-b1-ubuntu1204-amd64"
 export SLICEPATH="${ICE_HOME}/slice"
