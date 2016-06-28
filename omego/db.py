@@ -14,28 +14,32 @@ from env import DbParser
 
 log = logging.getLogger("omego.db")
 
-# Regexp identifying a SQL upgrade script
-SQL_UPGRADE_REGEXP = re.compile('.*OMERO(\d+)(\.|A)?(\d*)([A-Z]*)__(\d+)$')
+# Regular expression identifying a SQL schema
+SQL_SCHEMA_REGEXP = re.compile('.*OMERO(\d+)(\.|A)?(\d*)([A-Z]*)__(\d+)$')
 
 
 def is_schema(s):
-    """Return true if the string is a valid SQL upgrade script"""
-    return SQL_UPGRADE_REGEXP.match(s) is not None
+    """Return true if the string is a valid SQL schema"""
+    return SQL_SCHEMA_REGEXP.match(s) is not None
 
 
-def sort_schemas(versions):
-    """Sort schemas in order"""
+def sort_schemas(schemas):
+    """Sort a list of SQL schemas in order"""
     def keyfun(v):
-        x = SQL_UPGRADE_REGEXP.match(v).groups()
+        x = SQL_SCHEMA_REGEXP.match(v).groups()
         # x3: 'DEV' should come before ''
         return (int(x[0]), x[1], int(x[2]) if x[2] else None,
                 x[3] if x[3] else 'zzz', int(x[4]))
 
-    return sorted(versions, key=keyfun)
+    return sorted(schemas, key=keyfun)
 
 
 def parse_schema_files(files):
-    """Parse a set of schema files"""
+    """
+    Parse a list of SQL files and return a dictionary of valid schema
+    files where each key is a valid schema file and the corresponding value is
+    a tuple containing the source and the target schema.
+    """
     f_dict = {}
     for f in files:
         vto, vfrom = os.path.split(os.path.splitext(f)[0])
