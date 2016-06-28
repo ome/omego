@@ -35,7 +35,7 @@ before_script:
     - echo "config set omero.data.dir $HOME/OMERO" > $HOME/config.omero
     - echo "config set omero.db.name omero" >> $HOME/config.omero
 script:
-    - sh travis-build
+    - ./travis-build
 
 after_failure:
     - tail -n 1000 OMERO-CURRENT/var/log/Blitz-0.log
