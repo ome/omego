@@ -14,7 +14,7 @@ tar -xvf "download/Ice-3.5.1-b1-ubuntu1204-amd64.tar.xz"
 ICE_HOME="$(pwd)/Ice-3.5.1-b1-ubuntu1204-amd64"
 export SLICEPATH="${ICE_HOME}/slice"
 export PATH="${ICE_HOME}/bin:$PATH"
-export LD_LIBRARY_PATH="${ICE_HOME}/lib:$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH="${ICE_HOME}/lib"
 export PYTHONPATH="${ICE_HOME}/python:$PYTHONPATH"
 echo -e "travis_fold:end:ice.install\r"
 
