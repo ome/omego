@@ -39,7 +39,7 @@ class TestDownload(Downloader):
 
     def setup_class(self):
         self.artifact = 'python'
-        self.branch = 'OMERO-5.1-latest'
+        self.branch = 'OMERO-DEV-latest'
         self.ice = '3.5'
 
     def testDownloadNoUnzip(self, tmpdir):

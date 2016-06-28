@@ -14,6 +14,8 @@ cache: pip
 
 addons:
   apt_packages:
+    # Although we are installing a custom Ice 3.5 build, this package is still
+    # required to install some of the runtime Ice dependencies
     - ice34-services
     - python-zeroc-ice
   postgresql: "9.3"
@@ -35,7 +37,7 @@ before_script:
     - echo "config set omero.data.dir $HOME/OMERO" > $HOME/config.omero
     - echo "config set omero.db.name omero" >> $HOME/config.omero
 script:
-    - sh travis-build
+    - ./travis-build
 
 after_failure:
     - tail -n 1000 OMERO-CURRENT/var/log/Blitz-0.log
