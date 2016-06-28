@@ -41,11 +41,10 @@ fi
 #Test a multistage DB upgrade (4.4 -> 5.2) as part of the server upgrade
 if [ $TEST = upgrade ]; then
   omego download --release 4 --ice 3.5 server
-  unzip -qq OMERO.server-4.4.12-ice35-b116.zip;
   ln -s OMERO.server-4.4.12-ice35-b116 OMERO-CURRENT;
   OMERO-CURRENT/bin/omero db script "" "" ome -f OMERO.sql;
   psql -q -h localhost -U omero omero < OMERO.sql;
   OMERO-CURRENT/bin/omero load $HOME/config.omero;
   OMERO-CURRENT/bin/omero admin start;
-  omego upgrade --relase=5.2 --ice 3.5 --upgradedb -v;
+  omego upgrade --release=5.2 --ice 3.5 --upgradedb -v;
 fi
