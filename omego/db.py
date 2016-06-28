@@ -42,7 +42,10 @@ def parse_schema_files(files):
     """
     f_dict = {}
     for f in files:
-        vto, vfrom = os.path.split(os.path.splitext(f)[0])
+        root, ext = os.path.splitext(f)
+        if ext != ".sql":
+            continue
+        vto, vfrom = os.path.split(root)
         vto = os.path.split(vto)[1]
         if is_schema(vto) and is_schema(vfrom):
             f_dict[f] = (vfrom, vto)

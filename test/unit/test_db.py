@@ -60,6 +60,7 @@ def test_parse_schema_files():
         'OMERO5.3DEV__3/OMERO5.2__0.sql',
         'OMERO5.3DEV__3/OMERO5.3DEV__2.sql',
         # Unparsed schema files
+        'OMERO5.2__0/OMERO5.1__0.txt',
         'OMERO4.2__0/omero-4.1-all-public.sql',
         'OMERO5.2__0/data.sql',
         'OMERO5.2__0/OMERO5.1-precheck.sql',
