@@ -1,6 +1,14 @@
 OMEGO version history
 =====================
 
+0.4.1 (June 2016)
+-----------------
+
+* Fix Travis build
+* Add reference to pypi distribution to the top-level README
+* Refactor the SQL schema files parsing and sorting logic
+* Add protocol support to the `--ci` argument
+
 0.4.0 (May 2016)
 ----------------
 
