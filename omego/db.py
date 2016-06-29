@@ -14,6 +14,43 @@ from env import DbParser
 
 log = logging.getLogger("omego.db")
 
+# Regular expression identifying a SQL schema
+SQL_SCHEMA_REGEXP = re.compile('.*OMERO(\d+)(\.|A)?(\d*)([A-Z]*)__(\d+)$')
+
+
+def is_schema(s):
+    """Return true if the string is a valid SQL schema"""
+    return SQL_SCHEMA_REGEXP.match(s) is not None
+
+
+def sort_schemas(schemas):
+    """Sort a list of SQL schemas in order"""
+    def keyfun(v):
+        x = SQL_SCHEMA_REGEXP.match(v).groups()
+        # x3: 'DEV' should come before ''
+        return (int(x[0]), x[1], int(x[2]) if x[2] else None,
+                x[3] if x[3] else 'zzz', int(x[4]))
+
+    return sorted(schemas, key=keyfun)
+
+
+def parse_schema_files(files):
+    """
+    Parse a list of SQL files and return a dictionary of valid schema
+    files where each key is a valid schema file and the corresponding value is
+    a tuple containing the source and the target schema.
+    """
+    f_dict = {}
+    for f in files:
+        root, ext = os.path.splitext(f)
+        if ext != ".sql":
+            continue
+        vto, vfrom = os.path.split(root)
+        vto = os.path.split(vto)[1]
+        if is_schema(vto) and is_schema(vfrom):
+            f_dict[f] = (vfrom, vto)
+    return f_dict
+
 
 class DbAdmin(object):
 
@@ -74,43 +111,27 @@ class DbAdmin(object):
             self.upgrade()
 
     def sort_schema(self, versions):
-        # E.g. OMERO3__0 OMERO3A__10 OMERO4__0 OMERO4.4__0 OMERO5.1DEV__0
-        def keyfun(v):
-            x = re.match(
-                '.*OMERO(\d+)(\.|A)?(\d*)([A-Z]*)__(\d+)$', v).groups()
-            # x3: 'DEV' should come before ''
-            return (int(x[0]), x[1], int(x[2]) if x[2] else None,
-                    x[3] if x[3] else 'zzz', int(x[4]))
-
-        sortedver = sorted(versions, key=keyfun)
-        return sortedver
+        return sort_schemas(versions)
 
     def sql_version_matrix(self):
-        def version_pair(f):
-            vto, vfrom = os.path.split(os.path.splitext(f)[0])
-            vto = os.path.split(vto)[1]
-            return vfrom, vto
-
+        # Parse all schema files
         files = glob(os.path.join(
             self.dir, 'sql', 'psql', 'OMERO*', 'OMERO*.sql'))
+        f_dict = parse_schema_files(files)
 
-        # Windows is case-insensitive, so need to ignore additional files
-        # such as OMERO4.2__0/omero-4.1-*sql
-        files = [f for f in files if not
-                 os.path.basename(f).startswith('omero-')]
-
+        # Create a set of unique schema versions
         versions = set()
-        for f in files:
-            versions.update(version_pair(f))
-        versions = self.sort_schema(versions)
+        for v in f_dict.values():
+            versions.update(v)
+        versions = sort_schemas(versions)
         n = len(versions)
         versionsrev = dict(vi for vi in zip(versions, xrange(n)))
 
         # M(from,to) = upgrade script for this pair or None
         M = [[None for b in xrange(n)] for a in xrange(n)]
-        for f in files:
-            vfrom, vto = version_pair(f)
-            M[versionsrev[vfrom]][versionsrev[vto]] = f
+        for key, value in f_dict.items():
+            vfrom, vto = value
+            M[versionsrev[vfrom]][versionsrev[vto]] = key
 
         return M, versions
 
