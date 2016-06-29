@@ -1,6 +1,14 @@
 OMEGO version history
 =====================
 
+0.4.1 (June 2016)
+-----------------
+
+* Fix Travis build
+* Add reference to pypi distribution to the top-level README
+* Refactor the SQL schema files parsing and sorting logic
+* Add protocol support to the `--ci` argument
+
 0.4.0 (May 2016)
 ----------------
 
@@ -16,23 +24,23 @@ First large refactoring which reduces
 support for OMERO 5.1 and earlier though
 upgrading a 5.0 server is still possible.
 
- * remove `--ports` support in favor of 5.2 properties
- * add `omero db dump`
- * add `no-start` option
- * add `--upgradedb` for omego install
- * convert boolean string args to flags
+* remove `--ports` support in favor of 5.2 properties
+* add `omero db dump`
+* add `no-start` option
+* add `--upgradedb` for omego install
+* convert boolean string args to flags
 
 0.2.5 (August 2015)
 -------------------
 
- * archive logs before upgrade
- * upgrade DB fixes
- * download insight rather than clients
+* archive logs before upgrade
+* upgrade DB fixes
+* download insight rather than clients
 
 0.2.4 (December 2014)
 ---------------------
 
- * change `--cfg` to `--prestartfile`
+* change `--cfg` to `--prestartfile`
 
 0.2.3 (September 2014)
 ----------------------
