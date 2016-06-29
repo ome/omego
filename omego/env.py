@@ -116,8 +116,7 @@ class JenkinsParser(argparse.ArgumentParser):
             help="The release series to download e.g. 5, 5.1, 5.1.2, "
             "use 'latest' to get the latest release. "
             "Alternatively the name of a Jenkins job e.g. OMERO-5.1-latest.")
-        Add(group, "build",
-            "http://%(ci)s/job/%(branch)s/lastSuccessfulBuild/",
+        Add(group, "build", "",
             help="Full url of the Jenkins build containing the artifacts")
         Add(group, "labels", "",
             help="Comma separated list of labels for matrix builds")
