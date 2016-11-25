@@ -24,6 +24,7 @@ class Install(object):
         self.args = args
         log.info("%s: %s", self.__class__.__name__, cmd)
         log.debug("Current directory: %s", os.getcwd())
+        self.symlink_check_and_set()
 
         if cmd == 'upgrade':
             newinstall = False
@@ -234,6 +235,22 @@ class Install(object):
             command = command.split()
         self.external.omero_bin(command)
 
+    def symlink_check_and_set(self):
+        """
+        The default symlink was changed from OMERO-CURRENT to OMERO.server.
+        If `--sym` was not specified and OMERO-CURRENT exists in the current
+        directory stop and warn.
+        """
+        if self.args.sym == '':
+            if os.path.exists('OMERO-CURRENT'):
+                log.error('Deprecated OMERO-CURRENT found but --sym not set')
+                raise Stop(
+                    30, 'The default for --sym has changed to OMERO.server '
+                    'but the current directory contains OMERO-CURRENT. '
+                    'Either remove OMERO-CURRENT or explicity pass --sym.')
+        if self.args.sym in ('', 'auto'):
+            self.args.sym = 'OMERO.server'
+
 
 class UnixInstall(Install):
 
@@ -363,8 +380,6 @@ class InstallBaseCommand(Command):
         self.parser = FileUtilsParser(self.parser)
 
         Add = EnvDefault.add
-
-        Add(self.parser, "sym", "OMERO-CURRENT")
 
         self.parser.add_argument(
             "--no-start", action="store_true",

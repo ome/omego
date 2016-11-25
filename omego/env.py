@@ -128,6 +128,11 @@ class JenkinsParser(argparse.ArgumentParser):
         Add(group, "ice",
             "", help="Ice version, default is the latest (release only)")
 
+        Add(group, "sym", "",
+            help="Create a symlink to the unzipped download, "
+            "replaces any existing symlink. "
+            "Use 'auto' to automatically name the symlink OMERO.$component.")
+
     def __getattr__(self, key):
         return getattr(self.parser, key)
 
