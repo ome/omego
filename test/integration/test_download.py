@@ -61,6 +61,14 @@ class TestDownload(Downloader):
                           '--ice', self.ice)
             assert tmpdir.ensure('OMERO.py', dir=True)
 
+    def testDownloadSym(self, tmpdir):
+        with tmpdir.as_cwd():
+            self.download('--branch', self.branch, '--ice', self.ice,
+                          '--sym', 'auto')
+            files = tmpdir.listdir()
+            assert len(files) == 3
+            assert tmpdir.ensure('OMERO.py', dir=True)
+
     def testDownloadRelease(self, tmpdir):
         with tmpdir.as_cwd():
             self.download('--release', 'latest', '--ice', self.ice)
