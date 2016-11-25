@@ -111,7 +111,7 @@ class Artifacts(object):
                 pass
 
             try:
-                os.symlink(filename, sym)
+                os.symlink(os.path.abspath(localpath), sym)
             except OSError as e:
                 log.error("Failed to symlink %s to %s: %s", filename, sym, e)
                 raise
