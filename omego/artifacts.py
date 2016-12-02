@@ -227,8 +227,8 @@ class JenkinsArtifacts(ArtifactsList):
         url = None
         try:
             url = fileutils.open_url(buildurl + 'api/xml',
-                                     self.args.httpuser,
-                                     self.args.httppassword)
+                                     httpuser=self.args.httpuser,
+                                     httppassword=self.args.httppassword)
             log.debug('Fetching xml from %s code:%d', url.url, url.code)
             if url.code != 200:
                 log.error('Failed to get CI XML from %s (code %d)',

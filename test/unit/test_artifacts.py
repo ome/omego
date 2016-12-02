@@ -84,6 +84,11 @@ jars:
         assert str(a) == expected
 
 
+class MockAuth(object):
+    httpuser = 'foo'
+    httppassword = 'bar'
+
+
 class MockUrl(object):
     build = 1
     oldbuild = 0
@@ -160,8 +165,8 @@ class Args(object):
         self.skipunzip = False
         self.unzipdir = 'unzip/dir'
         self.overwrite = 'error'
-        self.httpuser = None
-        self.httppassword = None
+        self.httpuser = MockAuth.httpuser
+        self.httppassword = MockAuth.httppassword
         self.branch = None
         self.downloadurl = MockDownloadUrl.downloadurl
 
@@ -183,10 +188,14 @@ class TestJenkinsArtifacts(MoxBase):
         self.mox.StubOutWithMock(fileutils, 'open_url')
         if matrix:
             fileutils.open_url(
-                MockUrl.unlabelledurl + 'api/xml').AndReturn(
+                MockUrl.unlabelledurl + 'api/xml',
+                httpuser=MockAuth.httpuser,
+                httppassword=MockAuth.httppassword).AndReturn(
                 MockUrl(True))
         fileutils.open_url(
-            MockUrl.labelledurl + 'api/xml').AndReturn(
+            MockUrl.labelledurl + 'api/xml',
+            httpuser=MockAuth.httpuser,
+            httppassword=MockAuth.httppassword).AndReturn(
             MockUrl(False))
         self.mox.ReplayAll()
         return JenkinsArtifacts(Args(matrix))
@@ -302,15 +311,18 @@ class TestArtifacts(MoxBase):
             self.args = Args(False)
             self.artifacts = A()
 
-    def test_download(self):
+    @pytest.mark.parametrize('auth', [
+        {'httpuser': 'foo', 'httppassword': 'bar'}
+    ])
+    def test_download(self, auth):
         url = 'http://example.org/test/component-0.0.0.zip'
         a = self.MockArtifacts('testcomponent', url)
 
         self.mox.StubOutWithMock(fileutils, 'get_as_local_path')
         self.mox.StubOutWithMock(fileutils, 'unzip')
         fileutils.get_as_local_path(
-            url, 'error', progress=0, httpuser=None,
-            httppassword=None).AndReturn(
+            url, 'error', progress=0, httpuser=auth['httpuser'],
+            httppassword=auth['httppassword']).AndReturn(
             ('file', 'component-0.0.0.zip'))
         fileutils.unzip('component-0.0.0.zip', match_dir=True,
                         destdir='unzip/dir').AndReturn('component-0.0.0')
