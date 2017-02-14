@@ -67,6 +67,9 @@ class TestDownload(Downloader):
             files = tmpdir.listdir()
             assert len(files) == 2
 
+    def testDownloadNonExistingArtifact(self):
+        with pytest.raises(AttributeError):
+            self.download('-n', '--release', '5.3', '--ice', '3.3')
 
 class TestDownloadBioFormats(Downloader):
 
