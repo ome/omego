@@ -335,7 +335,7 @@ class ReleaseArtifacts(ArtifactsList):
         elif re.match('[0-9]+|latest$', args.branch):
             dl_url = self.follow_latest_redirect(args)
 
-        dl_icever = self.read_downloads(dl_url)
+        dl_icever = self.read_downloads(dl_url + 'artifacts/')
         if not args.ice:
             ice_ver = sorted(dl_icever.keys())[-1]
         else:
