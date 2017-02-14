@@ -71,6 +71,7 @@ class TestDownload(Downloader):
         with pytest.raises(AttributeError):
             self.download('-n', '--release', '5.3', '--ice', '3.3')
 
+
 class TestDownloadBioFormats(Downloader):
 
     def setup_class(self):
