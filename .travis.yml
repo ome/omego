@@ -41,4 +41,4 @@ script:
     - ./travis-build
 
 after_failure:
-    - tail -n 1000 OMERO-CURRENT/var/log/Blitz-0.log
+    - tail -n 1000 OMERO.server/var/log/Blitz-0.log
