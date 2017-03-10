@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import copy
 import os
 import shutil
 import tempfile
@@ -83,7 +84,14 @@ class Install(object):
                 raise Stop(0, 'Unzip disabled, exiting')
 
             log.info('Downloading server')
-            artifacts = Artifacts(self.args)
+
+            # The downloader automatically symlinks the server, however if
+            # we are upgrading we want to delay the symlink swap, so this
+            # overrides args.sym
+            # TODO: Find a nicer way to do this?
+            artifact_args = copy.copy(self.args)
+            artifact_args.sym = ''
+            artifacts = Artifacts(artifact_args)
             server = artifacts.download('server')
         else:
             progress = 0
