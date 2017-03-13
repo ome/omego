@@ -74,6 +74,17 @@ class TestDownload(Downloader):
             assert expected.exists()
             assert expected.isdir()
 
+            # Part two, if an artifact already exists and is unzipped check
+            # that a new symlink is created if necessary
+            self.download('--branch', self.branch, '--ice', self.ice,
+                          '--sym', 'custom.sym')
+            files2 = tmpdir.listdir()
+            files2diff = set(files2).symmetric_difference(files)
+            assert len(files2diff) == 1
+            sym2 = files2diff.pop()
+            assert sym2 == (tmpdir / 'custom.sym')
+            assert sym2.isdir()
+
     def testDownloadRelease(self, tmpdir):
         with tmpdir.as_cwd():
             self.download('--release', 'latest', '--ice', self.ice)
