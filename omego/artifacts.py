@@ -52,6 +52,7 @@ class Artifacts(object):
         unzipped = filename.replace(".zip", "")
 
         if os.path.exists(unzipped):
+            self.create_symlink(unzipped)
             return unzipped
 
         log.info("Checking %s", componenturl)
