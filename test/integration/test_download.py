@@ -59,7 +59,9 @@ class TestDownload(Downloader):
         with tmpdir.as_cwd():
             self.download('--unzipdir', 'OMERO.py', '--branch', self.branch,
                           '--ice', self.ice)
-            assert tmpdir.ensure('OMERO.py', dir=True)
+            expected = tmpdir / 'OMERO.py'
+            assert expected.exists()
+            assert expected.isdir()
 
     def testDownloadSym(self, tmpdir):
         with tmpdir.as_cwd():
@@ -67,7 +69,10 @@ class TestDownload(Downloader):
                           '--sym', 'auto')
             files = tmpdir.listdir()
             assert len(files) == 3
-            assert tmpdir.ensure('OMERO.py', dir=True)
+
+            expected = tmpdir / 'OMERO.py'
+            assert expected.exists()
+            assert expected.isdir()
 
     def testDownloadRelease(self, tmpdir):
         with tmpdir.as_cwd():
