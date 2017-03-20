@@ -52,6 +52,7 @@ class Artifacts(object):
         unzipped = filename.replace(".zip", "")
 
         if os.path.exists(unzipped):
+            self.create_symlink(unzipped)
             return unzipped
 
         log.info("Checking %s", componenturl)
@@ -73,6 +74,7 @@ class Artifacts(object):
                     log.info('Unzipping %s', localpath)
                     unzipped = fileutils.unzip(
                         localpath, match_dir=True, destdir=self.args.unzipdir)
+                    self.create_symlink(unzipped)
                     return unzipped
                 except Exception as e:
                     log.error('Unzip failed: %s', e)
@@ -91,6 +93,29 @@ class Artifacts(object):
              'any artifact, including those not listed.\n' +
              str(self.artifacts))
         print s
+
+    def create_symlink(self, localpath):
+        sym = self.args.sym
+        filename = os.path.basename(localpath)
+        if sym and sym == 'auto':
+            m = re.match('([A-Z]+\.\w+)-', filename)
+            if m:
+                sym = m.group(1)
+            else:
+                log.error('Failed to get symlink name for %s' % localpath)
+
+        if sym:
+            log.debug('Creating symlink %s -> %s', sym, localpath)
+            try:
+                os.unlink(sym)
+            except OSError as e:
+                pass
+
+            try:
+                os.symlink(os.path.abspath(localpath), sym)
+            except OSError as e:
+                log.error("Failed to symlink %s to %s: %s", filename, sym, e)
+                raise
 
 
 class ArtifactsList(object):

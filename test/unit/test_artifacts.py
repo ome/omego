@@ -169,6 +169,7 @@ class Args(object):
         self.httppassword = MockAuth.httppassword
         self.branch = None
         self.downloadurl = MockDownloadUrl.downloadurl
+        self.sym = None
 
 
 class MoxBase(object):
