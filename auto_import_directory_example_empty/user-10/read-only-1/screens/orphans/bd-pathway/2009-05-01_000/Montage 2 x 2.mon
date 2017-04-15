@@ -1,0 +1,15 @@
+[General]
+Type=Montage
+Version=1.00
+TileHeight=2
+TileWidth=2
+UseAutofocus=0
+AFSetting=
+AFFrameInterval=1
+AFInitialFrame=1
+AFType=0
+CXGap=0.000000
+CYGap=0.000000
+UseBorder=0
+UseCellCount=0
+CellCount=500

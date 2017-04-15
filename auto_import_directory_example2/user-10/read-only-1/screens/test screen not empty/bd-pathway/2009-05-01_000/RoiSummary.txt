@@ -1,0 +1,75 @@
+
+------------------------------------
+Date:	Friday, May 01, 2009
+Time:	12:35:37 PM
+------------------------------------
+
+Transmitted Light_ADF:	"E:\BD Users\Darren\Data\OMERO\2009-05-01_000\Well D03\Transmitted Light.adf"
+Transmitted Light_ROI:	"No ROI"
+Transmitted Light_Experiment Type:	"Endpoint"
+DsRed - Confocal_ADF:	"E:\BD Users\Darren\Data\OMERO\2009-05-01_000\Well D03\DsRed - Confocal.adf"
+DsRed - Confocal_ROI:	"No ROI"
+DsRed - Confocal_Experiment Type:	"Kinetic"
+
+
+TZ	Start	End
+--	-----	---
+1	17.9118107209317	28.4506450979876
+
+
+ROI	No ROI_Type	No ROI_X	No ROI_Y	No ROI_W	No ROI_H	No ROI_Pixels	Transmitted Light_Intensity	DsRed - Confocal_IntensityMax_TZ1	DsRed - Confocal_IntensityMin_TZ1	DsRed - Confocal_IntensityAvg_TZ1	DsRed - Confocal_IntensityRateOfRise_TZ1	DsRed - Confocal_IntensityRateOfFall_TZ1	DsRed - Confocal_IntensityAreaUnderCurve_TZ1
+---	-----------	--------	--------	--------	--------	-------------	---------------------------	---------------------------------	---------------------------------	---------------------------------	----------------------------------------	----------------------------------------	--------------------------------------------
+1	1	10	10	10	10	100	757.69	223.78	223.38	223.593333333333	0	-3.79548615804083E-02	2.30445570469512
+AvgTrace							757.69	223.78	223.38	223.593333333333	0	-3.79548615804083E-02	2.30445570469512
+AvgData							757.69	223.78	223.38	223.593333333333	0	-3.79548615804083E-02	2.30445570469512
+
+
+------------------------------------
+Date:	Friday, May 01, 2009
+Time:	12:36:04 PM
+------------------------------------
+
+Transmitted Light_ADF:	"E:\BD Users\Darren\Data\OMERO\2009-05-01_000\Well D07\Transmitted Light.adf"
+Transmitted Light_ROI:	"No ROI"
+Transmitted Light_Experiment Type:	"Endpoint"
+DsRed - Confocal_ADF:	"E:\BD Users\Darren\Data\OMERO\2009-05-01_000\Well D07\DsRed - Confocal.adf"
+DsRed - Confocal_ROI:	"No ROI"
+DsRed - Confocal_Experiment Type:	"Kinetic"
+
+
+TZ	Start	End
+--	-----	---
+1	16.8808663030116	27.1857736070646
+
+
+ROI	No ROI_Type	No ROI_X	No ROI_Y	No ROI_W	No ROI_H	No ROI_Pixels	Transmitted Light_Intensity	DsRed - Confocal_IntensityMax_TZ1	DsRed - Confocal_IntensityMin_TZ1	DsRed - Confocal_IntensityAvg_TZ1	DsRed - Confocal_IntensityRateOfRise_TZ1	DsRed - Confocal_IntensityRateOfFall_TZ1	DsRed - Confocal_IntensityAreaUnderCurve_TZ1
+---	-----------	--------	--------	--------	--------	-------------	---------------------------	---------------------------------	---------------------------------	---------------------------------	----------------------------------------	----------------------------------------	--------------------------------------------
+1	1	10	10	10	10	100	800.5	223.64	223	223.346666666667	0	-6.21063325575254E-02	3.72538305580012
+AvgTrace							800.5	223.64	223	223.346666666667	0	-6.21063325575254E-02	3.72538305580012
+AvgData							800.5	223.64	223	223.346666666667	0	-6.21063325575254E-02	3.72538305580012
+
+
+------------------------------------
+Date:	Friday, May 01, 2009
+Time:	12:36:32 PM
+------------------------------------
+
+Transmitted Light_ADF:	"E:\BD Users\Darren\Data\OMERO\2009-05-01_000\Well D11\Transmitted Light.adf"
+Transmitted Light_ROI:	"No ROI"
+Transmitted Light_Experiment Type:	"Endpoint"
+DsRed - Confocal_ADF:	"E:\BD Users\Darren\Data\OMERO\2009-05-01_000\Well D11\DsRed - Confocal.adf"
+DsRed - Confocal_ROI:	"No ROI"
+DsRed - Confocal_Experiment Type:	"Kinetic"
+
+
+TZ	Start	End
+--	-----	---
+1	17.030185018966	27.4925230978598
+
+
+ROI	No ROI_Type	No ROI_X	No ROI_Y	No ROI_W	No ROI_H	No ROI_Pixels	Transmitted Light_Intensity	DsRed - Confocal_IntensityMax_TZ1	DsRed - Confocal_IntensityMin_TZ1	DsRed - Confocal_IntensityAvg_TZ1	DsRed - Confocal_IntensityRateOfRise_TZ1	DsRed - Confocal_IntensityRateOfFall_TZ1	DsRed - Confocal_IntensityAreaUnderCurve_TZ1
+---	-----------	--------	--------	--------	--------	-------------	---------------------------	---------------------------------	---------------------------------	---------------------------------	----------------------------------------	----------------------------------------	--------------------------------------------
+1	1	10	10	10	10	100	801.21	224.28	223.9	224.093333333333	7.28005665692762E-02	-3.43341189715333E-02	2.51210408318698
+AvgTrace							801.21	224.28	223.9	224.093333333333	7.28005665692762E-02	-3.43341189715333E-02	2.51210408318698
+AvgData							801.21	224.28	223.9	224.093333333333	7.28005665692762E-02	-3.43341189715333E-02	2.51210408318698
+

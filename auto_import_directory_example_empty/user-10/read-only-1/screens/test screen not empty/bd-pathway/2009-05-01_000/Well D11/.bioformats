@@ -1,0 +1,124 @@
+[DsRed - Confocal - Graph.bmp global]
+reader = BMPReader
+test = true
+series_count = 1
+mem_mb = 111
+header = DsRed - Confocal - Graph.bmp global
+access_ms = 1
+
+[DsRed - Confocal - Graph.bmp series_0]
+Indexed = false
+DimensionOrder = XYCTZ
+ChannelName_0 = null
+SizeC = 4
+Interleaved = true
+MD5 = c38116078ef8a4a20ec2e6063e0a35ac
+ThumbSizeY = 88
+ThumbSizeX = 128
+LittleEndian = true
+RGB = true
+header = DsRed - Confocal - Graph.bmp series_0
+Name = DsRed - Confocal - Graph.bmp
+PixelType = uint8
+SizeX = 65
+Tile_MD5 = c38116078ef8a4a20ec2e6063e0a35ac
+Date = 2009-05-05T13:04:21
+SizeT = 1
+channel_count = 1
+SizeZ = 1
+SizeY = 45
+FalseColor = false
+
+[DsRed - Confocal Image Thumbnail.bmp global]
+reader = BMPReader
+test = true
+series_count = 1
+mem_mb = 59
+header = DsRed - Confocal Image Thumbnail.bmp global
+access_ms = 2
+
+[DsRed - Confocal Image Thumbnail.bmp series_0]
+Indexed = false
+DimensionOrder = XYCTZ
+ChannelName_0 = null
+SizeC = 3
+Interleaved = true
+MD5 = 48c2ddf447dbc5ae922849258e425bfb
+ThumbSizeY = 97
+ThumbSizeX = 128
+LittleEndian = true
+RGB = true
+header = DsRed - Confocal Image Thumbnail.bmp series_0
+Name = DsRed - Confocal Image Thumbnail.bmp
+PixelType = uint8
+SizeX = 131
+Tile_MD5 = 48c2ddf447dbc5ae922849258e425bfb
+Date = 2009-05-05T13:07:44
+SizeT = 1
+channel_count = 1
+SizeZ = 1
+SizeY = 100
+FalseColor = false
+
+[Transmitted Light - Graph.bmp global]
+reader = BMPReader
+test = true
+series_count = 1
+mem_mb = 59
+header = Transmitted Light - Graph.bmp global
+access_ms = 1
+
+[Transmitted Light - Graph.bmp series_0]
+Indexed = false
+DimensionOrder = XYCTZ
+ChannelName_0 = null
+SizeC = 4
+Interleaved = true
+MD5 = 6acafaea43dba0a1f71e0f9ba5e94b2b
+ThumbSizeY = 88
+ThumbSizeX = 128
+LittleEndian = true
+RGB = true
+header = Transmitted Light - Graph.bmp series_0
+Name = Transmitted Light - Graph.bmp
+PixelType = uint8
+SizeX = 65
+Tile_MD5 = 6acafaea43dba0a1f71e0f9ba5e94b2b
+Date = 2009-05-05T13:07:45
+SizeT = 1
+channel_count = 1
+SizeZ = 1
+SizeY = 45
+FalseColor = false
+
+[Transmitted Light Image Thumbnail.bmp global]
+reader = BMPReader
+test = true
+series_count = 1
+mem_mb = 46
+header = Transmitted Light Image Thumbnail.bmp global
+access_ms = 1
+
+[Transmitted Light Image Thumbnail.bmp series_0]
+Indexed = false
+DimensionOrder = XYCTZ
+ChannelName_0 = null
+SizeC = 3
+Interleaved = true
+MD5 = 22a8cd6dd8f95821bc224fd1439916c7
+ThumbSizeY = 97
+ThumbSizeX = 128
+LittleEndian = true
+RGB = true
+header = Transmitted Light Image Thumbnail.bmp series_0
+Name = Transmitted Light Image Thumbnail.bmp
+PixelType = uint8
+SizeX = 131
+Tile_MD5 = 22a8cd6dd8f95821bc224fd1439916c7
+Date = 2009-05-05T13:08:54
+SizeT = 1
+channel_count = 1
+SizeZ = 1
+SizeY = 100
+FalseColor = false
+

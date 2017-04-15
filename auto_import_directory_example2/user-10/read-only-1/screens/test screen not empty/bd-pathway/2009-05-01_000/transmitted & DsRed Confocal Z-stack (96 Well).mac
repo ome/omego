@@ -1,0 +1,36 @@
+[General]
+Type=Macro
+Version=7.00
+Lines=25
+Compound=1
+[DataClass]
+Active=0
+[Montage]
+Mode=2
+Setting=Montage 2 x 2
+[Macro]
+1=MoveWell(39,96)
+2=Autofocus("Laser AutoFocus")
+3=ProbeCycle("Transmitted light",1.000,6)
+4=ProbeCycle("DsRed - Confocal",1.000,6)
+5=MoveXYZ("Relative Z (Z Stack)")
+6=ProbeCycle("DsRed - Confocal",1.000,6)
+7=MoveXYZ("Relative Z (Z Stack)")
+8=ProbeCycle("DsRed - Confocal",1.000,6)
+9=MoveWell(43,96)
+10=Autofocus("Laser AutoFocus")
+11=ProbeCycle("Transmitted light",1.000,6)
+12=ProbeCycle("DsRed - Confocal",1.000,6)
+13=MoveXYZ("Relative Z (Z Stack)")
+14=ProbeCycle("DsRed - Confocal",1.000,6)
+15=MoveXYZ("Relative Z (Z Stack)")
+16=ProbeCycle("DsRed - Confocal",1.000,6)
+17=MoveWell(47,96)
+18=Autofocus("Laser AutoFocus")
+19=ProbeCycle("Transmitted light",1.000,6)
+20=ProbeCycle("DsRed - Confocal",1.000,6)
+21=MoveXYZ("Relative Z (Z Stack)")
+22=ProbeCycle("DsRed - Confocal",1.000,6)
+23=MoveXYZ("Relative Z (Z Stack)")
+24=ProbeCycle("DsRed - Confocal",1.000,6)
+25=Stop()

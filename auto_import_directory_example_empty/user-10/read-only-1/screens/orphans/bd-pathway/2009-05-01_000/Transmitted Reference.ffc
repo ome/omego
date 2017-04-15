@@ -1,0 +1,61 @@
+[General]
+Type=Flat Field
+Version=7.00
+Method=0
+[Capture]
+AutoMaxExposure=2.000000
+AutoMinExposure=0.001000
+TargetIntensity=3000
+AutoExpose=1
+CaptureNumber=10
+BlurOn=0
+BlurStrength=1
+FullChip=1
+Geometry=20X NA 075 Olympus
+LightPath=Transmitted Reference
+LampA=0
+LampB=0
+Trans=1
+BinX=1
+BinY=1
+RegionX=0
+RegionY=0
+RegionCX=1344
+RegionCY=1024
+Gain=0.000000
+Offset=255.000000
+Exposure=1.000000
+MeanCameraBias=552.727012
+ValidMeanCameraBias=1
+Version=
+[Sample]
+Name=Green Slide
+[Bias]
+Enable=1
+[Reference]
+NumImages=1
+[0]
+Geometry=20X NA 075 Olympus
+LightPath=Transmitted Reference
+LampA=0
+LampB=0
+Trans=1
+BinX=1
+BinY=1
+RegionX=0
+RegionY=0
+RegionCX=672
+RegionCY=512
+Gain=0.000000
+Offset=255.000000
+Exposure=0.001000
+MeanCameraBias=528.811808
+ValidMeanCameraBias=1
+RefImage=Transmitted Reference_20X NA 075 Olympus_ffc.tif
+Time=22:17:27 Mar. 03, 2007
+Sample=Green Slide
+AssignedGeometry=20X NA 075 Olympus
+Version=
+RefImageDir=
+[Experiment]
+Reanalysis=0
