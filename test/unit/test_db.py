@@ -197,9 +197,8 @@ class TestDb(object):
         self.mox.VerifyAll()
 
     @pytest.mark.parametrize('needupdate', [True, False])
-    @pytest.mark.parametrize('dryrun', [True, False])
-    def test_upgrade(self, needupdate, dryrun):
-        args = self.Args({'dry_run': dryrun})
+    def test_upgrade(self, needupdate):
+        args = self.Args({'dry_run': False})
         db = self.PartialMockDb(args, None)
         self.mox.StubOutWithMock(db, 'get_current_db_version')
         self.mox.StubOutWithMock(db, 'sql_version_matrix')
@@ -213,9 +212,8 @@ class TestDb(object):
             db.sql_version_resolve([], versions, versions[0]).AndReturn(
                 ['./sql/psql/OMERO4.4__0/OMERO3.0__0.sql',
                  './sql/psql/OMERO5.0__0/OMERO4.4__0.sql'])
-            if not dryrun:
-                db.psql('-f', './sql/psql/OMERO4.4__0/OMERO3.0__0.sql')
-                db.psql('-f', './sql/psql/OMERO5.0__0/OMERO4.4__0.sql')
+            db.psql('-f', './sql/psql/OMERO4.4__0/OMERO3.0__0.sql')
+            db.psql('-f', './sql/psql/OMERO5.0__0/OMERO4.4__0.sql')
         else:
             db.get_current_db_version().AndReturn(('OMERO5.0', '0'))
             db.sql_version_matrix().AndReturn(([], versions))
@@ -223,6 +221,54 @@ class TestDb(object):
         self.mox.ReplayAll()
 
         db.upgrade()
+        self.mox.VerifyAll()
+
+    @pytest.mark.parametrize('needupdate', [True, False])
+    def test_upgrade_dryrun(self, needupdate):
+        args = self.Args({'dry_run': True})
+        db = self.PartialMockDb(args, None)
+        self.mox.StubOutWithMock(db, 'get_current_db_version')
+        self.mox.StubOutWithMock(db, 'sql_version_matrix')
+        self.mox.StubOutWithMock(db, 'sql_version_resolve')
+        # Stub out to ensure it's NOT called
+        self.mox.StubOutWithMock(db, 'psql')
+
+        versions = ['OMERO4.4__0', 'OMERO5.0__0']
+        if needupdate:
+            db.get_current_db_version().AndReturn(('OMERO4.4', '0'))
+            db.sql_version_matrix().AndReturn(([], versions))
+            db.sql_version_resolve([], versions, versions[0]).AndReturn(
+                ['./sql/psql/OMERO5.0__0/OMERO4.4__0.sql'])
+        else:
+            db.get_current_db_version().AndReturn(('OMERO5.0', '0'))
+            db.sql_version_matrix().AndReturn(([], versions))
+
+        self.mox.ReplayAll()
+
+        if needupdate:
+            with pytest.raises(Stop) as excinfo:
+                db.upgrade()
+            assert excinfo.value.rc == 2
+            assert excinfo.value.message == (
+                'Database upgrade required OMERO4.4__0->OMERO5.0__0')
+        else:
+            db.upgrade()
+        self.mox.VerifyAll()
+
+    @pytest.mark.parametrize('dryrun', [True, False])
+    def test_upgrade_not_initialised(self, dryrun):
+        args = self.Args({'dry_run': dryrun})
+        db = self.PartialMockDb(args, None)
+        self.mox.StubOutWithMock(db, 'get_current_db_version')
+        exc = RunException('test psql failure', 'psql', [], -1, '', '')
+        db.get_current_db_version().AndRaise(exc)
+
+        self.mox.ReplayAll()
+
+        with pytest.raises(Stop) as excinfo:
+            db.upgrade()
+        assert excinfo.value.rc == 3
+        assert excinfo.value.message == 'Unable to get database version'
         self.mox.VerifyAll()
 
     def test_get_current_db_version(self):
