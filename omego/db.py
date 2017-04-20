@@ -154,7 +154,12 @@ class DbAdmin(object):
         return ugpath
 
     def upgrade(self):
-        currentsqlv = '%s__%s' % self.get_current_db_version()
+        try:
+            currentsqlv = '%s__%s' % self.get_current_db_version()
+        except RunException as e:
+            log.error(e)
+            raise Stop(3, 'Unable to get database version')
+
         M, versions = self.sql_version_matrix()
         latestsqlv = versions[-1]
 
@@ -162,10 +167,13 @@ class DbAdmin(object):
             log.info('Database is already at %s', latestsqlv)
         else:
             ugpath = self.sql_version_resolve(M, versions, currentsqlv)
+            log.debug('Database upgrade path: %s', ugpath)
+            if self.args.dry_run:
+                raise Stop(2, 'Database upgrade required %s->%s' % (
+                    currentsqlv, latestsqlv))
             for upgradesql in ugpath:
                 log.info('Upgrading database using %s', upgradesql)
-                if not self.args.dry_run:
-                    self.psql('-f', upgradesql)
+                self.psql('-f', upgradesql)
 
     def get_current_db_version(self):
         q = ('SELECT currentversion, currentpatch FROM dbpatch '
@@ -270,7 +278,10 @@ class DbCommand(Command):
         super(DbCommand, self).__init__(sub_parsers)
 
         self.parser = DbParser(self.parser)
-        self.parser.add_argument("-n", "--dry-run", action="store_true")
+        self.parser.add_argument("-n", "--dry-run", action="store_true", help=(
+            "Simulation/check mode. In 'upgrade' mode exits with code 2 if an "
+            "upgrade is required, 3 if database isn't initialised, 0 if "
+            "database is up-to-date."))
 
         # TODO: Kind of duplicates Upgrade args.sym/args.server
         self.parser.add_argument(
