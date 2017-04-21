@@ -129,7 +129,7 @@ class MockDownloadUrl(object):
     pageurl = 'http://example.org/omero/0.0.0/'
     artifactnames = [
         'OMERO.server-0.0.0-ice34-b1.zip', 'OMERO.server-0.0.0-ice35-b1.zip']
-    artifactpath = './artifacts/'
+    artifactpath = 'artifacts/'
 
     def __init__(self, page):
         self.code = 200
@@ -141,10 +141,10 @@ class MockDownloadUrl(object):
 
     def read(self):
         return (
-            '<html><body><a href="%s%s">%s</a>'
-            '<a href="%s%s">%s</a></body></html>' % (
-                self.artifactpath, self.artifactnames[0],
-                self.artifactnames[0], self.artifactpath,
+            '<html><body><a href="%s">%s</a>'
+            '<a href="%s">%s</a></body></html>' % (
+                self.artifactnames[0],
+                self.artifactnames[0],
                 self.artifactnames[1], self.artifactnames[1]))
 
     def close(self):
@@ -268,7 +268,8 @@ class TestReleaseArtifacts(MoxBase):
 
         self.mox.StubOutWithMock(fileutils, 'open_url')
         fileutils.open_url(
-            MockDownloadUrl.pageurl).AndReturn(
+            MockDownloadUrl.pageurl +
+            MockDownloadUrl.artifactpath).AndReturn(
             MockDownloadUrl(True))
         self.mox.ReplayAll()
         args = Args(False)
@@ -287,13 +288,14 @@ class TestReleaseArtifacts(MoxBase):
     def test_read_downloads(self):
         self.mox.StubOutWithMock(fileutils, 'open_url')
         fileutils.open_url(
-            MockDownloadUrl.pageurl).AndReturn(
+            MockDownloadUrl.pageurl + MockDownloadUrl.artifactpath).AndReturn(
             MockDownloadUrl(True))
         self.mox.ReplayAll()
 
         fullpath = '%s%s' % (
             MockDownloadUrl.pageurl, MockDownloadUrl.artifactpath)
-        assert ReleaseArtifacts.read_downloads(MockDownloadUrl.pageurl) == {
+        assert ReleaseArtifacts.read_downloads(
+            MockDownloadUrl.pageurl + MockDownloadUrl.artifactpath) == {
             'ice34': [fullpath + MockDownloadUrl.artifactnames[0]],
             'ice35': [fullpath + MockDownloadUrl.artifactnames[1]]
             }
