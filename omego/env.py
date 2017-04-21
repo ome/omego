@@ -124,7 +124,7 @@ class JenkinsParser(argparse.ArgumentParser):
             help="Comma separated list of labels for matrix builds (CI only)")
 
         Add(group, "downloadurl",
-            "http://downloads.openmicroscopy.org",
+            "https://downloads.openmicroscopy.org",
             help="Base URL of the downloads server. Since 0.6.0, the OMERO"
             " artifacts are expected to be found under "
             " DOWNLOADURL/omero/<version>/artifacts. Default: "
