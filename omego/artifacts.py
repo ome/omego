@@ -431,7 +431,8 @@ class ReleaseArtifacts(ArtifactsList):
 
 class DownloadCommand(Command):
     """
-    Download an OMERO artifact from a CI server.
+    Download an OMERO artifact from either a donwloads or a Continous
+    Integration server.
     """
 
     NAME = "download"
