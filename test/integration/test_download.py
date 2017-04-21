@@ -102,20 +102,20 @@ class TestDownloadBioFormats(Downloader):
         self.branch = 'BIOFORMATS-DEV-latest'
 
     def testDownloadJar(self, tmpdir):
-        self.artifact = 'ij'
+        self.artifact = 'formats-api'
         with tmpdir.as_cwd():
             self.download('--branch', self.branch)
             files = tmpdir.listdir()
             assert len(files) == 1
-            assert files[0].basename == 'ij.jar'
+            assert files[0].basename == 'formats-api.jar'
 
     def testDownloadFullFilename(self, tmpdir):
-        self.artifact = 'ij.jar'
+        self.artifact = 'formats-api'
         with tmpdir.as_cwd():
             self.download('--branch', self.branch)
             files = tmpdir.listdir()
             assert len(files) == 1
-            assert files[0].basename == 'ij.jar'
+            assert files[0].basename == 'formats-api.jar'
 
 
 class TestDownloadList(Downloader):
