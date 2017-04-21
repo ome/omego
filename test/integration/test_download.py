@@ -99,7 +99,7 @@ class TestDownload(Downloader):
 class TestDownloadBioFormats(Downloader):
 
     def setup_class(self):
-        self.branch = 'BIOFORMATS-5.1-latest'
+        self.branch = 'BIOFORMATS-DEV-latest'
 
     def testDownloadJar(self, tmpdir):
         self.artifact = 'ij'
