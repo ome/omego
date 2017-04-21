@@ -1,6 +1,15 @@
 OMEGO version history
 =====================
 
+0.5.0 (March 2017)
+-----------------
+
+* Symlink downloaded artifacts (#97)
+
+Breaking changes:
+
+* Change the default server symlink from OMERO-CURRENT to OMERO.server
+
 0.4.1 (June 2016)
 -----------------
 
