@@ -22,6 +22,7 @@
 import pytest
 import mox
 
+import copy
 import os
 import shutil
 
@@ -43,6 +44,9 @@ class TestUpgrade(object):
             self.verbose = False
             for k, v in args.iteritems():
                 setattr(self, k, v)
+
+        def __eq__(self, o):
+            return self.__dict__ == o.__dict__
 
     class PartialMockUnixInstall(UnixInstall):
 
@@ -90,7 +94,10 @@ class TestUpgrade(object):
                 ).AndReturn('server')
             expected = 'server'
         else:
-            omego.upgrade.Artifacts(args).AndReturn(self.MockArtifacts())
+            artifact_args = copy.copy(args)
+            artifact_args.sym = ''
+            omego.upgrade.Artifacts(artifact_args).AndReturn(
+                self.MockArtifacts())
             expected = 'server-dir'
 
         self.mox.ReplayAll()

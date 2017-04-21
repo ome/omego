@@ -25,6 +25,7 @@ env:
     - USER_AGENT=Travis TEST=upgrade
 
 before_install:
+  - pip install --upgrade pip setuptools
   - pip install -r requirements.txt
   - pip install flake8
   - flake8 -v .
@@ -40,4 +41,4 @@ script:
     - ./travis-build
 
 after_failure:
-    - tail -n 1000 OMERO-CURRENT/var/log/Blitz-0.log
+    - tail -n 1000 OMERO.server/var/log/Blitz-0.log
