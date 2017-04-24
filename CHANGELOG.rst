@@ -1,6 +1,26 @@
 OMEGO version history
 =====================
 
+0.6.0 (April 2017)
+------------------
+
+* Fix artifacts retrieval for OMERO 5.3.0 and above (#101)
+
+Breaking changes:
+
+* When retrieving artifacts using a custom downloads server, the OMERO
+  artifacts are now expected to be stored under a URL of type
+  `DOWNLOADS_URL/omero/VERSION/artifacts`
+
+0.5.0 (March 2017)
+------------------
+
+* Symlink downloaded artifacts (#97)
+
+Breaking changes:
+
+* Change the default server symlink from OMERO-CURRENT to OMERO.server
+
 0.4.1 (June 2016)
 -----------------
 

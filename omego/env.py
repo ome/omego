@@ -105,25 +105,30 @@ class JenkinsParser(argparse.ArgumentParser):
     def __init__(self, parser):
         self.parser = parser
         group = self.parser.add_argument_group(
-            'Jenkins arguments',
-            'Arguments related to the Jenkins instance')
+            'Download arguments',
+            'Arguments related to the Continuous Integration server or'
+            ' the downloads server.')
 
         Add = EnvDefault.add
         Add(group, "ci", "ci.openmicroscopy.org",
-            help="Base url of the continuous integration server")
+            help="Base URL of the Continuous Integration server (CI only)")
         group.add_argument(
             "--branch", "--release", default="latest",
             help="The release series to download e.g. 5, 5.1, 5.1.2, "
             "use 'latest' to get the latest release. "
             "Alternatively the name of a Jenkins job e.g. OMERO-5.1-latest.")
         Add(group, "build", "",
-            help="Full url of the Jenkins build containing the artifacts")
+            help="Full url of the Jenkins build containing the artifacts (CI"
+            " only)")
         Add(group, "labels", "",
-            help="Comma separated list of labels for matrix builds")
+            help="Comma separated list of labels for matrix builds (CI only)")
 
         Add(group, "downloadurl",
-            "http://downloads.openmicroscopy.org",
-            help="Base URL of the downloads server")
+            "https://downloads.openmicroscopy.org",
+            help="Base URL of the downloads server. Since 0.6.0, the OMERO"
+            " artifacts are expected to be found under "
+            " DOWNLOADURL/omero/<version>/artifacts. Default: "
+            "http://downloads.openmicroscopy.org")
 
         Add(group, "ice",
             "", help="Ice version, default is the latest (release only)")

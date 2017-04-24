@@ -91,27 +91,31 @@ class TestDownload(Downloader):
             files = tmpdir.listdir()
             assert len(files) == 2
 
+    def testDownloadNonExistingArtifact(self):
+        with pytest.raises(AttributeError):
+            self.download('-n', '--release', '5.3', '--ice', '3.3')
+
 
 class TestDownloadBioFormats(Downloader):
 
     def setup_class(self):
-        self.branch = 'BIOFORMATS-5.1-latest'
+        self.branch = 'BIOFORMATS-DEV-latest'
 
     def testDownloadJar(self, tmpdir):
-        self.artifact = 'ij'
+        self.artifact = 'formats-api'
         with tmpdir.as_cwd():
             self.download('--branch', self.branch)
             files = tmpdir.listdir()
             assert len(files) == 1
-            assert files[0].basename == 'ij.jar'
+            assert files[0].basename == 'formats-api.jar'
 
     def testDownloadFullFilename(self, tmpdir):
-        self.artifact = 'ij.jar'
+        self.artifact = 'formats-api'
         with tmpdir.as_cwd():
             self.download('--branch', self.branch)
             files = tmpdir.listdir()
             assert len(files) == 1
-            assert files[0].basename == 'ij.jar'
+            assert files[0].basename == 'formats-api.jar'
 
 
 class TestDownloadList(Downloader):
