@@ -31,6 +31,7 @@ from yaclifw.framework import main, Stop
 
 from artifacts import DownloadCommand
 from convert import ConvertCommand
+from cross import CrossCommand
 from db import DbCommand
 from upgrade import InstallCommand
 from upgrade import UpgradeCommand
@@ -47,6 +48,7 @@ def entry_point():
             (InstallCommand.NAME, InstallCommand),
             (UpgradeCommand.NAME, UpgradeCommand),
             (ConvertCommand.NAME, ConvertCommand),
+            (CrossCommand.NAME, CrossCommand),
             (DownloadCommand.NAME, DownloadCommand),
             (DbCommand.NAME, DbCommand),
             (Version.NAME, Version)])
