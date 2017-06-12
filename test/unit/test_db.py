@@ -366,8 +366,13 @@ class TestDb(object):
         self.mox.StubOutWithMock(db, 'get_db_args_env')
         self.mox.StubOutWithMock(External, 'run')
 
-        psqlargs = ['-d', 'name', '-h', 'host', '-U', 'user',
-                    '-w', '-A', '-t', 'arg1', 'arg2']
+        psqlargs = [
+            '-v', 'ON_ERROR_STOP=on',
+            '-d', 'name',
+            '-h', 'host',
+            '-U', 'user',
+            '-w', '-A', '-t',
+            'arg1', 'arg2']
         db.get_db_args_env().AndReturn(self.create_db_test_params())
         External.run('psql', psqlargs, capturestd=True,
                      env={'PGPASSWORD': 'pass'}).AndReturn(('', ''))

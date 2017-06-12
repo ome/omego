@@ -243,8 +243,13 @@ class DbAdmin(object):
         """
         db, env = self.get_db_args_env()
 
-        args = ['-d', db['name'], '-h', db['host'], '-U', db['user'],
-                '-w', '-A', '-t'] + list(psqlargs)
+        args = [
+            '-v', 'ON_ERROR_STOP=on',
+            '-d', db['name'],
+            '-h', db['host'],
+            '-U', db['user'],
+            '-w', '-A', '-t'
+            ] + list(psqlargs)
         stdout, stderr = External.run('psql', args, capturestd=True, env=env)
         if stderr:
             log.warn('stderr: %s', stderr)
