@@ -8,7 +8,7 @@ import tempfile
 import logging
 
 from artifacts import Artifacts
-from db import DbAdmin
+from db import DbAdmin, DB_UPTODATE, DB_UPGRADE_NEEDED, DB_INIT_NEEDED
 from external import External
 from yaclifw.framework import Command, Stop
 import fileutils
@@ -66,10 +66,7 @@ class Install(object):
         self.configure(copyold, args.prestartfile)
         self.directories()
 
-        if newinstall:
-            self.init_db()
-
-        self.upgrade_db()
+        self.handle_database()
 
         self.external.save_env_vars(args.savevarsfile, args.savevars.split())
         self.start()
@@ -203,15 +200,38 @@ class Install(object):
         self.rmlink(self.args.sym)
         self.symlink(self.dir, self.args.sym)
 
-    def init_db(self):
-        if self.args.initdb:
-            log.debug('Initialising database')
-            DbAdmin(self.dir, 'init', self.args, self.external)
+    def handle_database(self):
+        """
+        Handle database initialisation and upgrade, taking into account
+        command line arguments
+        """
+        db = DbAdmin(self.dir, None, self.args, self.external)
+        status = db.check()
+        log.debug('OMERO database upgrade status: %s', status)
 
-    def upgrade_db(self):
-        if self.args.upgradedb:
-            log.debug('Upgrading database')
-            DbAdmin(self.dir, 'upgrade', self.args, self.external)
+        if status == DB_INIT_NEEDED:
+            if self.args.initdb:
+                log.debug('Initialising OMERO database')
+                db.init()
+            else:
+                log.error('OMERO database not found')
+                raise Stop(DB_INIT_NEEDED,
+                           'Install/Upgrade failed: OMERO database not found')
+
+        elif status == DB_UPGRADE_NEEDED:
+            log.warn('OMERO database exists but is out of date')
+            if self.args.upgradedb:
+                log.debug('Upgrading OMERO database')
+                db.upgrade()
+            else:
+                raise Stop(
+                    DB_UPGRADE_NEEDED,
+                    'Pass --upgradedb or upgrade your OMERO database manually')
+
+        else:
+            assert status == DB_UPTODATE
+
+        return status
 
     def start(self):
         if self.args.no_start:
@@ -448,10 +468,11 @@ class InstallCommand(InstallBaseCommand):
     def __init__(self, sub_parsers):
         super(InstallCommand, self).__init__(sub_parsers)
         group = self.parser.parser.add_mutually_exclusive_group()
-        group.add_argument(
-            "--initdb", action="store_true", help="Initialise the database")
-        group.add_argument(
-            "--upgradedb", action="store_true", help="Upgrade the database")
+        group = self.parser.add_argument_group('Database management')
+        group.add_argument("--initdb", action="store_true",
+                           help="Initialise the database if necessary")
+        group.add_argument("--upgradedb", action="store_true",
+                           help="Upgrade the database if necessary")
 
 
 class UpgradeCommand(InstallBaseCommand):
