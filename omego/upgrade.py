@@ -467,7 +467,6 @@ class InstallCommand(InstallBaseCommand):
 
     def __init__(self, sub_parsers):
         super(InstallCommand, self).__init__(sub_parsers)
-        group = self.parser.parser.add_mutually_exclusive_group()
         group = self.parser.add_argument_group('Database management')
         group.add_argument("--initdb", action="store_true",
                            help="Initialise the database if necessary")
