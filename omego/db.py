@@ -17,6 +17,11 @@ log = logging.getLogger("omego.db")
 # Regular expression identifying a SQL schema
 SQL_SCHEMA_REGEXP = re.compile('.*OMERO(\d+)(\.|A)?(\d*)([A-Z]*)__(\d+)$')
 
+# Exit codes for db upgrade --dry-run (also used internally)
+DB_UPTODATE = 0
+DB_UPGRADE_NEEDED = 2
+DB_INIT_NEEDED = 3
+
 
 def is_schema(s):
     """Return true if the string is a valid SQL schema"""
@@ -76,7 +81,7 @@ class DbAdmin(object):
 
         if command in ('init', 'upgrade', 'dump'):
             getattr(self, command)()
-        else:
+        elif command is not None:
             raise Stop('Invalid db command: %s', command)
 
     def check_connection(self):
@@ -153,24 +158,34 @@ class DbAdmin(object):
         ugpath = resolve_index(M, versions.index(vfrom), len(versions) - 1)
         return ugpath
 
-    def upgrade(self):
+    def check(self):
+        return self.upgrade(check=True)
+
+    def upgrade(self, check=False):
         try:
             currentsqlv = '%s__%s' % self.get_current_db_version()
         except RunException as e:
             log.error(e)
-            raise Stop(3, 'Unable to get database version')
+            if check:
+                return DB_INIT_NEEDED
+            raise Stop(DB_INIT_NEEDED, 'Unable to get database version')
 
         M, versions = self.sql_version_matrix()
         latestsqlv = versions[-1]
 
         if latestsqlv == currentsqlv:
             log.info('Database is already at %s', latestsqlv)
+            if check:
+                return DB_UPTODATE
         else:
             ugpath = self.sql_version_resolve(M, versions, currentsqlv)
             log.debug('Database upgrade path: %s', ugpath)
+            if check:
+                return DB_UPGRADE_NEEDED
             if self.args.dry_run:
-                raise Stop(2, 'Database upgrade required %s->%s' % (
-                    currentsqlv, latestsqlv))
+                raise Stop(
+                    DB_UPGRADE_NEEDED, 'Database upgrade required %s->%s' % (
+                        currentsqlv, latestsqlv))
             for upgradesql in ugpath:
                 log.info('Upgrading database using %s', upgradesql)
                 self.psql('-f', upgradesql)
@@ -243,8 +258,13 @@ class DbAdmin(object):
         """
         db, env = self.get_db_args_env()
 
-        args = ['-d', db['name'], '-h', db['host'], '-U', db['user'],
-                '-w', '-A', '-t'] + list(psqlargs)
+        args = [
+            '-v', 'ON_ERROR_STOP=on',
+            '-d', db['name'],
+            '-h', db['host'],
+            '-U', db['user'],
+            '-w', '-A', '-t'
+            ] + list(psqlargs)
         stdout, stderr = External.run('psql', args, capturestd=True, env=env)
         if stderr:
             log.warn('stderr: %s', stderr)
