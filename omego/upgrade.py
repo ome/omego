@@ -113,8 +113,9 @@ class Install(object):
                 args.initdb = True
                 args.upgradedb = True
             else:
-                # Deprecated behaviour
-                pass
+                if args.initdb or args.upgradedb:
+                    log.warn('--initdb and --upgradedb are deprecated, '
+                             'use --managedb')
 
         elif cmd == 'upgrade':
             # Deprecated behaviour
