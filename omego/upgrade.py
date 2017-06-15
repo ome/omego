@@ -288,7 +288,7 @@ class Install(object):
             else:
                 raise Stop(
                     DB_UPGRADE_NEEDED,
-                    'Pass --upgradedb or upgrade your OMERO database manually')
+                    'Pass --managedb or upgrade your OMERO database manually')
 
         else:
             assert status == DB_UPTODATE
