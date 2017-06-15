@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import argparse
 import copy
 import os
 import shutil
@@ -21,22 +22,22 @@ log = logging.getLogger("omego.upgrade")
 class Install(object):
 
     def __init__(self, cmd, args):
-
-        self.args = args
+        self.args, newinstall = self._handle_args(cmd, args)
         log.info("%s: %s", self.__class__.__name__, cmd)
         log.debug("Current directory: %s", os.getcwd())
         self.symlink_check_and_set()
 
-        if cmd == 'upgrade':
-            newinstall = False
+        if newinstall is None:
+            # Automatically install or upgrade
+            newinstall = not os.path.exists(args.sym)
+        elif newinstall is False:
             if not os.path.exists(args.sym):
                 raise Stop(30, 'Symlink is missing: %s' % args.sym)
-        elif cmd == 'install':
-            newinstall = True
+        elif newinstall is True:
             if os.path.exists(args.sym):
                 raise Stop(30, 'Symlink already exists: %s' % args.sym)
         else:
-            raise Exception('Unexpected command: %s' % cmd)
+            assert False
 
         server_dir = self.get_server_dir()
 
@@ -70,6 +71,64 @@ class Install(object):
 
         self.external.save_env_vars(args.savevarsfile, args.savevars.split())
         self.start()
+
+    def _handle_args(self, cmd, args):
+        """
+        We need to support deprecated behaviour for now which makes this
+        quite complicated
+
+        Current behaviour:
+        - install: Installs a new server, existing server causes an error
+        - install --upgrade: Installs or upgrades a server
+        - install --managedb: Automatically initialise or upgrade the db
+
+        Deprecated:
+        - install --upgradedb --initdb: Replaced by install --managedb
+        - install --upgradedb: upgrade the db, must exist
+        - install --initdb: initialise the db
+        - upgrade: Upgrades a server, must already exist
+        - upgrade --upgradedb: Automatically upgrade the db
+
+        returns:
+        - Modified args object, flag to indicate new/existing/auto install
+        """
+        if cmd == 'install':
+            if args.managedb:
+                # Current behaviour
+                if args.initdb or args.upgradedb:
+                    raise Stop(10, (
+                        'Deprecated --initdb --upgradedb flags '
+                        'are incompatible with --managedb'))
+                args.initdb = True
+                args.upgradedb = True
+            else:
+                # Deprecated behaviour
+                pass
+
+            if args.upgrade:
+                # Current behaviour: install or upgrade
+                if args.initdb or args.upgradedb:
+                    raise Stop(10, (
+                        'Deprecated --initdb --upgradedb flags '
+                        'are incompatible with --upgrade'))
+                newinstall = None
+            else:
+                # Current behaviour: Server must not exist
+                newinstall = True
+
+        elif cmd == 'upgrade':
+            # Deprecated behaviour
+            log.warn(
+                '"omero upgrade" is deprecated, use "omego install --upgrade"')
+            cmd = 'install'
+            args.upgrade = True
+            # Deprecated behaviour: Server must exist
+            newinstall = False
+
+        else:
+            raise Exception('Unexpected command: %s' % cmd)
+
+        return args, newinstall
 
     def get_server_dir(self):
         """
@@ -209,6 +268,9 @@ class Install(object):
         status = db.check()
         log.debug('OMERO database upgrade status: %s', status)
 
+        # TODO: When initdb and upgradedb are dropped we can just test
+        # managedb, but for backwards compatibility we need to support
+        # initdb without upgradedb and vice-versa
         if status == DB_INIT_NEEDED:
             if self.args.initdb:
                 log.debug('Initialising OMERO database')
@@ -460,8 +522,10 @@ class InstallBaseCommand(Command):
 
 class InstallCommand(InstallBaseCommand):
     """
-    Setup a new OMERO installation.
+    Setup or upgrade an OMERO installation.
     """
+    # TODO: When UpgradeCommand is removed InstallBaseCommand and
+    # InstallCommand can be combined
 
     NAME = "install"
 
@@ -469,14 +533,24 @@ class InstallCommand(InstallBaseCommand):
         super(InstallCommand, self).__init__(sub_parsers)
         group = self.parser.add_argument_group('Database management')
         group.add_argument("--initdb", action="store_true",
-                           help="Initialise the database if necessary")
+                           help=argparse.SUPPRESS)
         group.add_argument("--upgradedb", action="store_true",
-                           help="Upgrade the database if necessary")
+                           help=argparse.SUPPRESS)
+        self.parser.add_argument(
+            "--upgrade", action="store_true",
+            help="Upgrade the server if already installed")
+        self.parser.add_argument(
+            "--managedb", action="store_true",
+            help="Initialise or upgrade the database if necessary")
+        self.parser.add_argument(
+            "--archivelogs", default=None, help=(
+                "If a logs directory exists archive to this zip file, "
+                "overwriting if it exists"))
 
 
 class UpgradeCommand(InstallBaseCommand):
     """
-    Upgrade an existing OMERO installation.
+    DEPRECATED: Use `omego install --upgrade` instead
     """
 
     NAME = "upgrade"
