@@ -47,10 +47,8 @@ if [ $TEST = upgrade ]; then
   ln -s OMERO.server-4.4.12-ice35-b116 OMERO.server;
 
   # Should return 3 DB_INIT_NEEDED
-  set +e
-  omego db upgrade -n --dbname omero --serverdir OMERO.server
-  RC=$?
-  set -e
+  RC=0;
+  omego db upgrade -n --dbname omero --serverdir OMERO.server || RC=$?
   test $RC -eq 3
 
   OMERO.server/bin/omero db script "" "" ome -f OMERO.sql;
@@ -63,10 +61,8 @@ if [ $TEST = upgrade ]; then
 
   omego download --release 5.3 --ice 3.5 server --sym download-server-50
   # Should return 2 DB_UPGRADE_NEEDED
-  set +e
-  omego db upgrade -n --dbname omero --serverdir download-server-50
-  RC=$?
-  set -e
+  RC=0;
+  omego db upgrade -n --dbname omero --serverdir download-server-50 || RC=$?
   test $RC -eq 2
 
   # Note this should use the already downloaded zip from the previous step
