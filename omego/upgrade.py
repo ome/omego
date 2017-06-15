@@ -93,6 +93,17 @@ class Install(object):
         - Modified args object, flag to indicate new/existing/auto install
         """
         if cmd == 'install':
+            if args.upgrade:
+                # Current behaviour: install or upgrade
+                if args.initdb or args.upgradedb:
+                    raise Stop(10, (
+                        'Deprecated --initdb --upgradedb flags '
+                        'are incompatible with --upgrade'))
+                newinstall = None
+            else:
+                # Current behaviour: Server must not exist
+                newinstall = True
+
             if args.managedb:
                 # Current behaviour
                 if args.initdb or args.upgradedb:
@@ -104,17 +115,6 @@ class Install(object):
             else:
                 # Deprecated behaviour
                 pass
-
-            if args.upgrade:
-                # Current behaviour: install or upgrade
-                if args.initdb or args.upgradedb:
-                    raise Stop(10, (
-                        'Deprecated --initdb --upgradedb flags '
-                        'are incompatible with --upgrade'))
-                newinstall = None
-            else:
-                # Current behaviour: Server must not exist
-                newinstall = True
 
         elif cmd == 'upgrade':
             # Deprecated behaviour
