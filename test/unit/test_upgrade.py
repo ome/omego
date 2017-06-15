@@ -66,6 +66,21 @@ class TestUpgrade(object):
     def teardown_method(self, method):
         self.mox.UnsetStubs()
 
+    @pytest.mark.parametrize('cmd,expected', [
+        ('install', True),
+        ('upgrade', False),
+    ])
+    def test_handle_args_deprecated(self, cmd, expected):
+        args = self.Args({
+            'initdb': False,
+            'upgradedb': False,
+            'managedb': False,
+            'upgrade': False,
+        })
+        upgrade = self.PartialMockUnixInstall(args, None)
+        args, newinstall = upgrade._handle_args(cmd, args)
+        assert newinstall is expected
+
     @pytest.mark.parametrize('server', [None, 'local', 'remote'])
     def test_get_server_dir(self, server):
         ext = self.mox.CreateMock(External)
