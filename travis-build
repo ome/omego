@@ -30,6 +30,9 @@ omego -h
 if [ $TEST = install ]; then
   omego install --initdb --dbhost localhost --dbname omero --prestartfile $HOME/config.omero -v --release 5.0.8 --ice 3.5
 
+  # Should return 0 DB_UPTODATE
+  omego db upgrade -n --dbhost localhost --dbname omero --serverdir OMERO.server-5.0.8-ice35-b60
+
   # Check the expected server version was downloaded
   test $(readlink OMERO.server) = './OMERO.server-5.0.8-ice35-b60'
 
@@ -38,13 +41,33 @@ if [ $TEST = install ]; then
   pg_restore -e travis-omero.pgdump | grep 'CREATE TABLE dbpatch'
 fi
 
-#Test a multistage DB upgrade (4.4 -> 5.2) as part of the server upgrade
+#Test a multistage DB upgrade (4.4 -> 5.3) as part of the server upgrade
 if [ $TEST = upgrade ]; then
   omego download --release 4 --ice 3.5 server
   ln -s OMERO.server-4.4.12-ice35-b116 OMERO.server;
+
+  # Should return 3 DB_INIT_NEEDED
+  RC=0;
+  omego db upgrade -n --dbname omero --serverdir OMERO.server || RC=$?
+  test $RC -eq 3
+
   OMERO.server/bin/omero db script "" "" ome -f OMERO.sql;
   psql -q -h localhost -U omero omero < OMERO.sql;
   OMERO.server/bin/omero load $HOME/config.omero;
   OMERO.server/bin/omero admin start;
-  omego upgrade --release=5.2 --ice 3.5 --upgradedb --no-web -v;
+
+  # Should return 0 DB_UPTODATE
+  omego db upgrade -n --serverdir OMERO.server
+
+  omego download --release 5.3 --ice 3.5 server --sym download-server-50
+  # Should return 2 DB_UPGRADE_NEEDED
+  RC=0;
+  omego db upgrade -n --dbname omero --serverdir download-server-50 || RC=$?
+  test $RC -eq 2
+
+  # Note this should use the already downloaded zip from the previous step
+  omego install --upgrade --managedb --release=5.3 --ice 3.5 --no-web;
+
+  # Should return 0 DB_UPTODATE
+  omego db upgrade -n --serverdir OMERO.server
 fi
