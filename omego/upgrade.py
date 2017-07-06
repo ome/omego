@@ -265,13 +265,18 @@ class Install(object):
         Handle database initialisation and upgrade, taking into account
         command line arguments
         """
-        db = DbAdmin(self.dir, None, self.args, self.external)
-        status = db.check()
-        log.debug('OMERO database upgrade status: %s', status)
-
         # TODO: When initdb and upgradedb are dropped we can just test
         # managedb, but for backwards compatibility we need to support
         # initdb without upgradedb and vice-versa
+
+        if self.args.initdb or self.args.upgradedb:
+            db = DbAdmin(self.dir, None, self.args, self.external)
+            status = db.check()
+            log.debug('OMERO database upgrade status: %s', status)
+        else:
+            log.warn('OMERO database check disabled')
+            return DB_INIT_NEEDED
+
         if status == DB_INIT_NEEDED:
             if self.args.initdb:
                 log.debug('Initialising OMERO database')
