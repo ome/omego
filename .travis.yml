@@ -14,10 +14,7 @@ cache: pip
 
 addons:
   apt_packages:
-    # Although we are installing a custom Ice 3.5 build, this package is still
-    # required to install some of the runtime Ice dependencies
-    - ice34-services
-    - python-zeroc-ice
+    - zeroc-ice35
   postgresql: "9.3"
 
 env:
