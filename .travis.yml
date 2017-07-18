@@ -15,7 +15,7 @@ cache: pip
 addons:
   apt_packages:
     - zeroc-ice35
-  postgresql: "9.3"
+  postgresql: "9.6"
 
 env:
     - USER_AGENT=Travis TEST=install
