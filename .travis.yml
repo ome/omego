@@ -9,13 +9,11 @@ virtualenv:
 # which cache: is available
 # http://docs.travis-ci.com/user/workers/container-based-infrastructure/
 dist: trusty
-sudo: false
+sudo: required
 
 cache: pip
 
 addons:
-  apt_packages:
-    - zeroc-ice35
   postgresql: "9.6"
 
 env:
@@ -23,6 +21,13 @@ env:
     - USER_AGENT=Travis TEST=upgrade
 
 before_install:
+  # The installation of the python dependencies must be done in that level for now
+  # otherwise they are not available in the containers,
+  # see https://github.com/travis-ci/travis-ci/issues/8048
+  # Changing the value for sudo will also need to be reviewed at the same time
+  # This will need to be reviewed when the issue above is fixed
+  - export PATH=/usr/bin/:$PATH
+  - sudo apt-get install -y zeroc-ice35
   - pip install --upgrade pip setuptools
   - pip install -r requirements.txt
   - pip install flake8
