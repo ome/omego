@@ -1,5 +1,5 @@
 language: python
-
+group: deprecated-2017Q2
 python: "2.7"
 
 virtualenv:
@@ -41,6 +41,7 @@ before_script:
     - echo "config set omero.data.dir $HOME/OMERO" > $HOME/config.omero
     - echo "config set omero.db.name omero" >> $HOME/config.omero
 script:
+    - source /home/travis/virtualenv/python2.7_with_system_site_packages/bin/activate
     - ./travis-build
 
 after_failure:
