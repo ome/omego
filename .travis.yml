@@ -40,8 +40,11 @@ before_script:
     - mkdir $HOME/OMERO
     - echo "config set omero.data.dir $HOME/OMERO" > $HOME/config.omero
     - echo "config set omero.db.name omero" >> $HOME/config.omero
+    # required so the server can start
     - echo "config set Ice.IPv6 0" >> $HOME/config.omero
 script:
+    # The installation is run in the virtual env
+    # Required to explicitly activate it
     - source $HOME/virtualenv/python2.7_with_system_site_packages/bin/activate
     - ./travis-build
 
