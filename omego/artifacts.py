@@ -224,9 +224,13 @@ class JenkinsArtifacts(ArtifactsList):
         self.args = args
         buildurl = args.build
 
+        try:
+            branch, buildno = args.branch.split(':', 1)
+        except ValueError:
+            branch = args.branch
+            buildno = 'lastSuccessfulBuild'
         if not buildurl:
-            buildurl = "%s/job/%s/lastSuccessfulBuild/" % (
-                args.ci, args.branch)
+            buildurl = '%s/job/%s/%s/' % (args.ci, branch, buildno)
         if not re.match('\w+://', buildurl):
             buildurl = 'http://%s' % buildurl
 
