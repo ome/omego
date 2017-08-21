@@ -167,7 +167,7 @@ class Args(object):
         self.overwrite = 'error'
         self.httpuser = MockAuth.httpuser
         self.httppassword = MockAuth.httppassword
-        self.branch = None
+        self.branch = 'TEST-build'
         self.downloadurl = MockDownloadUrl.downloadurl
         self.sym = None
 
