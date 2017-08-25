@@ -95,6 +95,15 @@ class TestDownload(Downloader):
         with pytest.raises(AttributeError):
             self.download('-n', '--release', '5.3', '--ice', '3.3')
 
+    def testDownloadBuildNumber(self):
+        # Old Jenkins artifacts are deleted so we can't download.
+        # Instead assert that an AttributeError is raised.
+        # This is not ideal since this error could occur for other reasons.
+        branch = self.branch + ':600'
+        with pytest.raises(AttributeError) as exc:
+            self.download('--branch', branch, '--ice', self.ice)
+        assert 'No artifacts' in exc.value.message
+
 
 class TestDownloadBioFormats(Downloader):
 
