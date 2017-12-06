@@ -8,7 +8,6 @@ test_images_metadata/
 *.swp
 .*un~
 MANIFEST
-RELEASE-VERSION
 build
 dist
 omego.egg-info

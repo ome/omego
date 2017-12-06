@@ -26,6 +26,7 @@ OME-GO Management library
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
 
+import os
 import sys
 
 
@@ -81,15 +82,11 @@ class PyTest(TestCommand):
         errno = pytest.main(self.test_args)
         sys.exit(errno)
 
+with open(os.path.join('omego', 'RELEASE-VERSION')) as version_file:
+    VERSION = version_file.read().strip()
 
-try:
-    from yaclifw.version import get_git_version
-    from omego import __file__ as module_file
-    VERSION = get_git_version(module_file)
-except ImportError:
-    VERSION = "UNKNOWN"
+
 ZIP_SAFE = False
-
 
 LONG_DESCRIPTION = open("README.rst", "r").read()
 
