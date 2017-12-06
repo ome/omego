@@ -82,6 +82,7 @@ class PyTest(TestCommand):
         errno = pytest.main(self.test_args)
         sys.exit(errno)
 
+
 with open(os.path.join('omego', 'RELEASE-VERSION')) as version_file:
     VERSION = version_file.read().strip()
 

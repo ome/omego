@@ -289,7 +289,7 @@ class JenkinsArtifacts(ArtifactsList):
 
         try:
             build = re.search('/(\d+)/?$', rurl).group(1)
-        except:
+        except Exception:
             log.error('Failed to extract build number from url: %s', rurl)
             raise Stop(20, 'Failed to parse CI XML')
 
