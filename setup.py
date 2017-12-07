@@ -87,8 +87,6 @@ with open(os.path.join('omego', 'RELEASE-VERSION')) as version_file:
     VERSION = version_file.read().strip()
 
 
-ZIP_SAFE = False
-
 LONG_DESCRIPTION = open("README.rst", "r").read()
 
 CLASSIFIERS = ["Development Status :: 4 - Beta",
@@ -117,7 +115,7 @@ setup(name='omego',
       packages=['omego'],
       include_package_data=True,
       entry_points={'console_scripts': ['omego = omego.main:entry_point']},
-      zip_safe=ZIP_SAFE,
+      zip_safe=True,
       # REQUIREMENTS:
       # These should be kept in sync with requirements.txt
       # Skipping argparse for Python 2.7 and greater.
