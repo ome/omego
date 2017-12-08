@@ -26,6 +26,7 @@ OME-GO Management library
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
 
+import os
 import sys
 
 
@@ -82,13 +83,8 @@ class PyTest(TestCommand):
         sys.exit(errno)
 
 
-try:
-    from yaclifw.version import get_git_version
-    from omego import __file__ as module_file
-    VERSION = get_git_version(module_file)
-except ImportError:
-    VERSION = "UNKNOWN"
-ZIP_SAFE = False
+with open(os.path.join('omego', 'RELEASE-VERSION')) as version_file:
+    VERSION = version_file.read().strip()
 
 
 LONG_DESCRIPTION = open("README.rst", "r").read()
@@ -119,7 +115,7 @@ setup(name='omego',
       packages=['omego'],
       include_package_data=True,
       entry_points={'console_scripts': ['omego = omego.main:entry_point']},
-      zip_safe=ZIP_SAFE,
+      zip_safe=True,
       # REQUIREMENTS:
       # These should be kept in sync with requirements.txt
       # Skipping argparse for Python 2.7 and greater.

@@ -150,7 +150,7 @@ class DbAdmin(object):
                     try:
                         p2 = resolve_index(M, p, ito)
                         return [M[ifrom][p]] + p2
-                    except:
+                    except Exception:
                         continue
             raise Exception('No upgrade path found from %s to %s' % (
                 versions[ifrom], versions[ito]))

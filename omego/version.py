@@ -21,9 +21,14 @@
 
 
 import yaclifw.version
+from pkg_resources import resource_string
 
 
 class Version(yaclifw.version.Version):
     """Find which version of this library is being used"""
 
     FILE = __file__
+
+    def __call__(self, args):
+        super(yaclifw.version.Version, self).__call__(args)
+        print resource_string(__name__, 'RELEASE-VERSION').rstrip()
