@@ -4,27 +4,27 @@ OMEGO version history
 0.6.5 (December 2017)
 ---------------------
 
-* Fix version sourcing and make the package zip-safe ([#114](https://github.com/ome/omego/pull/114))
+* Fix version sourcing and make the package zip-safe (#114)
 
 0.6.4 (August 2017)
 -------------------
 
-* Add support for passing CI build numbers ([#111](https://github.com/ome/omego/pull/111))
+* Add support for passing CI build numbers (#111)
 
 0.6.3 (July 2017)
 -----------------
 
-* Do not check database if ``--managedb`` is not set ([#108](https://github.com/ome/omego/pull/108))
+* Do not check database if ``--managedb`` is not set (#108)
 
 0.6.2 (June 2017)
 -----------------
 
-* Simplify install and upgrade commands and introduce ``-managedb`` flag ([#107](https://github.com/ome/omego/pull/107))
+* Simplify install and upgrade commands and introduce ``-managedb`` flag (#107)
 
 0.6.1 (June 2017)
 ------------------
 
-* Refactor the database management logic ([#104](https://github.com/ome/omego/pull/104))
+* Refactor the database management logic (#104)
 
 0.6.0 (April 2017)
 ------------------
