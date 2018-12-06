@@ -11,26 +11,27 @@ pip install dist/*.tar.gz
 omego version
 omego -h
 
-#Install a new server
+#Install a new server without web
 #Tests rely on a non-zero error code being returned on failure
 if [ $TEST = install ]; then
-  omego install --initdb --dbhost localhost --dbname omero --prestartfile $HOME/config.omero -v --release 5.0.8 --ice 3.5
+  omego install --initdb --dbhost localhost --dbname omero --prestartfile $HOME/config.omero -v --release 5.3.5 --ice 3.6 --no-web
 
   # Should return 0 DB_UPTODATE
-  omego db upgrade -n --dbhost localhost --dbname omero --serverdir OMERO.server-5.0.8-ice35-b60
+  omego db upgrade -n --dbhost localhost --dbname omero --serverdir OMERO.server-5.3.5-ice36-b73
 
   # Check the expected server version was downloaded
-  test $(readlink OMERO.server) = './OMERO.server-5.0.8-ice35-b60'
+  test $(readlink OMERO.server) = './OMERO.server-5.3.5-ice36-b73'
 
   # Check db dump file
   omego db dump --serverdir OMERO.server --dumpfile travis-omero.pgdump
-  pg_restore -e travis-omero.pgdump | grep 'CREATE TABLE dbpatch'
+  
+  pg_restore -l travis-omero.pgdump | grep 'dbpatch_versions_trigger'
 fi
 
-#Test a multistage DB upgrade (4.4 -> 5.3) as part of the server upgrade
+#Test a multistage DB upgrade (5.3 -> 5.4) as part of the server upgrade
 if [ $TEST = upgrade ]; then
-  omego download --release 4 --ice 3.5 server
-  ln -s OMERO.server-4.4.12-ice35-b116 OMERO.server;
+  omego download --release 5.3 --ice 3.6 server
+  ln -s OMERO.server-5.3.5-ice36-b73 OMERO.server;
 
   # Should return 3 DB_INIT_NEEDED
   RC=0;
@@ -45,14 +46,14 @@ if [ $TEST = upgrade ]; then
   # Should return 0 DB_UPTODATE
   omego db upgrade -n --serverdir OMERO.server
 
-  omego download --release 5.3 --ice 3.5 server --sym download-server-50
+  omego download --release 5.4 --ice 3.6 server --sym download-server-50
   # Should return 2 DB_UPGRADE_NEEDED
   RC=0;
   omego db upgrade -n --dbname omero --serverdir download-server-50 || RC=$?
   test $RC -eq 2
 
   # Note this should use the already downloaded zip from the previous step
-  omego install --upgrade --managedb --release=5.3 --ice 3.5 --no-web;
+  omego install --upgrade --managedb --release=5.4 --ice 3.6 --no-web;
 
   # Should return 0 DB_UPTODATE
   omego db upgrade -n --serverdir OMERO.server
