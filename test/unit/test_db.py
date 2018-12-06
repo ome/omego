@@ -103,9 +103,9 @@ class TestDb(object):
         self.mox.StubOutWithMock(db, 'psql')
 
         if connected:
-            db.psql('-c', '\conninfo')
+            db.psql('-c', r'\conninfo')
         else:
-            db.psql('-c', '\conninfo').AndRaise(
+            db.psql('-c', r'\conninfo').AndRaise(
                 RunException('', '', [], 1, '', ''))
         self.mox.ReplayAll()
 

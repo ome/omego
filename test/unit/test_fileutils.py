@@ -132,10 +132,10 @@ class TestFileutils(object):
     def test_timestamp_filename(self, ext):
         if ext:
             s = fileutils.timestamp_filename('name', 'test')
-            assert re.match('^name-\d{8}-\d{6}-\d{6}\.test$', s)
+            assert re.match(r'^name-\d{8}-\d{6}-\d{6}\.test$', s)
         else:
             s = fileutils.timestamp_filename('name')
-            assert re.match('^name-\d{8}-\d{6}-\d{6}$', s)
+            assert re.match(r'^name-\d{8}-\d{6}-\d{6}$', s)
 
     def test_check_extracted_paths(self):
         fileutils.check_extracted_paths(['a/', 'a/b'])
