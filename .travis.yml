@@ -26,11 +26,22 @@ before_install:
   # Changing the value for sudo will also need to be reviewed at the same time
   # This will need to be reviewed when the issue above is fixed
   - export PATH=/usr/bin/:$PATH
-  - sudo apt-get install -y zeroc-ice35
+  - sudo apt-get -y install python-{pillow,numpy,psutil}
+  - sudo apt-get -y install python-dev build-essential
+  - sudo apt-get -y install db5.3-util
+  - sudo apt-get -y install libssl-dev libbz2-dev libmcpp-dev libdb++-dev libdb-dev
+
+  - sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 5E6DA83306132997
+  - sudo apt-add-repository "deb http://zeroc.com/download/apt/ubuntu`lsb_release -rs` stable main"
+  - sudo apt-get update
+  - sudo apt-get -y install zeroc-ice-all-runtime zeroc-ice-all-dev
+  #- sudo pip install -U "zeroc-ice<3.7"
+  - sudo curl -L -O https://gitlab.com/openmicroscopy/incubator/zeroc-ice-py-ubuntu1604/-/jobs/129805187/artifacts/raw/dist/zeroc_ice-3.6.4-cp27-cp27mu-linux_x86_64.whl
+  - sudo pip install -U zeroc_ice-3.6.4-cp27-cp27mu-linux_x86_64.whl
   - pip install --upgrade pip setuptools
   - pip install -r requirements.txt
   - pip install flake8
-  - flake8 -v .
+  #- flake8 -v .
 
 before_script:
     - psql -c "create user omero with password 'omero';" -U postgres
