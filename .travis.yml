@@ -1,5 +1,6 @@
 language: python
 python: "2.7"
+dist: xenial
 
 virtualenv:
   system_site_packages: true
@@ -25,7 +26,12 @@ before_install:
   # Changing the value for sudo will also need to be reviewed at the same time
   # This will need to be reviewed when the issue above is fixed
   - export PATH=/usr/bin/:$PATH
-  - sudo apt-get install -y zeroc-ice35
+  - sudo apt-get -y install python-{pillow,numpy,psutil}
+  - sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 5E6DA83306132997
+  - sudo apt-add-repository "deb http://zeroc.com/download/apt/ubuntu`lsb_release -rs` stable main"
+  - sudo apt-get update
+  - sudo apt-get -y install zeroc-ice-all-runtime zeroc-ice-all-dev
+  - sudo pip install -U https://github.com/ome/zeroc-ice-py-ubuntu1604/releases/download/0.1.0/zeroc_ice-3.6.4-cp27-cp27mu-linux_x86_64.whl
   - pip install --upgrade pip setuptools
   - pip install -r requirements.txt
   - pip install flake8

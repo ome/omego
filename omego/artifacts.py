@@ -35,7 +35,7 @@ class Artifacts(object):
 
     def __init__(self, args):
         self.args = args
-        if args.build or re.match('[A-Za-z]\w+-\w+', args.branch):
+        if args.build or re.match(r'[A-Za-z]\w+-\w+', args.branch):
             self.artifacts = JenkinsArtifacts(args)
         elif re.match('[0-9]+|latest$', args.branch):
             self.artifacts = ReleaseArtifacts(args)
@@ -98,7 +98,7 @@ class Artifacts(object):
         sym = self.args.sym
         filename = os.path.basename(localpath)
         if sym and sym == 'auto':
-            m = re.match('([A-Z]+\.\w+)-', filename)
+            m = re.match(r'([A-Z]+\.\w+)-', filename)
             if m:
                 sym = m.group(1)
             else:
@@ -231,7 +231,7 @@ class JenkinsArtifacts(ArtifactsList):
             buildno = 'lastSuccessfulBuild'
         if not buildurl:
             buildurl = '%s/job/%s/%s/' % (args.ci, branch, buildno)
-        if not re.match('\w+://', buildurl):
+        if not re.match(r'\w+://', buildurl):
             buildurl = 'http://%s' % buildurl
 
         log.debug("buildurl: %s", buildurl)
@@ -288,7 +288,7 @@ class JenkinsArtifacts(ArtifactsList):
         log.debug('Root url: %s', rurl)
 
         try:
-            build = re.search('/(\d+)/?$', rurl).group(1)
+            build = re.search(r'/(\d+)/?$', rurl).group(1)
         except Exception:
             log.error('Failed to extract build number from url: %s', rurl)
             raise Stop(20, 'Failed to parse CI XML')
@@ -358,10 +358,10 @@ class ReleaseArtifacts(ArtifactsList):
         super(ReleaseArtifacts, self).__init__()
         self.args = args
 
-        if re.match('[0-9]+\.[0-9]+\.[0-9]+', args.branch):
+        if re.match(r'[0-9]+\.[0-9]+\.[0-9]+', args.branch):
             ver = args.branch
             dl_url = '%s/omero/%s/' % (args.downloadurl, ver)
-        elif re.match('[0-9]+|latest$', args.branch):
+        elif re.match(r'[0-9]+|latest$', args.branch):
             dl_url = self.follow_latest_redirect(args)
 
         dl_icever = self.read_downloads(dl_url + 'artifacts/')
@@ -417,8 +417,8 @@ class ReleaseArtifacts(ArtifactsList):
         dl_icever = {}
         for href in parser.hrefs:
             try:
-                icever = re.search('-(ice\d+).*zip$', href).group(1)
-                if re.match('\w+://', href):
+                icever = re.search(r'-(ice\d+).*zip$', href).group(1)
+                if re.match(r'\w+://', href):
                     fullurl = href
                 else:
                     fullurl = dlurl + href

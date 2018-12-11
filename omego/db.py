@@ -15,7 +15,7 @@ from env import DbParser
 log = logging.getLogger("omego.db")
 
 # Regular expression identifying a SQL schema
-SQL_SCHEMA_REGEXP = re.compile('.*OMERO(\d+)(\.|A)?(\d*)([A-Z]*)__(\d+)$')
+SQL_SCHEMA_REGEXP = re.compile(r'.*OMERO(\d+)(\.|A)?(\d*)([A-Z]*)__(\d+)$')
 
 # Exit codes for db upgrade --dry-run (also used internally)
 DB_UPTODATE = 0
@@ -86,7 +86,7 @@ class DbAdmin(object):
 
     def check_connection(self):
         try:
-            self.psql('-c', '\conninfo')
+            self.psql('-c', r'\conninfo')
         except RunException as e:
             log.error(e)
             raise Stop(30, 'Database connection check failed')
