@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
+
 import os
 import logging
 
@@ -78,7 +80,7 @@ class Artifacts(object):
                     return unzipped
                 except Exception as e:
                     log.error('Unzip failed: %s', e)
-                    print e
+                    print (e)
                     raise Stop(20, 'Unzip failed, try unzipping manually')
             else:
                 log.warn('Not unzipping %s', localpath)
@@ -92,7 +94,7 @@ class Artifacts(object):
              'Alternatively a full filename can be specified to download '
              'any artifact, including those not listed.\n' +
              str(self.artifacts))
-        print s
+        print (s)
 
     def create_symlink(self, localpath):
         sym = self.args.sym

@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
+
 #
-# Copyright (C) 2013 University of Dundee & Open Microscopy Environment
+# Copyright (C) 2013,2018 University of Dundee & Open Microscopy Environment
 # All Rights Reserved.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -50,11 +52,11 @@ def entry_point():
             (DownloadCommand.NAME, DownloadCommand),
             (DbCommand.NAME, DbCommand),
             (Version.NAME, Version)])
-    except Stop, stop:
+    except Stop as stop:
         if stop.rc != 0:
-            print "ERROR:", stop
+            print ("ERROR:", stop)
         else:
-            print stop
+            print (stop)
         sys.exit(stop.rc)
 
 

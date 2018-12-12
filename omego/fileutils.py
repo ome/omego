@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
+
 from datetime import datetime
 import os
 import logging
@@ -40,8 +42,8 @@ class ProgressBar(object):
             p = ''
             if self.pad:
                 p = ' ' * (self.ndots - self.n) * len(self.marker)
-            print '%s%s (%d/%d bytes)' % (
-                self.marker * self.n, p, current, self.total)
+            print ('%s%s (%d/%d bytes)' % (
+                self.marker * self.n, p, current, self.total))
 
 
 def open_url(url, httpuser=None, httppassword=None, method=None):

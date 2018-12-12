@@ -34,7 +34,7 @@ class TestUpgrade(object):
     def testUpgradeHelp(self):
         try:
             self.upgrade("-h")
-        except SystemExit, se:
+        except SystemExit as se:
             assert se.code == 0
 
     def testUpgradeDryRun(self):

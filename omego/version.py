@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
+
 #
-# Copyright (C) 2015 University of Dundee & Open Microscopy Environment
+# Copyright (C) 2015,2018 University of Dundee & Open Microscopy Environment
 # All Rights Reserved.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -31,4 +33,4 @@ class Version(yaclifw.version.Version):
 
     def __call__(self, args):
         super(yaclifw.version.Version, self).__call__(args)
-        print resource_string(__name__, 'RELEASE-VERSION').rstrip()
+        print (resource_string(__name__, 'RELEASE-VERSION').rstrip())

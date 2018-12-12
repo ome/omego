@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
+
 #
-# Copyright (C) 2014 University of Dundee. All Rights Reserved.
+# Copyright (C) 2014,2018 University of Dundee. All Rights Reserved.
 # Use is subject to license terms supplied in LICENSE.txt
 #
 # This program is free software; you can redistribute it and/or modify
@@ -159,4 +161,4 @@ class ConvertCommand(Command):
         super(ConvertCommand, self).__call__(args)
         self.configure_logging(args)
         tagGroups, terms = parse(args.filename, args.limit)
-        print generate(tagGroups, terms)
+        print (generate(tagGroups, terms))
