@@ -6,13 +6,30 @@ from __future__ import print_function
 import os
 import logging
 
-from HTMLParser import HTMLParser
-from urllib2 import HTTPError
+try:
+    basestring
+except NameError:
+    basestring = str
+
+try:
+    # For Python 3.0 and later
+    from html.parser import HTMLParser
+except ImportError:
+    # Fall back to Python 2's urllib2
+    from HTMLParser import HTMLParser
+
+try:
+    # For Python 3.0 and later
+    from urllib.error import HTTPError
+except ImportError:
+    # Fall back to Python 2's urllib2
+    from urllib2 import HTTPError
+
 import re
 
-import fileutils
+from . import fileutils
 from yaclifw.framework import Command, Stop
-from env import FileUtilsParser, JenkinsParser
+from .env import FileUtilsParser, JenkinsParser
 
 try:
     from xml.etree.ElementTree import XML
@@ -408,7 +425,7 @@ class ReleaseArtifacts(ArtifactsList):
                           url.url, url.code)
                 raise Stop(
                     20, 'Downloads page failed, is the version correct?')
-            parser.feed(url.read())
+            parser.feed(str(url.read()))
         except HTTPError as e:
             log.error('Failed to get HTML from %s (%s)', dlurl, e)
             raise Stop(20, 'Downloads page failed, is the version correct?')

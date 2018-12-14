@@ -8,7 +8,7 @@ import sys
 import tempfile
 import time
 
-from env import WINDOWS
+from .env import WINDOWS
 
 log = logging.getLogger("omego.external")
 

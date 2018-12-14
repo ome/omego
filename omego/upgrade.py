@@ -8,13 +8,18 @@ import shutil
 import tempfile
 import logging
 
-from artifacts import Artifacts
-from db import DbAdmin, DB_UPTODATE, DB_UPGRADE_NEEDED, DB_INIT_NEEDED
-from external import External
+try:
+    basestring
+except NameError:
+    basestring = str
+
+from .artifacts import Artifacts
+from .db import DbAdmin, DB_UPTODATE, DB_UPGRADE_NEEDED, DB_INIT_NEEDED
+from .external import External
 from yaclifw.framework import Command, Stop
-import fileutils
-from env import EnvDefault, DbParser, FileUtilsParser, JenkinsParser
-from env import WINDOWS
+from . import fileutils
+from .env import EnvDefault, DbParser, FileUtilsParser, JenkinsParser
+from .env import WINDOWS
 
 log = logging.getLogger("omego.upgrade")
 

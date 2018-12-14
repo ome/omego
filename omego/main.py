@@ -31,12 +31,12 @@ import sys
 
 from yaclifw.framework import main, Stop
 
-from artifacts import DownloadCommand
-from convert import ConvertCommand
-from db import DbCommand
-from upgrade import InstallCommand
-from upgrade import UpgradeCommand
-from version import Version
+from .artifacts import DownloadCommand
+from .convert import ConvertCommand
+from .db import DbCommand
+from .upgrade import InstallCommand
+from .upgrade import UpgradeCommand
+from .version import Version
 
 
 def entry_point():

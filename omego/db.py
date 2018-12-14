@@ -7,10 +7,10 @@ import logging
 from glob import glob
 import re
 
-import fileutils
-from external import External, RunException
+from . import fileutils
+from .external import External, RunException
 from yaclifw.framework import Command, Stop
-from env import DbParser
+from .env import DbParser
 
 log = logging.getLogger("omego.db")
 

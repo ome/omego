@@ -8,7 +8,13 @@ import os
 import logging
 import re
 import ssl
-import urllib2
+try:
+    # For Python 3.0 and later
+    from urllib import request as urllib2
+except ImportError:
+    # Fall back to Python 2's urllib2
+    import urllib2
+
 import tempfile
 import zipfile
 from yaclifw.framework import Stop
