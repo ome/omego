@@ -1,7 +1,7 @@
 language: python
 python:
-  - "2.7"
-  - "3.6"
+  - 2.7
+  - 3.4
 
 dist: xenial
 
@@ -52,7 +52,9 @@ before_script:
 script:
     # The installation is run in the virtual env
     # Required to explicitly activate it
-    - source $HOME/virtualenv/python2.7_with_system_site_packages/bin/activate
+    # - source $HOME/virtualenv/python$TRAVIS_PYTHON_VERSION_with_system_site_packages/bin/activate
+    - which python
+    - python --version
     - ./travis-build
 
 after_failure:
