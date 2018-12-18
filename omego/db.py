@@ -4,6 +4,16 @@
 import os
 import logging
 
+try:
+    basestring  #noqa
+except NameError:
+    basestring = str
+
+try:
+    xrange
+except NameError:
+    xrange = range
+
 from glob import glob
 import re
 

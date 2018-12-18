@@ -20,7 +20,10 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import pytest
-import mox
+try:
+    from mox3 import mox
+except ImportError:
+    import mox
 
 import os
 
@@ -81,7 +84,7 @@ class TestDb(object):
 
     class Args(object):
         def __init__(self, args):
-            for k, v in args.iteritems():
+            for k, v in args.items():
                 setattr(self, k, v)
 
     class PartialMockDb(DbAdmin):

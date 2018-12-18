@@ -20,7 +20,10 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import pytest
-import mox
+try:
+    from mox3 import mox
+except ImportError:
+    import mox
 
 from yaclifw.framework import Stop
 from omego.artifacts import ArtifactException, ArtifactsList

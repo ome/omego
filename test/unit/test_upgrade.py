@@ -20,7 +20,10 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import pytest
-import mox
+try:
+    from mox3 import mox
+except ImportError:
+    import mox
 
 import copy
 import os
@@ -42,7 +45,7 @@ class TestUpgrade(object):
             self.delete_old = False
             self.keep_old_zip = False
             self.verbose = False
-            for k, v in args.iteritems():
+            for k, v in args.items():
                 setattr(self, k, v)
 
         def __eq__(self, o):

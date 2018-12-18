@@ -12,17 +12,13 @@ except NameError:
     basestring = str
 
 try:
-    # For Python 3.0 and later
     from html.parser import HTMLParser
 except ImportError:
-    # Fall back to Python 2's urllib2
     from HTMLParser import HTMLParser
 
 try:
-    # For Python 3.0 and later
     from urllib.error import HTTPError
 except ImportError:
-    # Fall back to Python 2's urllib2
     from urllib2 import HTTPError
 
 import re

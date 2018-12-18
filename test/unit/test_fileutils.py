@@ -20,11 +20,19 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import pytest
-import mox
+try:
+    from mox3 import mox
+except ImportError:
+    import mox
 
 import os
 import re
 import zipfile
+
+try:
+    xrange
+except NameError:
+    xrange = range
 
 from omego import fileutils
 
@@ -170,7 +178,7 @@ class TestFileutils(object):
         self.mox.StubOutWithMock(os, 'chmod')
 
         files = ['test/', 'test/a', 'test/b/', 'test/b/c']
-        perms = [0755, 0644, 0755, 0550]
+        perms = [755, 644, 755, 550]
         infos = [MockZipInfo(f, p) for (f, p) in zip(files, perms)]
 
         mockzip = zipfile.ZipFile('path/to/test.zip')
