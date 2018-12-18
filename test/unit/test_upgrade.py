@@ -137,7 +137,7 @@ class TestUpgrade(object):
 
         args = self.Args({'no_web': noweb})
         upgrade = self.PartialMockUnixInstall(args, ext)
-        print ('*** %s' % upgrade.args.__dict__)
+        print('*** %s' % upgrade.args.__dict__)
         upgrade.stop()
         self.mox.VerifyAll()
 

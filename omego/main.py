@@ -54,9 +54,9 @@ def entry_point():
             (Version.NAME, Version)])
     except Stop as stop:
         if stop.rc != 0:
-            print ("ERROR:", stop)
+            print("ERROR:", stop)
         else:
-            print (stop)
+            print(stop)
         sys.exit(stop.rc)
 
 

@@ -161,4 +161,4 @@ class ConvertCommand(Command):
         super(ConvertCommand, self).__call__(args)
         self.configure_logging(args)
         tagGroups, terms = parse(args.filename, args.limit)
-        print (generate(tagGroups, terms))
+        print(generate(tagGroups, terms))

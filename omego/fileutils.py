@@ -46,7 +46,7 @@ class ProgressBar(object):
             p = ''
             if self.pad:
                 p = ' ' * (self.ndots - self.n) * len(self.marker)
-            print ('%s%s (%d/%d bytes)' % (
+            print('%s%s (%d/%d bytes)' % (
                 self.marker * self.n, p, current, self.total))
 
 

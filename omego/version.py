@@ -33,4 +33,4 @@ class Version(yaclifw.version.Version):
 
     def __call__(self, args):
         super(yaclifw.version.Version, self).__call__(args)
-        print (resource_string(__name__, 'RELEASE-VERSION').rstrip())
+        print(resource_string(__name__, 'RELEASE-VERSION').rstrip())
