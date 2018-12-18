@@ -3,11 +3,17 @@
 
 from __future__ import print_function
 
+try:
+    basestring  #noqa
+except NameError:
+    basestring = str
+
 from datetime import datetime
 import os
 import logging
 import re
 import ssl
+
 try:
     from urllib import request as urllib2
 except ImportError:

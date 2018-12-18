@@ -9,7 +9,7 @@ import tempfile
 import logging
 
 try:
-    basestring
+    basestring  #noqa
 except NameError:
     basestring = str
 
