@@ -7,7 +7,7 @@ import os
 import logging
 
 try:
-    basestring  #noqa
+    basestring  # noqa
 except NameError:
     basestring = str
 

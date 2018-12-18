@@ -4,7 +4,7 @@
 from __future__ import print_function
 
 try:
-    basestring  #noqa
+    basestring  # noqa
 except NameError:
     basestring = str
 
