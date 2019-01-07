@@ -2,6 +2,8 @@ language: python
 python:
   - 2.7
   - 3.4
+virtualenv:
+    system_site_packages: true
 
 dist: xenial
 
@@ -49,10 +51,6 @@ before_script:
     - echo "config set Ice.IPv6 0" >> $HOME/config.omero
 script:
     # The installation is run in the virtual env
-    # Required to explicitly activate it
-    # - source $HOME/virtualenv/python$TRAVIS_PYTHON_VERSION_with_system_site_packages/bin/activate
-    - which python
-    - python --version
     - ./travis-build
 
 after_failure:
