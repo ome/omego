@@ -178,7 +178,7 @@ class TestFileutils(object):
         self.mox.StubOutWithMock(os, 'chmod')
 
         files = ['test/', 'test/a', 'test/b/', 'test/b/c']
-        perms = [755, 644, 755, 550]
+        perms = [493, 644, 493, 550]
         infos = [MockZipInfo(f, p) for (f, p) in zip(files, perms)]
 
         mockzip = zipfile.ZipFile('path/to/test.zip')
