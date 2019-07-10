@@ -54,4 +54,4 @@ class TestUpgrade(object):
     @pytest.mark.slowtest
     @pytest.mark.skipif(True, reason='Broken due to multiple CLI import')
     def testUpgradeMatrixBuild(self):
-        self.upgrade("--branch=OMERO-DEV-latest", "--ice=3.5")
+        self.upgrade("--branch=OMERO-DEV-latest", "--ice=3.6")

@@ -46,14 +46,14 @@ if [ $TEST = upgrade ]; then
   # Should return 0 DB_UPTODATE
   omego db upgrade -n --serverdir OMERO.server
 
-  omego download --release 5.4 --ice 3.6 server --sym download-server-50
+  omego download --release 5.5 --ice 3.6 server --sym download-server-50
   # Should return 2 DB_UPGRADE_NEEDED
   RC=0;
   omego db upgrade -n --dbname omero --serverdir download-server-50 || RC=$?
   test $RC -eq 2
 
   # Note this should use the already downloaded zip from the previous step
-  omego install --upgrade --managedb --release=5.4 --ice 3.6 --no-web;
+  omego install --upgrade --managedb --release=5.5 --ice 3.6 --no-web;
 
   # Should return 0 DB_UPTODATE
   omego db upgrade -n --serverdir OMERO.server
