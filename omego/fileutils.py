@@ -1,12 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import division
+from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
+from past.builtins import basestring
+from builtins import object
+from past.utils import old_div
 from datetime import datetime
 import os
 import logging
 import re
 import ssl
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import tempfile
 import zipfile
 from yaclifw.framework import Stop
@@ -34,14 +41,14 @@ class ProgressBar(object):
         self.pad = True
 
     def update(self, current):
-        nextn = int(current * self.ndots / self.total)
+        nextn = int(old_div(current * self.ndots, self.total))
         if nextn > self.n:
             self.n = nextn
             p = ''
             if self.pad:
                 p = ' ' * (self.ndots - self.n) * len(self.marker)
-            print '%s%s (%d/%d bytes)' % (
-                self.marker * self.n, p, current, self.total)
+            print('%s%s (%d/%d bytes)' % (
+                self.marker * self.n, p, current, self.total))
 
 
 def open_url(url, httpuser=None, httppassword=None, method=None):
@@ -66,26 +73,26 @@ def open_url(url, httpuser=None, httppassword=None, method=None):
                 'is not supported on older versions of Python')
         sslctx.check_hostname = False
         sslctx.verify_mode = ssl.CERT_NONE
-        opener = urllib2.build_opener(urllib2.HTTPSHandler(context=sslctx))
+        opener = urllib.request.build_opener(urllib.request.HTTPSHandler(context=sslctx))
     else:
-        opener = urllib2.build_opener()
+        opener = urllib.request.build_opener()
 
     if 'USER_AGENT' in os.environ:
         opener.addheaders = [('User-agent', os.environ.get('USER_AGENT'))]
         log.debug('Setting user-agent: %s', os.environ.get('USER_AGENT'))
 
     if httpuser and httppassword:
-        mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
+        mgr = urllib.request.HTTPPasswordMgrWithDefaultRealm()
         mgr.add_password(None, url, httpuser, httppassword)
         log.debug('Enabling HTTP authentication')
-        opener.add_handler(urllib2.HTTPBasicAuthHandler(mgr))
-        opener.add_handler(urllib2.HTTPDigestAuthHandler(mgr))
+        opener.add_handler(urllib.request.HTTPBasicAuthHandler(mgr))
+        opener.add_handler(urllib.request.HTTPDigestAuthHandler(mgr))
     elif httpuser or httppassword:
         raise FileException(
             'httpuser and httppassword must be used together', url)
 
     # Override method http://stackoverflow.com/a/4421485
-    req = urllib2.Request(url)
+    req = urllib.request.Request(url)
     if method:
         req.get_method = lambda: method
 

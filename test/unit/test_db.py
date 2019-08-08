@@ -19,6 +19,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from builtins import str
+from builtins import object
 import pytest
 import mox
 
@@ -81,7 +83,7 @@ class TestDb(object):
 
     class Args(object):
         def __init__(self, args):
-            for k, v in args.iteritems():
+            for k, v in args.items():
                 setattr(self, k, v)
 
     class PartialMockDb(DbAdmin):

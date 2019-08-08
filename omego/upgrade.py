@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import division
+from __future__ import absolute_import
+from past.builtins import basestring
+from builtins import object
+from past.utils import old_div
 import argparse
 import copy
 import os
@@ -8,13 +13,13 @@ import shutil
 import tempfile
 import logging
 
-from artifacts import Artifacts
-from db import DbAdmin, DB_UPTODATE, DB_UPGRADE_NEEDED, DB_INIT_NEEDED
-from external import External
+from .artifacts import Artifacts
+from .db import DbAdmin, DB_UPTODATE, DB_UPGRADE_NEEDED, DB_INIT_NEEDED
+from .external import External
 from yaclifw.framework import Command, Stop
-import fileutils
-from env import EnvDefault, DbParser, FileUtilsParser, JenkinsParser
-from env import WINDOWS
+from . import fileutils
+from .env import EnvDefault, DbParser, FileUtilsParser, JenkinsParser
+from .env import WINDOWS
 
 log = logging.getLogger("omego.upgrade")
 
@@ -193,12 +198,12 @@ class Install(object):
                     with open(b) as fb:
                         return fa.read() == fb.read()
 
-        target = self.dir / "etc" / "grid" / "config.xml"
+        target = old_div(self.dir, "etc" / "grid" / "config.xml")
 
         if copyold:
             from path import path
-            old_grid = path(self.args.sym) / "etc" / "grid"
-            old_cfg = old_grid / "config.xml"
+            old_grid = old_div(path(self.args.sym), "etc" / "grid")
+            old_cfg = old_div(old_grid, "config.xml")
             log.info("Copying old configuration from %s", old_cfg)
             if not old_cfg.exists():
                 raise Stop(40, 'config.xml not found')

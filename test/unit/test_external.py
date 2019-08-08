@@ -19,6 +19,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from builtins import str
+from builtins import object
 import pytest
 import mox
 
@@ -104,7 +106,7 @@ class TestExternal(object):
         assert env['TEST_ENVVAR2'] == '1=2=3=4=5'
 
     def test_omero_cli(self):
-        class MockCli:
+        class MockCli(object):
             def invoke(*args, **kwargs):
                 assert args[1:] == (['arg1', 'arg2'], )
                 assert kwargs == {'strict': True}

@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
+from builtins import object
 import subprocess
 import logging
 import os
@@ -8,7 +10,7 @@ import sys
 import tempfile
 import time
 
-from env import WINDOWS
+from .env import WINDOWS
 
 log = logging.getLogger("omego.external")
 

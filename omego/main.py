@@ -24,17 +24,19 @@ Primary launching functions for omego. All Commands
 which are present in the globals() of this module
 will be presented to the user.
 """
+from __future__ import print_function
+from __future__ import absolute_import
 
 import sys
 
 from yaclifw.framework import main, Stop
 
-from artifacts import DownloadCommand
-from convert import ConvertCommand
-from db import DbCommand
-from upgrade import InstallCommand
-from upgrade import UpgradeCommand
-from version import Version
+from .artifacts import DownloadCommand
+from .convert import ConvertCommand
+from .db import DbCommand
+from .upgrade import InstallCommand
+from .upgrade import UpgradeCommand
+from .version import Version
 
 
 def entry_point():
@@ -50,11 +52,11 @@ def entry_point():
             (DownloadCommand.NAME, DownloadCommand),
             (DbCommand.NAME, DbCommand),
             (Version.NAME, Version)])
-    except Stop, stop:
+    except Stop as stop:
         if stop.rc != 0:
-            print "ERROR:", stop
+            print("ERROR:", stop)
         else:
-            print stop
+            print(stop)
         sys.exit(stop.rc)
 
 

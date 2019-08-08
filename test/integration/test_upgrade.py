@@ -19,6 +19,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from builtins import object
 import pytest  # noqa
 
 from yaclifw.framework import main, Stop
@@ -34,7 +35,7 @@ class TestUpgrade(object):
     def testUpgradeHelp(self):
         try:
             self.upgrade("-h")
-        except SystemExit, se:
+        except SystemExit as se:
             assert se.code == 0
 
     def testUpgradeDryRun(self):

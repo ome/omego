@@ -19,6 +19,10 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from builtins import zip
+from builtins import str
+from builtins import range
+from builtins import object
 import pytest
 import mox
 
@@ -170,13 +174,13 @@ class TestFileutils(object):
         self.mox.StubOutWithMock(os, 'chmod')
 
         files = ['test/', 'test/a', 'test/b/', 'test/b/c']
-        perms = [0755, 0644, 0755, 0550]
+        perms = [0o755, 0o644, 0o755, 0o550]
         infos = [MockZipInfo(f, p) for (f, p) in zip(files, perms)]
 
         mockzip = zipfile.ZipFile('path/to/test.zip')
         mockzip.namelist().AndReturn(files)
         mockzip.infolist().AndReturn(infos)
-        for n in xrange(4):
+        for n in range(4):
             mockzip.extract(infos[n], destdir)
             os.chmod(os.path.join(destdir, files[n]), perms[n])
 

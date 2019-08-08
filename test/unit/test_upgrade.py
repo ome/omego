@@ -19,6 +19,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from __future__ import print_function
+from builtins import object
 import pytest
 import mox
 
@@ -42,7 +44,7 @@ class TestUpgrade(object):
             self.delete_old = False
             self.keep_old_zip = False
             self.verbose = False
-            for k, v in args.iteritems():
+            for k, v in args.items():
                 setattr(self, k, v)
 
         def __eq__(self, o):
@@ -134,7 +136,7 @@ class TestUpgrade(object):
 
         args = self.Args({'no_web': noweb})
         upgrade = self.PartialMockUnixInstall(args, ext)
-        print '*** %s' % upgrade.args.__dict__
+        print('*** %s' % upgrade.args.__dict__)
         upgrade.stop()
         self.mox.VerifyAll()
 

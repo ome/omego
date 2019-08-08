@@ -1,16 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
+from builtins import zip
+from builtins import range
+from past.builtins import basestring
+from builtins import object
 import os
 import logging
 
 from glob import glob
 import re
 
-import fileutils
-from external import External, RunException
+from . import fileutils
+from .external import External, RunException
 from yaclifw.framework import Command, Stop
-from env import DbParser
+from .env import DbParser
 
 log = logging.getLogger("omego.db")
 
@@ -126,15 +131,15 @@ class DbAdmin(object):
 
         # Create a set of unique schema versions
         versions = set()
-        for v in f_dict.values():
+        for v in list(f_dict.values()):
             versions.update(v)
         versions = sort_schemas(versions)
         n = len(versions)
-        versionsrev = dict(vi for vi in zip(versions, xrange(n)))
+        versionsrev = dict(vi for vi in zip(versions, range(n)))
 
         # M(from,to) = upgrade script for this pair or None
-        M = [[None for b in xrange(n)] for a in xrange(n)]
-        for key, value in f_dict.items():
+        M = [[None for b in range(n)] for a in range(n)]
+        for key, value in list(f_dict.items()):
             vfrom, vto = value
             M[versionsrev[vfrom]][versionsrev[vto]] = key
 
@@ -143,7 +148,7 @@ class DbAdmin(object):
     def sql_version_resolve(self, M, versions, vfrom):
         def resolve_index(M, ifrom, ito):
             n = len(M)
-            for p in xrange(n - 1, 0, -1):
+            for p in range(n - 1, 0, -1):
                 if M[ifrom][p]:
                     if p == ito:
                         return [M[ifrom][p]]
