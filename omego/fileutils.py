@@ -4,7 +4,7 @@
 from __future__ import division
 from __future__ import print_function
 from future import standard_library
-standard_library.install_aliases()
+standard_library.install_aliases()  # noqa
 from past.builtins import basestring
 from builtins import object
 from past.utils import old_div
@@ -13,7 +13,9 @@ import os
 import logging
 import re
 import ssl
-import urllib.request, urllib.error, urllib.parse
+import urllib.request
+import urllib.error
+import urllib.parse
 import tempfile
 import zipfile
 from yaclifw.framework import Stop
@@ -73,7 +75,8 @@ def open_url(url, httpuser=None, httppassword=None, method=None):
                 'is not supported on older versions of Python')
         sslctx.check_hostname = False
         sslctx.verify_mode = ssl.CERT_NONE
-        opener = urllib.request.build_opener(urllib.request.HTTPSHandler(context=sslctx))
+        opener = urllib.request.build_opener(
+            urllib.request.HTTPSHandler(context=sslctx))
     else:
         opener = urllib.request.build_opener()
 
