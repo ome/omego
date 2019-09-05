@@ -111,7 +111,8 @@ class JenkinsParser(argparse.ArgumentParser):
 
         Add = EnvDefault.add
         Add(group, "ci", "https://ci.openmicroscopy.org",
-            help="Base URL of the Continuous Integration server (CI only)")
+            help="Base URL or short name of the Continuous Integration server "
+            "(CI only)")
         group.add_argument(
             "--branch", "--release", default="latest",
             help="The release series to download e.g. 5, 5.1, 5.1.2, "

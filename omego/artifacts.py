@@ -5,7 +5,10 @@ import os
 import logging
 
 from HTMLParser import HTMLParser
-from urllib2 import HTTPError
+from urllib2 import (
+    HTTPError,
+    URLError,
+)
 import re
 
 import fileutils
@@ -229,10 +232,11 @@ class JenkinsArtifacts(ArtifactsList):
         except ValueError:
             branch = args.branch
             buildno = 'lastSuccessfulBuild'
+        ci = self.guess_ci_server(args.ci)
         if not buildurl:
-            buildurl = '%s/job/%s/%s/' % (args.ci, branch, buildno)
+            buildurl = '%s/job/%s/%s/' % (ci, branch, buildno)
         if not re.match(r'\w+://', buildurl):
-            buildurl = 'http://%s' % buildurl
+            buildurl = 'https://%s' % buildurl
 
         log.debug("buildurl: %s", buildurl)
 
@@ -251,6 +255,28 @@ class JenkinsArtifacts(ArtifactsList):
         artifacturls = [
             base_url + a.find("relativePath").text for a in artifacts]
         self.find_artifacts(artifacturls)
+
+    def guess_ci_server(self, ci):
+        """
+        If this is a short name (no protocol, no dots) guess the CI server
+        (i.e. devspace)
+        """
+        if re.match(r'\w+://', ci) or '.' in ci:
+            return ci
+        guesses = [
+            'https://%s.openmicroscopy.org/jenkins' % ci,
+            'https://%s.openmicroscopy.org/' % ci,
+            'http://%s' % ci,
+        ]
+        for guess in guesses:
+            try:
+                log.debug('CI server %s: trying %s', ci, guess)
+                return fileutils.dereference_url(guess)
+            except (URLError, HTTPError) as e:
+                log.debug('CI server %s not found %s', guess, e)
+                pass
+        log.error('Failed to lookup CI server %s, tried: %s', ci, guesses)
+        raise Stop(20, 'Failed to lookup CI server %s' % ci)
 
     def read_xml(self, buildurl):
         url = None
