@@ -22,7 +22,7 @@
 from builtins import str
 from builtins import object
 import pytest
-import mox
+from mox3 import mox
 
 import os
 import subprocess

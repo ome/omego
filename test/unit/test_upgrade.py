@@ -22,7 +22,7 @@
 from __future__ import print_function
 from builtins import object
 import pytest
-import mox
+from mox3 import mox
 
 import copy
 import os
