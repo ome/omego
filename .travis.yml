@@ -15,9 +15,28 @@ cache: pip
 addons:
   postgresql: "9.6"
 
-env:
-    - USER_AGENT=Travis TEST=install
-    - USER_AGENT=Travis TEST=upgrade
+matrix:
+  include:
+    - python: 2.7
+      env:
+        - TOX_ENV=py27
+        - USER_AGENT=Travis
+        - TEST=install
+    - python: 2.7
+      env:
+        - TOX_ENV=py27
+        - USER_AGENT=Travis
+        - TEST=upgrade
+    - python: 3.6
+      env:
+        - TOX_ENV=py36
+        - USER_AGENT=Travis
+        - TEST=install
+    - python: 3.6
+      env:
+        - TOX_ENV=py36
+        - USER_AGENT=Travis
+        - TEST=upgrade
 
 before_install:
   # The installation of the python dependencies must be done in that level for now
@@ -47,10 +66,7 @@ before_script:
     # required so the server can start
     - echo "config set Ice.IPv6 0" >> $HOME/config.omero
 script:
-    # The installation is run in the virtual env
-    # Required to explicitly activate it
-    - source $HOME/virtualenv/python2.7_with_system_site_packages/bin/activate
-    - ./travis-build
+    - tox -e $TOX_ENV
 
 after_failure:
     - tail -n 1000 OMERO.server/var/log/Blitz-0.log
