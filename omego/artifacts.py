@@ -118,7 +118,7 @@ class Artifacts(object):
             log.debug('Creating symlink %s -> %s', sym, localpath)
             try:
                 os.unlink(sym)
-            except OSError as e:
+            except OSError:
                 pass
 
             try:
