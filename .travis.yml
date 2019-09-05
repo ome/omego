@@ -50,10 +50,11 @@ before_install:
   - sudo apt-add-repository "deb http://zeroc.com/download/apt/ubuntu`lsb_release -rs` stable main"
   - sudo apt-get update
   - sudo apt-get -y install zeroc-ice-all-runtime zeroc-ice-all-dev
-  - sudo pip install -U https://github.com/ome/zeroc-ice-py-ubuntu1604/releases/download/0.1.0/zeroc_ice-3.6.4-cp27-cp27mu-linux_x86_64.whl
+  - if [ "$TOX_ENV" = py27 ]; then WHL_PY_VER=cp27-cp27mu; else WHL_PY_VER=cp36-cp36m; fi
+  - sudo pip install -U https://github.com/ome/zeroc-ice-py-manylinux/releases/download/0.1.0/zeroc_ice-3.6.5-${WHL_PY_VER}-manylinux2010_x86_64.whl
   - pip install --upgrade pip setuptools
   - pip install -r requirements.txt
-  - pip install flake8
+  - pip install flake8 tox
   - flake8 -v .
 
 before_script:
