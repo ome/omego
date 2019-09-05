@@ -2,9 +2,6 @@ language: python
 python: "2.7"
 dist: xenial
 
-virtualenv:
-  system_site_packages: true
-
 # This (sudo: false) is needed to "run on container-based infrastructure" on
 # which cache: is available
 # http://docs.travis-ci.com/user/workers/container-based-infrastructure/
