@@ -127,5 +127,9 @@ setup(name='omego',
       version=VERSION,
 
       cmdclass={'test': PyTest},
-      tests_require=['pytest', 'restview', 'mox'],
+      tests_require=[
+          'pytest>4,<5',
+          'restview',
+          'mox',
+      ],
       )
