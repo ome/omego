@@ -159,6 +159,7 @@ class Args(object):
         else:
             self.labels = ''
             self.build = MockUrl.labelledurl
+        self.ci = 'https://ci.openmicroscopy.org'
         self.ice = None
         self.dry_run = False
         self.verbose = False
