@@ -266,7 +266,7 @@ class JenkinsArtifacts(ArtifactsList):
         guesses = [
             'https://%s.openmicroscopy.org/jenkins' % ci,
             'https://%s.openmicroscopy.org/' % ci,
-            'http://%s' % ci,
+            'https://%s' % ci,
         ]
         for guess in guesses:
             try:
