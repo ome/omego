@@ -232,7 +232,7 @@ class JenkinsArtifacts(ArtifactsList):
         except ValueError:
             branch = args.branch
             buildno = 'lastSuccessfulBuild'
-        ci = self.guess_ci_server(args.ci)
+        ci = self._expand_ci_server(args.ci)
         if not buildurl:
             buildurl = '%s/job/%s/%s/' % (ci, branch, buildno)
         if not re.match(r'\w+://', buildurl):
@@ -256,7 +256,7 @@ class JenkinsArtifacts(ArtifactsList):
             base_url + a.find("relativePath").text for a in artifacts]
         self.find_artifacts(artifacturls)
 
-    def guess_ci_server(self, ci):
+    def _expand_ci_server(self, ci):
         """
         If this is a short name (no protocol, no dots) guess the CI server
         (i.e. devspace)
