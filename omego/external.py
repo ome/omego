@@ -186,7 +186,7 @@ class External(object):
             raise Exception('OMERO CLI not initialised')
         return self.run(self.cli, command, capturestd=True)
 
-    def omero_bin(self, command):
+    def omero_old(self, command):
         """
         Runs the omero command-line client with an array of arguments using the
         old environment

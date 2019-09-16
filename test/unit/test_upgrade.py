@@ -128,10 +128,10 @@ class TestUpgrade(object):
     @pytest.mark.parametrize('noweb', [True, False])
     def test_stop(self, noweb):
         ext = self.mox.CreateMock(External)
-        ext.omero_bin(['admin', 'status', '--nodeonly'])
-        ext.omero_bin(['admin', 'stop'])
+        ext.omero_old(['admin', 'status', '--nodeonly'])
+        ext.omero_old(['admin', 'stop'])
         if not noweb:
-            ext.omero_bin(['web', 'stop'])
+            ext.omero_old(['web', 'stop'])
         self.mox.ReplayAll()
 
         args = self.Args({'no_web': noweb})
@@ -186,8 +186,8 @@ class TestUpgrade(object):
 
     def test_bin(self):
         ext = self.mox.CreateMock(External)
-        ext.omero_bin(['a', 'b'])
-        ext.omero_bin(['a', 'b'])
+        ext.omero_old(['a', 'b'])
+        ext.omero_old(['a', 'b'])
         self.mox.ReplayAll()
 
         upgrade = self.PartialMockUnixInstall({}, ext)

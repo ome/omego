@@ -102,7 +102,7 @@ class TestExternal(object):
         self.ext.omero_cli(['arg1', 'arg2'])
         self.mox.VerifyAll()
 
-    def test_omero_bin(self):
+    def test_omero_old(self):
         env = {'TEST': 'test'}
         self.ext.old_env = env
         self.mox.StubOutWithMock(external, 'run')
@@ -110,7 +110,7 @@ class TestExternal(object):
                      ).AndReturn(0)
         self.mox.ReplayAll()
 
-        self.ext.omero_bin(['arg1', 'arg2'])
+        self.ext.omero_old(['arg1', 'arg2'])
         self.mox.VerifyAll()
 
     @pytest.mark.parametrize('retcode', [0, 1])

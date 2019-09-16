@@ -337,7 +337,7 @@ class Install(object):
         """
         if isinstance(command, basestring):
             command = command.split()
-        self.external.omero_bin(command)
+        self.external.omero_old(command)
 
     def symlink_check_and_set(self):
         """
