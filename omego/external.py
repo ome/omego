@@ -4,7 +4,6 @@
 import subprocess
 import logging
 import os
-import sys
 import tempfile
 import time
 
@@ -56,7 +55,6 @@ class External(object):
         Set the directory of the server to be controlled
         """
         self.dir = os.path.abspath(dir)
-        config = os.path.join(self.dir, 'etc', 'grid', 'config.xml')
 
     def get_config(self):
         """
@@ -72,35 +70,38 @@ class External(object):
         except ValueError:
             raise Exception('Failed to parse omero config: %s' % stdout)
 
-    def setup_omero_cli(self):
+    def setup_omero_cli(self, omero_cli=None):
         """
-        Imports the omero CLI module so that commands can be run directly.
-        Note Python does not allow a module to be imported multiple times,
-        so this will only work with a single omero instance.
-
-        This can have several surprising effects, so setup_omero_cli()
-        must be explcitly called.
+        Configures the OMERO CLI.
+        omero_cli: path to bin/omero command, if None then try in order:
+        - OMERO.server/bin/omero
+        - omero (in PATH)
         """
-        if not self.dir:
-            raise Exception('No server directory set')
+        if not omero_cli:
+            if self.dir:
+                omero_bin = os.path.join(self.dir, "bin", "omero")
+                if (os.path.exists(omero_bin) and
+                        self._bin_omero_valid(omero_bin)):
+                    omero_cli = omero_bin
+            if not omero_cli:
+                omero_bin = 'omero'
+                if self._bin_omero_valid(omero_bin):
+                    omero_cli = omero_bin
+            if not omero_cli:
+                raise Exception('Unable to find omero executable')
+        else:
+            if not self._bin_omero_valid(omero_cli):
+                raise Exception('Unable to execute omero executable')
 
-        if 'omero.cli' in sys.modules:
-            raise Exception('omero.cli can only be imported once')
+        log.debug("Using omero CLI from %s", omero_cli)
+        self.cli = omero_cli
 
-        log.debug("Setting up omero CLI")
-        lib = os.path.join(self.dir, "lib", "python")
-        if not os.path.exists(lib):
-            raise Exception("%s does not exist!" % lib)
-        sys.path.insert(0, lib)
-
-        import omero
-        import omero.cli
-
-        log.debug("Using omero CLI from %s", omero.cli.__file__)
-
-        self.cli = omero.cli.CLI()
-        self.cli.loadplugins()
-        self._omero = omero
+    def _bin_omero_valid(self, bin_omero):
+        try:
+            self.run(bin_omero, ['version'])
+            return True
+        except RunException:
+            return False
 
     def setup_previous_omero_env(self, olddir, savevarsfile):
         """
@@ -127,14 +128,13 @@ class External(object):
 
     def omero_cli(self, command):
         """
-        Runs a command as if from the OMERO command-line without the need
-        for using popen or subprocess.
+        Runs an OMERO CLI command
+        CLI must have been initialised using setup_omero_cli()
         """
         assert isinstance(command, list)
         if not self.cli:
-            raise Exception('omero.cli not initialised')
-        log.info("Invoking CLI [current environment]: %s", " ".join(command))
-        self.cli.invoke(command, strict=True)
+            raise Exception('OMERO CLI not initialised')
+        return self.run(self.cli, command, capturestd=True)
 
     def omero_bin(self, command):
         """
@@ -145,7 +145,7 @@ class External(object):
         if not self.old_env:
             raise Exception('Old environment not initialised')
         log.info("Running [old environment]: %s", " ".join(command))
-        self.run('omero', command, capturestd=True, env=self.old_env)
+        return self.run('omero', command, capturestd=True, env=self.old_env)
 
     @staticmethod
     def run(exe, args, capturestd=False, env=None):
