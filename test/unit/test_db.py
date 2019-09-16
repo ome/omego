@@ -345,7 +345,7 @@ class TestDb(object):
                 if dbname:
                     cfg['omero.db.name'] = 'extname'
 
-                db.external.get_config(force=True).AndReturn(cfg)
+                db.external.get_config().AndReturn(cfg)
             else:
                 db.external.get_config().AndRaise(Exception())
 

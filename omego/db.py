@@ -232,7 +232,7 @@ class DbAdmin(object):
 
         if not self.args.no_db_config:
             try:
-                c = self.external.get_config(force=True)
+                c = self.external.get_config()
             except Exception as e:
                 log.warn('config.xml not found: %s', e)
                 c = {}

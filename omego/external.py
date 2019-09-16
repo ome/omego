@@ -44,7 +44,6 @@ class External(object):
     def __init__(self, dir=None):
         self.old_env = None
         self.cli = None
-        self.configured = None
 
         self.dir = None
         if dir:
@@ -58,48 +57,20 @@ class External(object):
         """
         self.dir = os.path.abspath(dir)
         config = os.path.join(self.dir, 'etc', 'grid', 'config.xml')
-        self.configured = os.path.exists(config)
 
-    def has_config(self):
+    def get_config(self):
         """
-        Checks whether a config.xml file existed in the new server when the
-        directory was first set by set_server_dir(). Importing omero.cli
-        may automatically create an empty file, so we have to use the saved
-        state.
+        Returns a dictionary of all OMERO config properties
+
+        Assumes properties are in the form key=value, multiline-properties are
+        not supported
         """
-        if not self.dir:
-            raise Exception('No server directory set')
-        return self.configured
-
-    def get_config(self, force=False):
-        """
-        Returns a dictionary of all config.xml properties
-
-        If `force = True` then ignore any cached state and read config.xml
-        if possible
-
-        setup_omero_cli() must be called before this method to import the
-        correct omero module to minimise the possibility of version conflicts
-        """
-        if not force and not self.has_config():
-            raise Exception('No config file')
-
-        configxml = os.path.join(self.dir, 'etc', 'grid', 'config.xml')
-        if not os.path.exists(configxml):
-            raise Exception('No config file')
-
+        stdout, stderr = self.omero_cli(['config', 'get'])
         try:
-            # Attempt to open config.xml read-only, though this flag is not
-            # present in early versions of OMERO 5.0
-            c = self._omero.config.ConfigXml(
-                configxml, exclusive=False, read_only=True)
-        except TypeError:
-            c = self._omero.config.ConfigXml(configxml, exclusive=False)
-
-        try:
-            return c.as_map()
-        finally:
-            c.close()
+            return dict(line.split('=', 1)
+                        for line in stdout.splitlines() if line)
+        except ValueError:
+            raise Exception('Failed to parse omero config: %s' % stdout)
 
     def setup_omero_cli(self):
         """

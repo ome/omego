@@ -65,25 +65,12 @@ class TestExternal(object):
         f = d.join(self.envfilename)
         f.write('TEST_ENVVAR1=abcde\nTEST_ENVVAR2=1=2=3=4=5\n')
 
-    @pytest.mark.parametrize('configured', [True, False])
-    def test_set_server_dir_and_has_config(self, tmpdir, configured):
+    def test_set_server_dir(self, tmpdir):
         self.create_dummy_server_dir(tmpdir)
-        if configured:
-            tmpdir.ensure('etc', 'grid', 'config.xml')
-
-        with pytest.raises(Exception) as excinfo:
-            self.ext.has_config()
-        assert str(excinfo.value) == 'No server directory set'
-
         with tmpdir.as_cwd():
             self.ext.set_server_dir('.')
 
         assert self.ext.dir == str(tmpdir)
-        assert self.ext.has_config() == configured
-
-        # Creating a config file should not change the original state
-        tmpdir.ensure('etc', 'grid', 'config.xml')
-        assert self.ext.has_config() == configured
 
     # def test_get_config(self):
     # Not easily testable since it requires the omero module
@@ -104,13 +91,13 @@ class TestExternal(object):
         assert env['TEST_ENVVAR2'] == '1=2=3=4=5'
 
     def test_omero_cli(self):
-        class MockCli:
-            def invoke(*args, **kwargs):
-                assert args[1:] == (['arg1', 'arg2'], )
-                assert kwargs == {'strict': True}
+        self.mox.StubOutWithMock(self.ext, 'run')
+        self.ext.run('omero', ['arg1', 'arg2'], capturestd=True
+                     ).AndReturn(0)
+        self.mox.ReplayAll()
 
-        self.ext.cli = MockCli()
         self.ext.omero_cli(['arg1', 'arg2'])
+        self.mox.VerifyAll()
 
     def test_omero_bin(self):
         env = {'TEST': 'test'}

@@ -55,9 +55,7 @@ class Install(object):
         if not newinstall:
             self.external.setup_previous_omero_env(args.sym, args.savevarsfile)
 
-        # Need lib/python set above
-        import path
-        self.dir = path.path(server_dir)
+        self.dir = server_dir
 
         if not newinstall:
             self.stop()
@@ -193,7 +191,7 @@ class Install(object):
                     with open(b) as fb:
                         return fa.read() == fb.read()
 
-        target = self.dir / "etc" / "grid" / "config.xml"
+        target = os.path.join(self.dir, "etc", "grid", "config.xml")
 
         if copyold:
             from path import path
