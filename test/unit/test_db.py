@@ -328,7 +328,6 @@ class TestDb(object):
                           'dbuser': 'user', 'dbpass': 'pass',
                           'no_db_config': noconfig})
         db = self.PartialMockDb(args, ext)
-        self.mox.StubOutWithMock(db.external, 'has_config')
         self.mox.StubOutWithMock(db.external, 'get_config')
         self.mox.StubOutWithMock(os.environ, 'copy')
 

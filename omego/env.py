@@ -168,3 +168,19 @@ class FileUtilsParser(argparse.ArgumentParser):
 
     def __getattr__(self, key):
         return getattr(self.parser, key)
+
+
+class OmeroDeployParser(argparse.ArgumentParser):
+
+    def __init__(self, parser):
+        self.parser = parser
+        group = self.parser.add_argument_group(
+            'OMERO parameters',
+            'Additional arguments controlling how OMERO is deployed')
+
+        Add = EnvDefault.add
+        Add(group, "omerocli", None,
+            help="Path to OMERO CLI (bin/omero)")
+
+    def __getattr__(self, key):
+        return getattr(self.parser, key)

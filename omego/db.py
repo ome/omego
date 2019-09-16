@@ -15,7 +15,10 @@ import re
 from . import fileutils
 from . import external
 from yaclifw.framework import Command, Stop
-from .env import DbParser
+from .env import (
+    DbParser,
+    OmeroDeployParser,
+)
 
 log = logging.getLogger("omego.db")
 
@@ -303,6 +306,7 @@ class DbCommand(Command):
         super(DbCommand, self).__init__(sub_parsers)
 
         self.parser = DbParser(self.parser)
+        self.parser = OmeroDeployParser(self.parser)
         self.parser.add_argument("-n", "--dry-run", action="store_true", help=(
             "Simulation/check mode. In 'upgrade' mode exits with code 2 if an "
             "upgrade is required, 3 if database isn't initialised, 0 if "
@@ -341,5 +345,5 @@ class DbCommand(Command):
         else:
             raise Stop(1, 'OMERO server directory required')
         ext = external.External(d)
-        ext.setup_omero_cli()
+        ext.setup_omero_cli(args.omerocli)
         DbAdmin(d, args.dbcommand, args, ext)

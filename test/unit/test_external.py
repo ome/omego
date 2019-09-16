@@ -93,10 +93,12 @@ class TestExternal(object):
 
     def test_omero_cli(self):
         self.mox.StubOutWithMock(self.ext, 'run')
+        self.ext.run('omero', ['version']).AndReturn(0)
         self.ext.run('omero', ['arg1', 'arg2'], capturestd=True
                      ).AndReturn(0)
         self.mox.ReplayAll()
 
+        self.ext.setup_omero_cli()
         self.ext.omero_cli(['arg1', 'arg2'])
         self.mox.VerifyAll()
 

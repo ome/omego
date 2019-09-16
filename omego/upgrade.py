@@ -18,8 +18,14 @@ from .db import DbAdmin, DB_UPTODATE, DB_UPGRADE_NEEDED, DB_INIT_NEEDED
 from .external import External
 from yaclifw.framework import Command, Stop
 from . import fileutils
-from .env import EnvDefault, DbParser, FileUtilsParser, JenkinsParser
-from .env import WINDOWS
+from .env import (
+    EnvDefault,
+    DbParser,
+    FileUtilsParser,
+    JenkinsParser,
+    OmeroDeployParser,
+    WINDOWS,
+)
 
 log = logging.getLogger("omego.upgrade")
 
@@ -55,7 +61,7 @@ class Install(object):
             log.info("Upgrading %s (%s)...", server_dir, args.sym)
 
         self.external = External(server_dir)
-        self.external.setup_omero_cli()
+        self.external.setup_omero_cli(args.omerocli)
 
         if not newinstall:
             self.external.setup_previous_omero_env(args.sym, args.savevarsfile)
@@ -477,6 +483,7 @@ class InstallBaseCommand(Command):
         self.parser = JenkinsParser(self.parser)
         self.parser = DbParser(self.parser)
         self.parser = FileUtilsParser(self.parser)
+        self.parser = OmeroDeployParser(self.parser)
 
         Add = EnvDefault.add
 
