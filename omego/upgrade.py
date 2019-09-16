@@ -200,20 +200,19 @@ class Install(object):
         target = os.path.join(self.dir, "etc", "grid", "config.xml")
 
         if copyold:
-            from path import path
-            old_grid = path(self.args.sym) / "etc" / "grid"
-            old_cfg = old_grid / "config.xml"
+            old_grid = os.path.join(self.args.sym, "etc", "grid")
+            old_cfg = os.path.join(old_grid, "config.xml")
             log.info("Copying old configuration from %s", old_cfg)
-            if not old_cfg.exists():
+            if not os.path.exists(old_cfg):
                 raise Stop(40, 'config.xml not found')
-            if target.exists() and samecontents(old_cfg, target):
+            if os.path.exists(target) and samecontents(old_cfg, target):
                 # This likely is caused by the symlink being
                 # created early on an initial install.
                 pass
             else:
-                old_cfg.copy(target)
+                shutil.copy(old_cfg, target)
         else:
-            if target.exists():
+            if os.path.exists(target):
                 log.info('Deleting configuration file %s', target)
                 target.remove()
 
