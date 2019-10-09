@@ -105,7 +105,7 @@ class TestDownload(Downloader):
         branch = self.branch + ':600'
         with pytest.raises(AttributeError) as exc:
             self.download('--branch', branch, '--ice', self.ice)
-        assert 'No artifacts' in exc.value.message
+        assert 'No artifacts' in exc.value.args[0]
 
 
 class TestDownloadBioFormats(Downloader):
