@@ -148,7 +148,7 @@ class External(object):
 
     def _bin_omero_valid(self, bin_omero):
         try:
-            self.run(bin_omero, ['version'])
+            run(bin_omero, ['version'])
             return True
         except RunException:
             return False
@@ -184,7 +184,7 @@ class External(object):
         assert isinstance(command, list)
         if not self.cli:
             raise Exception('OMERO CLI not initialised')
-        return self.run(self.cli, command, capturestd=True)
+        return run(self.cli, command, capturestd=True)
 
     def omero_old(self, command):
         """
