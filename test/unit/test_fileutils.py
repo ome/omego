@@ -51,7 +51,7 @@ class TestFileutils(object):
             assert self.remaining > 0
             r = min(blocksize, self.remaining)
             self.remaining -= r
-            return 'x' * r
+            return b'x' * r
 
         def close(self):
             pass
