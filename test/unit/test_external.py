@@ -28,14 +28,13 @@ import os
 import subprocess
 import tempfile
 
-import omego.external
-from omego.external import External, RunException
+from omego import external
 
 
 class TestRunException(object):
 
     def setup_method(self, method):
-        self.ex = RunException(
+        self.ex = external.RunException(
             'Message', 'exe', ['arg1', 'arg2'], 1, 'out', 'err')
 
     def test_shortstr(self):
@@ -51,7 +50,7 @@ class TestRunException(object):
 class TestExternal(object):
 
     def setup_method(self, method):
-        self.ext = External()
+        self.ext = external.External()
         self.mox = mox.Mox()
         self.envfilename = 'test.env'
 
@@ -117,8 +116,8 @@ class TestExternal(object):
     def test_omero_bin(self):
         env = {'TEST': 'test'}
         self.ext.old_env = env
-        self.mox.StubOutWithMock(self.ext, 'run')
-        self.ext.run('omero', ['arg1', 'arg2'], capturestd=True, env=env
+        self.mox.StubOutWithMock(external, 'run')
+        external.run('omero', ['arg1', 'arg2'], capturestd=True, env=env
                      ).AndReturn(0)
         self.mox.ReplayAll()
 
@@ -132,9 +131,9 @@ class TestExternal(object):
         env = {'TEST': 'test'}
         self.mox.StubOutWithMock(subprocess, 'call')
         self.mox.StubOutWithMock(tempfile, 'TemporaryFile')
-        self.mox.StubOutWithMock(omego.external, 'WINDOWS')
+        self.mox.StubOutWithMock(external, 'WINDOWS')
 
-        omego.external.WINDOWS = windows
+        external.WINDOWS = windows
 
         if capturestd:
             outfile = open(str(tmpdir.join('std.out')), 'w+')
@@ -154,11 +153,11 @@ class TestExternal(object):
         self.mox.ReplayAll()
 
         if retcode == 0:
-            stdout, stderr = self.ext.run(
+            stdout, stderr = external.run(
                 'test', ['arg1', 'arg2'], capturestd, env)
         else:
-            with pytest.raises(RunException) as excinfo:
-                self.ext.run('test', ['arg1', 'arg2'], capturestd, env)
+            with pytest.raises(external.RunException) as excinfo:
+                external.run('test', ['arg1', 'arg2'], capturestd, env)
             exc = excinfo.value
             assert exc.r == 1
             assert exc.message == 'Non-zero return code'

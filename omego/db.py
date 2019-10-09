@@ -13,7 +13,7 @@ from glob import glob
 import re
 
 from . import fileutils
-from .external import External, RunException
+from . import external
 from yaclifw.framework import Command, Stop
 from .env import DbParser
 
@@ -92,7 +92,7 @@ class DbAdmin(object):
     def check_connection(self):
         try:
             self.psql('-c', r'\conninfo')
-        except RunException as e:
+        except external.RunException as e:
             log.error(e)
             raise Stop(30, 'Database connection check failed')
 
@@ -169,7 +169,7 @@ class DbAdmin(object):
     def upgrade(self, check=False):
         try:
             currentsqlv = '%s__%s' % self.get_current_db_version()
-        except RunException as e:
+        except external.RunException as e:
             log.error(e)
             if check:
                 return DB_INIT_NEEDED
@@ -270,7 +270,7 @@ class DbAdmin(object):
             '-U', db['user'],
             '-w', '-A', '-t'
             ] + list(psqlargs)
-        stdout, stderr = External.run('psql', args, capturestd=True, env=env)
+        stdout, stderr = external.run('psql', args, capturestd=True, env=env)
         if stderr:
             log.warn('stderr: %s', stderr)
         log.debug('stdout: %s', stdout)
@@ -284,8 +284,7 @@ class DbAdmin(object):
 
         args = ['-d', db['name'], '-h', db['host'], '-U', db['user'], '-w'
                 ] + list(pgdumpargs)
-        stdout, stderr = External.run(
-            'pg_dump', args, capturestd=True, env=env)
+        stdout, stderr = external.run('pg_dump', args, capturestd=True, env=env)
         if stderr:
             log.warn('stderr: %s', stderr)
         log.debug('stdout: %s', stdout)
@@ -340,6 +339,6 @@ class DbCommand(Command):
             d = args.serverdir
         else:
             raise Stop(1, 'OMERO server directory required')
-        ext = External(d)
+        ext = external.External(d)
         ext.setup_omero_cli()
         DbAdmin(d, args.dbcommand, args, ext)
