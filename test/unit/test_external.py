@@ -106,9 +106,10 @@ class TestExternal(object):
     def test_omero_old(self):
         env = {'TEST': 'test'}
         self.ext.old_env = env
+        self.ext.old_cli = '/old/omero'
         self.mox.StubOutWithMock(external, 'run')
         external.run(
-            'python-custom', ['omero', 'arg1', 'arg2'], capturestd=True,
+            'python-custom', ['/old/omero', 'arg1', 'arg2'], capturestd=True,
             env=env).AndReturn((b'', b''))
         self.mox.ReplayAll()
 

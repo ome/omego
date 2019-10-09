@@ -176,6 +176,7 @@ class External(object):
         bin = os.path.join(olddir, "bin")
         addpath("PATH", bin)
         self.old_env = env
+        self.old_cli = os.path.join(bin, "omero")
 
     def omero_cli(self, command):
         """
@@ -195,9 +196,10 @@ class External(object):
         assert isinstance(command, list)
         if not self.old_env:
             raise Exception('Old environment not initialised')
-        log.info("Running [old environment]: %s", " ".join(command))
+        log.info("Running [old environment]: %s %s",
+                 self.old_cli, " ".join(command))
         return self.run_python(
-            'omero', command, capturestd=True, env=self.old_env)
+            self.old_cli, command, capturestd=True, env=self.old_env)
 
     def get_environment(self, filename=None):
         env = os.environ.copy()
