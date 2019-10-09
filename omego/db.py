@@ -277,7 +277,7 @@ class DbAdmin(object):
         if stderr:
             log.warn('stderr: %s', stderr)
         log.debug('stdout: %s', stdout)
-        return stdout
+        return stdout.decode()
 
     def pgdump(self, *pgdumpargs):
         """
@@ -292,7 +292,7 @@ class DbAdmin(object):
         if stderr:
             log.warn('stderr: %s', stderr)
         log.debug('stdout: %s', stdout)
-        return stdout
+        return stdout.decode()
 
 
 class DbCommand(Command):

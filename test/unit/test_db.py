@@ -377,7 +377,7 @@ class TestDb(object):
             'arg1', 'arg2']
         db.get_db_args_env().AndReturn(self.create_db_test_params())
         external.run('psql', psqlargs, capturestd=True,
-                     env={'PGPASSWORD': 'pass'}).AndReturn(('', ''))
+                     env={'PGPASSWORD': 'pass'}).AndReturn((b'', b''))
         self.mox.ReplayAll()
 
         db.psql('arg1', 'arg2')
@@ -392,7 +392,7 @@ class TestDb(object):
                       '-w', 'arg1', 'arg2']
         db.get_db_args_env().AndReturn(self.create_db_test_params())
         external.run('pg_dump', pgdumpargs, capturestd=True,
-                     env={'PGPASSWORD': 'pass'}).AndReturn(('', ''))
+                     env={'PGPASSWORD': 'pass'}).AndReturn((b'', b''))
         self.mox.ReplayAll()
 
         db.pgdump('arg1', 'arg2')

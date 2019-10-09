@@ -96,7 +96,7 @@ class TestExternal(object):
         external.run('python-custom', ['omero', 'version']).AndReturn(0)
         external.run(
             'python-custom', ['omero', 'arg1', 'arg2'], capturestd=True
-            ).AndReturn(0)
+            ).AndReturn((b'', b''))
         self.mox.ReplayAll()
 
         self.ext.setup_omero_cli()
@@ -109,7 +109,7 @@ class TestExternal(object):
         self.mox.StubOutWithMock(external, 'run')
         external.run(
             'python-custom', ['omero', 'arg1', 'arg2'], capturestd=True,
-            env=env).AndReturn(0)
+            env=env).AndReturn((b'', b''))
         self.mox.ReplayAll()
 
         self.ext.omero_old(['arg1', 'arg2'])
@@ -127,10 +127,10 @@ class TestExternal(object):
         external.WINDOWS = windows
 
         if capturestd:
-            outfile = open(str(tmpdir.join('std.out')), 'w+')
-            outfile.write('out')
-            errfile = open(str(tmpdir.join('std.err')), 'w+')
-            errfile.write('err')
+            outfile = open(str(tmpdir.join('std.out')), 'wb+')
+            outfile.write(b'out')
+            errfile = open(str(tmpdir.join('std.err')), 'wb+')
+            errfile.write(b'err')
 
             tempfile.TemporaryFile().AndReturn(outfile)
             tempfile.TemporaryFile().AndReturn(errfile)
@@ -156,8 +156,8 @@ class TestExternal(object):
             stderr = exc.stderr
 
         if capturestd:
-            assert stdout == 'out'
-            assert stderr == 'err'
+            assert stdout == b'out'
+            assert stderr == b'err'
             outfile.close()
             errfile.close()
         else:
