@@ -117,7 +117,7 @@ class External(object):
         stdout, stderr = self.omero_cli(['config', 'get'])
         try:
             return dict(line.split('=', 1)
-                        for line in stdout.splitlines() if line)
+                        for line in stdout.decode().splitlines() if line)
         except ValueError:
             raise Exception('Failed to parse omero config: %s' % stdout)
 
