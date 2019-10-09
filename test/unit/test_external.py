@@ -160,7 +160,7 @@ class TestExternal(object):
                 external.run('test', ['arg1', 'arg2'], capturestd, env)
             exc = excinfo.value
             assert exc.r == 1
-            assert exc.message == 'Non-zero return code'
+            assert exc.args[0] == 'Non-zero return code'
             stdout = exc.stdout
             stderr = exc.stderr
 

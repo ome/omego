@@ -147,20 +147,20 @@ class TestFileutils(object):
 
         with pytest.raises(fileutils.FileException) as excinfo:
             fileutils.check_extracted_paths(['a', '/b'])
-        assert excinfo.value.message == 'Insecure path in zipfile'
+        assert excinfo.value.args[0] == 'Insecure path in zipfile'
 
         with pytest.raises(fileutils.FileException) as excinfo:
             fileutils.check_extracted_paths(['a', 'a/../..'])
-        assert excinfo.value.message == 'Insecure path in zipfile'
+        assert excinfo.value.args[0] == 'Insecure path in zipfile'
 
         with pytest.raises(fileutils.FileException) as excinfo:
             fileutils.check_extracted_paths(['a', '..'])
-        assert excinfo.value.message == 'Insecure path in zipfile'
+        assert excinfo.value.args[0] == 'Insecure path in zipfile'
 
         with pytest.raises(fileutils.FileException) as excinfo:
             fileutils.check_extracted_paths(['a', 'b/c'], 'a')
-        assert excinfo.value.message == \
-            'Path in zipfile is not in required subdir'
+        assert excinfo.value.args[0] == (
+            'Path in zipfile is not in required subdir')
 
     @pytest.mark.parametrize('destdir', ['.', 'testdir'])
     def test_unzip(self, destdir):

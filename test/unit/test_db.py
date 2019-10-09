@@ -251,7 +251,7 @@ class TestDb(object):
             with pytest.raises(Stop) as excinfo:
                 db.upgrade()
             assert excinfo.value.rc == 2
-            assert excinfo.value.message == (
+            assert str(excinfo.value) == (
                 'Database upgrade required OMERO4.4__0->OMERO5.0__0')
         else:
             db.upgrade()
@@ -271,7 +271,7 @@ class TestDb(object):
         with pytest.raises(Stop) as excinfo:
             db.upgrade()
         assert excinfo.value.rc == 3
-        assert excinfo.value.message == 'Unable to get database version'
+        assert str(excinfo.value) == 'Unable to get database version'
         self.mox.VerifyAll()
 
     def test_get_current_db_version(self):

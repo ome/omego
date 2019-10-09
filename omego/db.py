@@ -284,7 +284,8 @@ class DbAdmin(object):
 
         args = ['-d', db['name'], '-h', db['host'], '-U', db['user'], '-w'
                 ] + list(pgdumpargs)
-        stdout, stderr = external.run('pg_dump', args, capturestd=True, env=env)
+        stdout, stderr = external.run(
+            'pg_dump', args, capturestd=True, env=env)
         if stderr:
             log.warn('stderr: %s', stderr)
         log.debug('stdout: %s', stdout)
