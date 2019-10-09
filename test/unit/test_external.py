@@ -50,7 +50,7 @@ class TestRunException(object):
 class TestExternal(object):
 
     def setup_method(self, method):
-        self.ext = external.External()
+        self.ext = external.External(None, 'python-custom')
         self.mox = mox.Mox()
         self.envfilename = 'test.env'
 
@@ -93,9 +93,10 @@ class TestExternal(object):
 
     def test_omero_cli(self):
         self.mox.StubOutWithMock(external, 'run')
-        external.run('omero', ['version']).AndReturn(0)
-        external.run('omero', ['arg1', 'arg2'], capturestd=True
-                     ).AndReturn(0)
+        external.run('python-custom', ['omero', 'version']).AndReturn(0)
+        external.run(
+            'python-custom', ['omero', 'arg1', 'arg2'], capturestd=True
+            ).AndReturn(0)
         self.mox.ReplayAll()
 
         self.ext.setup_omero_cli()
@@ -106,8 +107,9 @@ class TestExternal(object):
         env = {'TEST': 'test'}
         self.ext.old_env = env
         self.mox.StubOutWithMock(external, 'run')
-        external.run('omero', ['arg1', 'arg2'], capturestd=True, env=env
-                     ).AndReturn(0)
+        external.run(
+            'python-custom', ['omero', 'arg1', 'arg2'], capturestd=True,
+            env=env).AndReturn(0)
         self.mox.ReplayAll()
 
         self.ext.omero_old(['arg1', 'arg2'])

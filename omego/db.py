@@ -344,6 +344,6 @@ class DbCommand(Command):
             d = args.serverdir
         else:
             raise Stop(1, 'OMERO server directory required')
-        ext = external.External(d)
+        ext = external.External(d, args.python)
         ext.setup_omero_cli(args.omerocli)
         DbAdmin(d, args.dbcommand, args, ext)

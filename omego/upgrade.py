@@ -59,7 +59,7 @@ class Install(object):
         else:
             log.info("Upgrading %s (%s)...", server_dir, args.sym)
 
-        self.external = External(server_dir)
+        self.external = External(server_dir, args.python)
         self.external.setup_omero_cli(args.omerocli)
 
         if not newinstall:

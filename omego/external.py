@@ -90,9 +90,10 @@ class External(object):
     Manages the execution of shell and OMERO CLI commands
     """
 
-    def __init__(self, dir=None):
+    def __init__(self, dir, python):
         self.old_env = None
         self.cli = None
+        self.python = python
 
         self.dir = None
         if dir:
@@ -148,7 +149,7 @@ class External(object):
 
     def _bin_omero_valid(self, bin_omero):
         try:
-            run(bin_omero, ['version'])
+            self.run_python(bin_omero, ['version'])
             return True
         except RunException:
             return False
@@ -184,7 +185,7 @@ class External(object):
         assert isinstance(command, list)
         if not self.cli:
             raise Exception('OMERO CLI not initialised')
-        return run(self.cli, command, capturestd=True)
+        return self.run_python(self.cli, command, capturestd=True)
 
     def omero_old(self, command):
         """
@@ -195,7 +196,8 @@ class External(object):
         if not self.old_env:
             raise Exception('Old environment not initialised')
         log.info("Running [old environment]: %s", " ".join(command))
-        return run('omero', command, capturestd=True, env=self.old_env)
+        return self.run_python(
+            'omero', command, capturestd=True, env=self.old_env)
 
     def get_environment(self, filename=None):
         env = os.environ.copy()
@@ -228,3 +230,6 @@ class External(object):
         except IOError as e:
             log.error("Failed to save environment variables to %s: %s",
                       filename, e)
+
+    def run_python(self, command, args, **kwargs):
+        return run(self.python, [command] + args, **kwargs)
