@@ -42,11 +42,7 @@ before_install:
   # Changing the value for sudo will also need to be reviewed at the same time
   # This will need to be reviewed when the issue above is fixed
   - export PATH=/usr/bin/:$PATH
-  - sudo apt-get -y install python-{pillow,numpy,psutil}
-  - sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 5E6DA83306132997
-  - sudo apt-add-repository "deb http://zeroc.com/download/apt/ubuntu`lsb_release -rs` stable main"
-  - sudo apt-get update
-  - sudo apt-get -y install zeroc-ice-all-runtime zeroc-ice-all-dev
+  - ./travis-install
   - pip install flake8 tox
   - flake8 -v .
 
