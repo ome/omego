@@ -18,7 +18,6 @@ if [ "$TRAVIS_PYTHON_VERSION" = "3.6" ]; then
   python3.6 -c 'import Ice; print(Ice.stringVersion())'
   python2.7 -c 'import Ice; print(Ice.stringVersion())'
 else
-  pip install https://github.com/ome/zeroc-ice-py-manylinux/releases/download/0.1.0/zeroc_ice-3.6.5-cp27-cp27mu-manylinux2010_x86_64.whl
-
+  sudo pip install https://github.com/ome/zeroc-ice-py-manylinux/releases/download/0.1.0/zeroc_ice-3.6.5-cp27-cp27mu-manylinux2010_x86_64.whl
   python -c 'import Ice; print(Ice.stringVersion())'
 fi
