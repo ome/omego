@@ -91,6 +91,13 @@ class External(object):
     """
 
     def __init__(self, dir, python):
+        """
+        :param dir: The server directory, can be None if you are not
+                    interacting with OMERO
+        :param python: The python executable to use for run bin/omero, set to
+                       the empty string "" to use the python defined by the
+                       shebang line in bin/omero
+        """
         self.old_env = None
         self.cli = None
         self.python = python
@@ -234,4 +241,6 @@ class External(object):
                       filename, e)
 
     def run_python(self, command, args, **kwargs):
-        return run(self.python, [command] + args, **kwargs)
+        if self.python:
+            return run(self.python, [command] + args, **kwargs)
+        return run(command, args, **kwargs)

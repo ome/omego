@@ -167,6 +167,24 @@ class TestExternal(object):
 
         self.mox.VerifyAll()
 
+    @pytest.mark.parametrize('python,expected', [
+        ('', []),
+        ('/opt/custom/python-x', ['/opt/custom/python-x']),
+    ])
+    def test_run_python(self, python, expected):
+        ext = external.External(None, python)
+        env = {'TEST': 'test'}
+        self.mox.StubOutWithMock(subprocess, 'call')
+        self.mox.StubOutWithMock(external, 'WINDOWS')
+        external.WINDOWS = False
+        subprocess.call(
+            expected + ['cmd'], env=env, shell=False,
+            stdout=None, stderr=None).AndReturn(0)
+        self.mox.ReplayAll()
+
+        ext.run_python('cmd', [], env=env)
+        self.mox.VerifyAll()
+
     def test_get_environment(self, tmpdir):
         self.create_dummy_server_dir(tmpdir)
         savevarsfile = str(tmpdir.join(self.envfilename))

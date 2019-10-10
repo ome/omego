@@ -4,7 +4,6 @@
 import os
 import argparse
 import platform
-import sys
 
 
 ###########################################################################
@@ -182,9 +181,8 @@ class OmeroDeployParser(argparse.ArgumentParser):
         Add = EnvDefault.add
         Add(group, "omerocli", None,
             help="Path to OMERO CLI (bin/omero)")
-        Add(group, "python", sys.executable,
-            help=("Python command, default is the one used to run omego (%s)" %
-                  sys.executable))
+        Add(group, "python", "",
+            help=("Override the Python executable used to run omero"))
 
     def __getattr__(self, key):
         return getattr(self.parser, key)
