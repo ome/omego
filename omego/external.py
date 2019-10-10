@@ -193,6 +193,8 @@ class External(object):
         assert isinstance(command, list)
         if not self.cli:
             raise Exception('OMERO CLI not initialised')
+        log.info("Running [current environment]: %s %s",
+                 self.cli, " ".join(command))
         return self.run_python(self.cli, command, capturestd=True)
 
     def omero_old(self, command):
