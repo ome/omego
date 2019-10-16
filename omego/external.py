@@ -121,7 +121,14 @@ class External(object):
         Assumes properties are in the form key=value, multiline-properties are
         not supported
         """
-        stdout, stderr = self.omero_cli(['config', 'get'])
+        # OMERO 5.4.1 changed the default from showing to hiding passwords
+        try:
+            stdout, stderr = self.omero_cli(
+                ['config', 'get', '--show-password'])
+        except RunException as e:
+            log.warn('Failed to config get --show-password, trying without '
+                     '--show-password: %s', e)
+            stdout, stderr = self.omero_cli(['config', 'get'])
         try:
             return dict(line.split('=', 1)
                         for line in stdout.decode().splitlines() if line)
