@@ -11,19 +11,29 @@ pip install dist/*.tar.gz
 omego version
 omego -h
 
+# Python 3.6: Run omego with Python 3.6 but run OMERO with Python 2.7
+if [ "${TRAVIS_PYTHON_VERSION:-}" = "3.6" ]; then
+  OMERO_PYTHON="python2.7"
+  OMEGO_OMERO_PYTHON="--python python2.7"
+else
+  OMERO_PYTHON=
+  OMEGO_OMERO_PYTHON=
+fi
+
+
 #Install a new server without web
 #Tests rely on a non-zero error code being returned on failure
 if [ $TEST = install ]; then
-  omego install --initdb --dbhost localhost --dbname omero --prestartfile $HOME/config.omero -v --release 5.3.5 --ice 3.6 --no-web
+  omego install --initdb --dbhost localhost --dbname omero --prestartfile $HOME/config.omero -v --release 5.3.5 --ice 3.6 --no-web $OMEGO_OMERO_PYTHON
 
   # Should return 0 DB_UPTODATE
-  omego db upgrade -n --dbhost localhost --dbname omero --serverdir OMERO.server-5.3.5-ice36-b73
+  omego db upgrade -n --dbhost localhost --dbname omero --serverdir OMERO.server-5.3.5-ice36-b73 $OMEGO_OMERO_PYTHON
 
   # Check the expected server version was downloaded
   test $(readlink OMERO.server) = './OMERO.server-5.3.5-ice36-b73'
 
   # Check db dump file
-  omego db dump --serverdir OMERO.server --dumpfile travis-omero.pgdump
+  omego db dump --serverdir OMERO.server --dumpfile travis-omero.pgdump $OMEGO_OMERO_PYTHON
   
   pg_restore -l travis-omero.pgdump | grep 'dbpatch_versions_trigger'
 fi
@@ -35,26 +45,26 @@ if [ $TEST = upgrade ]; then
 
   # Should return 3 DB_INIT_NEEDED
   RC=0;
-  omego db upgrade -n --dbname omero --serverdir OMERO.server || RC=$?
+  omego db upgrade -n --dbname omero --serverdir OMERO.server $OMEGO_OMERO_PYTHON || RC=$?
   test $RC -eq 3
 
-  OMERO.server/bin/omero db script "" "" ome -f OMERO.sql;
+  $OMERO_PYTHON OMERO.server/bin/omero db script "" "" ome -f OMERO.sql;
   psql -q -h localhost -U omero omero < OMERO.sql;
-  OMERO.server/bin/omero load $HOME/config.omero;
-  OMERO.server/bin/omero admin start;
+  $OMERO_PYTHON OMERO.server/bin/omero load $HOME/config.omero;
+  $OMERO_PYTHON OMERO.server/bin/omero admin start;
 
   # Should return 0 DB_UPTODATE
-  omego db upgrade -n --serverdir OMERO.server
+  omego db upgrade -n --serverdir OMERO.server $OMEGO_OMERO_PYTHON
 
   omego download --release 5.5 --ice 3.6 server --sym download-server-50
   # Should return 2 DB_UPGRADE_NEEDED
   RC=0;
-  omego db upgrade -n --dbname omero --serverdir download-server-50 || RC=$?
+  omego db upgrade -n --dbname omero --serverdir download-server-50 $OMEGO_OMERO_PYTHON || RC=$?
   test $RC -eq 2
 
   # Note this should use the already downloaded zip from the previous step
-  omego install --upgrade --managedb --release=5.5 --ice 3.6 --no-web;
+  omego install --upgrade --managedb --release=5.5 --ice 3.6 --no-web $OMEGO_OMERO_PYTHON
 
   # Should return 0 DB_UPTODATE
-  omego db upgrade -n --serverdir OMERO.server
+  omego db upgrade -n --serverdir OMERO.server $OMEGO_OMERO_PYTHON
 fi

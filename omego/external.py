@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
+from builtins import object
 import subprocess
 import logging
 import os
-import sys
 import tempfile
 import time
 
-from env import WINDOWS
+from .env import WINDOWS
 
 log = logging.getLogger("omego.external")
 
@@ -36,15 +37,70 @@ class RunException(Exception):
         return self.fullstr()
 
 
+def run(exe, args, capturestd=False, env=None):
+    """
+    Runs an executable with an array of arguments, optionally in the
+    specified environment.
+    Returns stdout and stderr
+    """
+    command = [exe] + args
+    if env:
+        log.info("Executing [custom environment]: %s", " ".join(command))
+    else:
+        log.info("Executing : %s", " ".join(command))
+    start = time.time()
+
+    # Temp files will be automatically deleted on close()
+    # If run() throws the garbage collector should call close(), so don't
+    # bother with try-finally
+    outfile = None
+    errfile = None
+    if capturestd:
+        outfile = tempfile.TemporaryFile()
+        errfile = tempfile.TemporaryFile()
+
+    # Use call instead of Popen so that stdin is connected to the console,
+    # in case user input is required
+    # On Windows shell=True is needed otherwise the modified environment
+    # PATH variable is ignored. On Unix this breaks things.
+    r = subprocess.call(
+        command, env=env, stdout=outfile, stderr=errfile, shell=WINDOWS)
+
+    stdout = None
+    stderr = None
+    if capturestd:
+        outfile.seek(0)
+        stdout = outfile.read()
+        outfile.close()
+        errfile.seek(0)
+        stderr = errfile.read()
+        errfile.close()
+
+    end = time.time()
+    if r != 0:
+        log.error("Failed [%.3f s]", end - start)
+        raise RunException(
+            "Non-zero return code", exe, args, r, stdout, stderr)
+    log.info("Completed [%.3f s]", end - start)
+    return stdout, stderr
+
+
 class External(object):
     """
     Manages the execution of shell and OMERO CLI commands
     """
 
-    def __init__(self, dir=None):
+    def __init__(self, dir, python):
+        """
+        :param dir: The server directory, can be None if you are not
+                    interacting with OMERO
+        :param python: The python executable to use for run bin/omero, set to
+                       the empty string "" to use the python defined by the
+                       shebang line in bin/omero
+        """
         self.old_env = None
         self.cli = None
-        self.configured = None
+        self.python = python
 
         self.dir = None
         if dir:
@@ -57,79 +113,60 @@ class External(object):
         Set the directory of the server to be controlled
         """
         self.dir = os.path.abspath(dir)
-        config = os.path.join(self.dir, 'etc', 'grid', 'config.xml')
-        self.configured = os.path.exists(config)
 
-    def has_config(self):
+    def get_config(self):
         """
-        Checks whether a config.xml file existed in the new server when the
-        directory was first set by set_server_dir(). Importing omero.cli
-        may automatically create an empty file, so we have to use the saved
-        state.
+        Returns a dictionary of all OMERO config properties
+
+        Assumes properties are in the form key=value, multiline-properties are
+        not supported
         """
-        if not self.dir:
-            raise Exception('No server directory set')
-        return self.configured
-
-    def get_config(self, force=False):
-        """
-        Returns a dictionary of all config.xml properties
-
-        If `force = True` then ignore any cached state and read config.xml
-        if possible
-
-        setup_omero_cli() must be called before this method to import the
-        correct omero module to minimise the possibility of version conflicts
-        """
-        if not force and not self.has_config():
-            raise Exception('No config file')
-
-        configxml = os.path.join(self.dir, 'etc', 'grid', 'config.xml')
-        if not os.path.exists(configxml):
-            raise Exception('No config file')
-
+        # OMERO 5.4.1 changed the default from showing to hiding passwords
         try:
-            # Attempt to open config.xml read-only, though this flag is not
-            # present in early versions of OMERO 5.0
-            c = self._omero.config.ConfigXml(
-                configxml, exclusive=False, read_only=True)
-        except TypeError:
-            c = self._omero.config.ConfigXml(configxml, exclusive=False)
-
+            stdout, stderr = self.omero_cli(
+                ['config', 'get', '--show-password'])
+        except RunException as e:
+            log.warn('Failed to config get --show-password, trying without '
+                     '--show-password: %s', e)
+            stdout, stderr = self.omero_cli(['config', 'get'])
         try:
-            return c.as_map()
-        finally:
-            c.close()
+            return dict(line.split('=', 1)
+                        for line in stdout.decode().splitlines() if line)
+        except ValueError:
+            raise Exception('Failed to parse omero config: %s' % stdout)
 
-    def setup_omero_cli(self):
+    def setup_omero_cli(self, omero_cli=None):
         """
-        Imports the omero CLI module so that commands can be run directly.
-        Note Python does not allow a module to be imported multiple times,
-        so this will only work with a single omero instance.
-
-        This can have several surprising effects, so setup_omero_cli()
-        must be explcitly called.
+        Configures the OMERO CLI.
+        omero_cli: path to bin/omero command, if None then try in order:
+        - OMERO.server/bin/omero
+        - omero (in PATH)
         """
-        if not self.dir:
-            raise Exception('No server directory set')
+        if not omero_cli:
+            if self.dir:
+                omero_bin = os.path.join(self.dir, "bin", "omero")
+                if (os.path.exists(omero_bin) and
+                        self._bin_omero_valid(omero_bin)):
+                    omero_cli = omero_bin
+            if not omero_cli:
+                omero_bin = 'omero'
+                if self._bin_omero_valid(omero_bin):
+                    omero_cli = omero_bin
+            if not omero_cli:
+                raise Exception('Unable to find omero executable')
+        else:
+            if not self._bin_omero_valid(omero_cli):
+                raise Exception('Unable to execute omero executable')
 
-        if 'omero.cli' in sys.modules:
-            raise Exception('omero.cli can only be imported once')
+        log.debug("Using omero CLI from %s", omero_cli)
+        self.cli = omero_cli
 
-        log.debug("Setting up omero CLI")
-        lib = os.path.join(self.dir, "lib", "python")
-        if not os.path.exists(lib):
-            raise Exception("%s does not exist!" % lib)
-        sys.path.insert(0, lib)
-
-        import omero
-        import omero.cli
-
-        log.debug("Using omero CLI from %s", omero.cli.__file__)
-
-        self.cli = omero.cli.CLI()
-        self.cli.loadplugins()
-        self._omero = omero
+    def _bin_omero_valid(self, bin_omero):
+        try:
+            self.run_python(bin_omero, ['version'])
+            return True
+        except RunException:
+            return False
 
     def setup_previous_omero_env(self, olddir, savevarsfile):
         """
@@ -153,19 +190,21 @@ class External(object):
         bin = os.path.join(olddir, "bin")
         addpath("PATH", bin)
         self.old_env = env
+        self.old_cli = os.path.join(bin, "omero")
 
     def omero_cli(self, command):
         """
-        Runs a command as if from the OMERO command-line without the need
-        for using popen or subprocess.
+        Runs an OMERO CLI command
+        CLI must have been initialised using setup_omero_cli()
         """
         assert isinstance(command, list)
         if not self.cli:
-            raise Exception('omero.cli not initialised')
-        log.info("Invoking CLI [current environment]: %s", " ".join(command))
-        self.cli.invoke(command, strict=True)
+            raise Exception('OMERO CLI not initialised')
+        log.info("Running [current environment]: %s %s",
+                 self.cli, " ".join(command))
+        return self.run_python(self.cli, command, capturestd=True)
 
-    def omero_bin(self, command):
+    def omero_old(self, command):
         """
         Runs the omero command-line client with an array of arguments using the
         old environment
@@ -173,56 +212,10 @@ class External(object):
         assert isinstance(command, list)
         if not self.old_env:
             raise Exception('Old environment not initialised')
-        log.info("Running [old environment]: %s", " ".join(command))
-        self.run('omero', command, capturestd=True, env=self.old_env)
-
-    @staticmethod
-    def run(exe, args, capturestd=False, env=None):
-        """
-        Runs an executable with an array of arguments, optionally in the
-        specified environment.
-        Returns stdout and stderr
-        """
-        command = [exe] + args
-        if env:
-            log.info("Executing [custom environment]: %s", " ".join(command))
-        else:
-            log.info("Executing : %s", " ".join(command))
-        start = time.time()
-
-        # Temp files will be automatically deleted on close()
-        # If run() throws the garbage collector should call close(), so don't
-        # bother with try-finally
-        outfile = None
-        errfile = None
-        if capturestd:
-            outfile = tempfile.TemporaryFile()
-            errfile = tempfile.TemporaryFile()
-
-        # Use call instead of Popen so that stdin is connected to the console,
-        # in case user input is required
-        # On Windows shell=True is needed otherwise the modified environment
-        # PATH variable is ignored. On Unix this breaks things.
-        r = subprocess.call(
-            command, env=env, stdout=outfile, stderr=errfile, shell=WINDOWS)
-
-        stdout = None
-        stderr = None
-        if capturestd:
-            outfile.seek(0)
-            stdout = outfile.read()
-            outfile.close()
-            errfile.seek(0)
-            stderr = errfile.read()
-            errfile.close()
-
-        end = time.time()
-        if r != 0:
-            log.error("Failed [%.3f s]", end - start)
-            raise RunException(
-                "Non-zero return code", exe, args, r, stdout, stderr)
-        log.info("Completed [%.3f s]", end - start)
-        return stdout, stderr
+        log.info("Running [old environment]: %s %s",
+                 self.old_cli, " ".join(command))
+        return self.run_python(
+            self.old_cli, command, capturestd=True, env=self.old_env)
 
     def get_environment(self, filename=None):
         env = os.environ.copy()
@@ -255,3 +248,8 @@ class External(object):
         except IOError as e:
             log.error("Failed to save environment variables to %s: %s",
                       filename, e)
+
+    def run_python(self, command, args, **kwargs):
+        if self.python:
+            return run(self.python, [command] + args, **kwargs)
+        return run(command, args, **kwargs)

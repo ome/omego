@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import division
+from __future__ import absolute_import
+from past.builtins import basestring
+from builtins import object
 import argparse
 import copy
 import os
@@ -8,13 +12,19 @@ import shutil
 import tempfile
 import logging
 
-from artifacts import Artifacts
-from db import DbAdmin, DB_UPTODATE, DB_UPGRADE_NEEDED, DB_INIT_NEEDED
-from external import External
+from .artifacts import Artifacts
+from .db import DbAdmin, DB_UPTODATE, DB_UPGRADE_NEEDED, DB_INIT_NEEDED
+from .external import External
 from yaclifw.framework import Command, Stop
-import fileutils
-from env import EnvDefault, DbParser, FileUtilsParser, JenkinsParser
-from env import WINDOWS
+from . import fileutils
+from .env import (
+    EnvDefault,
+    DbParser,
+    FileUtilsParser,
+    JenkinsParser,
+    OmeroDeployParser,
+    WINDOWS,
+)
 
 log = logging.getLogger("omego.upgrade")
 
@@ -49,15 +59,13 @@ class Install(object):
         else:
             log.info("Upgrading %s (%s)...", server_dir, args.sym)
 
-        self.external = External(server_dir)
-        self.external.setup_omero_cli()
+        self.external = External(server_dir, args.python)
+        self.external.setup_omero_cli(args.omerocli)
 
         if not newinstall:
             self.external.setup_previous_omero_env(args.sym, args.savevarsfile)
 
-        # Need lib/python set above
-        import path
-        self.dir = path.path(server_dir)
+        self.dir = server_dir
 
         if not newinstall:
             self.stop()
@@ -193,23 +201,22 @@ class Install(object):
                     with open(b) as fb:
                         return fa.read() == fb.read()
 
-        target = self.dir / "etc" / "grid" / "config.xml"
+        target = os.path.join(self.dir, "etc", "grid", "config.xml")
 
         if copyold:
-            from path import path
-            old_grid = path(self.args.sym) / "etc" / "grid"
-            old_cfg = old_grid / "config.xml"
+            old_grid = os.path.join(self.args.sym, "etc", "grid")
+            old_cfg = os.path.join(old_grid, "config.xml")
             log.info("Copying old configuration from %s", old_cfg)
-            if not old_cfg.exists():
+            if not os.path.exists(old_cfg):
                 raise Stop(40, 'config.xml not found')
-            if target.exists() and samecontents(old_cfg, target):
+            if os.path.exists(target) and samecontents(old_cfg, target):
                 # This likely is caused by the symlink being
                 # created early on an initial install.
                 pass
             else:
-                old_cfg.copy(target)
+                shutil.copy(old_cfg, target)
         else:
-            if target.exists():
+            if os.path.exists(target):
                 log.info('Deleting configuration file %s', target)
                 target.remove()
 
@@ -329,7 +336,7 @@ class Install(object):
         """
         if isinstance(command, basestring):
             command = command.split()
-        self.external.omero_bin(command)
+        self.external.omero_old(command)
 
     def symlink_check_and_set(self):
         """
@@ -474,6 +481,7 @@ class InstallBaseCommand(Command):
         self.parser = JenkinsParser(self.parser)
         self.parser = DbParser(self.parser)
         self.parser = FileUtilsParser(self.parser)
+        self.parser = OmeroDeployParser(self.parser)
 
         Add = EnvDefault.add
 

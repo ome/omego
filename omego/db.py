@@ -1,16 +1,24 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
+from builtins import zip
+from builtins import range
+from past.builtins import basestring
+from builtins import object
 import os
 import logging
 
 from glob import glob
 import re
 
-import fileutils
-from external import External, RunException
+from . import fileutils
+from . import external
 from yaclifw.framework import Command, Stop
-from env import DbParser
+from .env import (
+    DbParser,
+    OmeroDeployParser,
+)
 
 log = logging.getLogger("omego.db")
 
@@ -33,7 +41,7 @@ def sort_schemas(schemas):
     def keyfun(v):
         x = SQL_SCHEMA_REGEXP.match(v).groups()
         # x3: 'DEV' should come before ''
-        return (int(x[0]), x[1], int(x[2]) if x[2] else None,
+        return (int(x[0]), x[1] if x[1] else '', int(x[2]) if x[2] else '',
                 x[3] if x[3] else 'zzz', int(x[4]))
 
     return sorted(schemas, key=keyfun)
@@ -87,7 +95,7 @@ class DbAdmin(object):
     def check_connection(self):
         try:
             self.psql('-c', r'\conninfo')
-        except RunException as e:
+        except external.RunException as e:
             log.error(e)
             raise Stop(30, 'Database connection check failed')
 
@@ -126,15 +134,15 @@ class DbAdmin(object):
 
         # Create a set of unique schema versions
         versions = set()
-        for v in f_dict.values():
+        for v in list(f_dict.values()):
             versions.update(v)
         versions = sort_schemas(versions)
         n = len(versions)
-        versionsrev = dict(vi for vi in zip(versions, xrange(n)))
+        versionsrev = dict(vi for vi in zip(versions, range(n)))
 
         # M(from,to) = upgrade script for this pair or None
-        M = [[None for b in xrange(n)] for a in xrange(n)]
-        for key, value in f_dict.items():
+        M = [[None for b in range(n)] for a in range(n)]
+        for key, value in list(f_dict.items()):
             vfrom, vto = value
             M[versionsrev[vfrom]][versionsrev[vto]] = key
 
@@ -143,7 +151,7 @@ class DbAdmin(object):
     def sql_version_resolve(self, M, versions, vfrom):
         def resolve_index(M, ifrom, ito):
             n = len(M)
-            for p in xrange(n - 1, 0, -1):
+            for p in range(n - 1, 0, -1):
                 if M[ifrom][p]:
                     if p == ito:
                         return [M[ifrom][p]]
@@ -164,7 +172,7 @@ class DbAdmin(object):
     def upgrade(self, check=False):
         try:
             currentsqlv = '%s__%s' % self.get_current_db_version()
-        except RunException as e:
+        except external.RunException as e:
             log.error(e)
             if check:
                 return DB_INIT_NEEDED
@@ -232,7 +240,7 @@ class DbAdmin(object):
 
         if not self.args.no_db_config:
             try:
-                c = self.external.get_config(force=True)
+                c = self.external.get_config()
             except Exception as e:
                 log.warn('config.xml not found: %s', e)
                 c = {}
@@ -265,11 +273,11 @@ class DbAdmin(object):
             '-U', db['user'],
             '-w', '-A', '-t'
             ] + list(psqlargs)
-        stdout, stderr = External.run('psql', args, capturestd=True, env=env)
+        stdout, stderr = external.run('psql', args, capturestd=True, env=env)
         if stderr:
             log.warn('stderr: %s', stderr)
         log.debug('stdout: %s', stdout)
-        return stdout
+        return stdout.decode()
 
     def pgdump(self, *pgdumpargs):
         """
@@ -279,12 +287,12 @@ class DbAdmin(object):
 
         args = ['-d', db['name'], '-h', db['host'], '-U', db['user'], '-w'
                 ] + list(pgdumpargs)
-        stdout, stderr = External.run(
+        stdout, stderr = external.run(
             'pg_dump', args, capturestd=True, env=env)
         if stderr:
             log.warn('stderr: %s', stderr)
         log.debug('stdout: %s', stdout)
-        return stdout
+        return stdout.decode()
 
 
 class DbCommand(Command):
@@ -298,6 +306,7 @@ class DbCommand(Command):
         super(DbCommand, self).__init__(sub_parsers)
 
         self.parser = DbParser(self.parser)
+        self.parser = OmeroDeployParser(self.parser)
         self.parser.add_argument("-n", "--dry-run", action="store_true", help=(
             "Simulation/check mode. In 'upgrade' mode exits with code 2 if an "
             "upgrade is required, 3 if database isn't initialised, 0 if "
@@ -335,6 +344,6 @@ class DbCommand(Command):
             d = args.serverdir
         else:
             raise Stop(1, 'OMERO server directory required')
-        ext = External(d)
-        ext.setup_omero_cli()
+        ext = external.External(d, args.python)
+        ext.setup_omero_cli(args.omerocli)
         DbAdmin(d, args.dbcommand, args, ext)

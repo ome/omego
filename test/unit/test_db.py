@@ -19,12 +19,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from builtins import str
+from builtins import object
 import pytest
-import mox
+from mox3 import mox
 
 import os
 
-from omego.external import External, RunException
+from omego import external
 from yaclifw.framework import Stop
 import omego.db
 import omego.fileutils
@@ -81,7 +83,7 @@ class TestDb(object):
 
     class Args(object):
         def __init__(self, args):
-            for k, v in args.iteritems():
+            for k, v in args.items():
                 setattr(self, k, v)
 
     class PartialMockDb(DbAdmin):
@@ -106,7 +108,7 @@ class TestDb(object):
             db.psql('-c', r'\conninfo')
         else:
             db.psql('-c', r'\conninfo').AndRaise(
-                RunException('', '', [], 1, '', ''))
+                external.RunException('', '', [], 1, '', ''))
         self.mox.ReplayAll()
 
         if connected:
@@ -121,7 +123,7 @@ class TestDb(object):
     @pytest.mark.parametrize('sqlfile', ['exists', 'missing', 'notprovided'])
     @pytest.mark.parametrize('dryrun', [True, False])
     def test_init(self, sqlfile, dryrun):
-        ext = self.mox.CreateMock(External)
+        ext = self.mox.CreateMock(external.External)
         if sqlfile != 'notprovided':
             omerosql = 'omero.sql'
         else:
@@ -249,7 +251,7 @@ class TestDb(object):
             with pytest.raises(Stop) as excinfo:
                 db.upgrade()
             assert excinfo.value.rc == 2
-            assert excinfo.value.message == (
+            assert str(excinfo.value) == (
                 'Database upgrade required OMERO4.4__0->OMERO5.0__0')
         else:
             db.upgrade()
@@ -260,7 +262,8 @@ class TestDb(object):
         args = self.Args({'dry_run': dryrun})
         db = self.PartialMockDb(args, None)
         self.mox.StubOutWithMock(db, 'get_current_db_version')
-        exc = RunException('test psql failure', 'psql', [], -1, '', '')
+        exc = external.RunException(
+            'test psql failure', 'psql', [], -1, '', '')
         db.get_current_db_version().AndRaise(exc)
 
         self.mox.ReplayAll()
@@ -268,7 +271,7 @@ class TestDb(object):
         with pytest.raises(Stop) as excinfo:
             db.upgrade()
         assert excinfo.value.rc == 3
-        assert excinfo.value.message == 'Unable to get database version'
+        assert str(excinfo.value) == 'Unable to get database version'
         self.mox.VerifyAll()
 
     def test_get_current_db_version(self):
@@ -320,12 +323,11 @@ class TestDb(object):
     @pytest.mark.parametrize('hasconfig', [True, False])
     @pytest.mark.parametrize('noconfig', [True, False])
     def test_get_db_args_env(self, dbname, hasconfig, noconfig):
-        ext = self.mox.CreateMock(External)
+        ext = self.mox.CreateMock(external.External)
         args = self.Args({'dbhost': 'host', 'dbname': dbname,
                           'dbuser': 'user', 'dbpass': 'pass',
                           'no_db_config': noconfig})
         db = self.PartialMockDb(args, ext)
-        self.mox.StubOutWithMock(db.external, 'has_config')
         self.mox.StubOutWithMock(db.external, 'get_config')
         self.mox.StubOutWithMock(os.environ, 'copy')
 
@@ -345,7 +347,7 @@ class TestDb(object):
                 if dbname:
                     cfg['omero.db.name'] = 'extname'
 
-                db.external.get_config(force=True).AndReturn(cfg)
+                db.external.get_config().AndReturn(cfg)
             else:
                 db.external.get_config().AndRaise(Exception())
 
@@ -364,7 +366,7 @@ class TestDb(object):
     def test_psql(self):
         db = self.PartialMockDb(None, None)
         self.mox.StubOutWithMock(db, 'get_db_args_env')
-        self.mox.StubOutWithMock(External, 'run')
+        self.mox.StubOutWithMock(external, 'run')
 
         psqlargs = [
             '-v', 'ON_ERROR_STOP=on',
@@ -374,8 +376,8 @@ class TestDb(object):
             '-w', '-A', '-t',
             'arg1', 'arg2']
         db.get_db_args_env().AndReturn(self.create_db_test_params())
-        External.run('psql', psqlargs, capturestd=True,
-                     env={'PGPASSWORD': 'pass'}).AndReturn(('', ''))
+        external.run('psql', psqlargs, capturestd=True,
+                     env={'PGPASSWORD': 'pass'}).AndReturn((b'', b''))
         self.mox.ReplayAll()
 
         db.psql('arg1', 'arg2')
@@ -384,13 +386,13 @@ class TestDb(object):
     def test_pgdump(self):
         db = self.PartialMockDb(None, None)
         self.mox.StubOutWithMock(db, 'get_db_args_env')
-        self.mox.StubOutWithMock(External, 'run')
+        self.mox.StubOutWithMock(external, 'run')
 
         pgdumpargs = ['-d', 'name', '-h', 'host', '-U', 'user',
                       '-w', 'arg1', 'arg2']
         db.get_db_args_env().AndReturn(self.create_db_test_params())
-        External.run('pg_dump', pgdumpargs, capturestd=True,
-                     env={'PGPASSWORD': 'pass'}).AndReturn(('', ''))
+        external.run('pg_dump', pgdumpargs, capturestd=True,
+                     env={'PGPASSWORD': 'pass'}).AndReturn((b'', b''))
         self.mox.ReplayAll()
 
         db.pgdump('arg1', 'arg2')

@@ -19,10 +19,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from builtins import object
 import pytest  # noqa
 
 from yaclifw.framework import main, Stop
 from omego.upgrade import UpgradeCommand
+from os import getenv
 
 
 class TestUpgrade(object):
@@ -34,7 +36,7 @@ class TestUpgrade(object):
     def testUpgradeHelp(self):
         try:
             self.upgrade("-h")
-        except SystemExit, se:
+        except SystemExit as se:
             assert se.code == 0
 
     def testUpgradeDryRun(self):
@@ -49,6 +51,17 @@ class TestUpgrade(object):
 
     @pytest.mark.slowtest
     def testUpgrade(self):
+        args = ["--branch=OMERO-DEV-latest"]
+        # Python 3.6 on Travis: Force OMERO to run with 2.7 instead
+        if getenv('TRAVIS_PYTHON_VERSION') == '3.6':
+            args += ['--python', 'python2.7']
+        self.upgrade(*args)
+
+    @pytest.mark.slowtest
+    @pytest.mark.skipif(
+        getenv('TRAVIS_PYTHON_VERSION') == '3.6',
+        reason='OMERO not supported on Python 3.6')
+    def testUpgradePython3(self):
         self.upgrade("--branch=OMERO-DEV-latest")
 
     @pytest.mark.slowtest

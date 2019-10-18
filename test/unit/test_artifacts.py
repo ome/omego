@@ -19,8 +19,10 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from builtins import str
+from builtins import object
 import pytest
-import mox
+from mox3 import mox
 
 from yaclifw.framework import Stop
 from omego.artifacts import ArtifactException, ArtifactsList
@@ -113,11 +115,11 @@ class MockUrl(object):
                 '</matrixBuild>' % (
                     self.unlabelledurl,
                     self.oldbuild, self.oldlabelledurl,
-                    self.build, self.labelledurl))
+                    self.build, self.labelledurl)).encode()
         return (
             '<root><artifact><fileName>%s</fileName><relativePath>'
             '%s</relativePath></artifact></root>' %
-            (self.artifactname, self.artifactpath))
+            (self.artifactname, self.artifactpath)).encode()
 
     def close(self):
         pass
@@ -145,7 +147,7 @@ class MockDownloadUrl(object):
             '<a href="%s">%s</a></body></html>' % (
                 self.artifactnames[0],
                 self.artifactnames[0],
-                self.artifactnames[1], self.artifactnames[1]))
+                self.artifactnames[1], self.artifactnames[1])).encode()
 
     def close(self):
         pass

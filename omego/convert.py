@@ -34,6 +34,7 @@ Parser for the gene-ontology to OMERO's tag format:
     }]
 }]
 """
+from __future__ import print_function
 
 
 from yaclifw.framework import Command
@@ -92,15 +93,15 @@ def parse(filename, MAX_TERM_COUNT=1000):
                         break
 
     count = 0
-    for tid, tdict in terms.items():
+    for tid, tdict in list(terms.items()):
         count += 1      # purely for display
         for p in tdict['parents']:
-            if p in terms.keys():
+            if p in list(terms.keys()):
                 terms[p]['children'].append(tid)
 
     # Get unique term IDs for Tag Groups.
     tagGroups = set()
-    for tid, tdict in terms.items():
+    for tid, tdict in list(terms.items()):
         # Only create Tags for GO:terms that are 'leafs' of the tree
         if len(tdict['children']) == 0:
             for p in tdict['parents']:
@@ -117,7 +118,7 @@ def generate(tagGroups, terms):
     rv = []
     for pid in tagGroups:
         # In testing we may not have complete set
-        if pid not in terms.keys():
+        if pid not in list(terms.keys()):
             continue
 
         groupData = terms[pid]
@@ -159,4 +160,4 @@ class ConvertCommand(Command):
         super(ConvertCommand, self).__call__(args)
         self.configure_logging(args)
         tagGroups, terms = parse(args.filename, args.limit)
-        print generate(tagGroups, terms)
+        print(generate(tagGroups, terms))

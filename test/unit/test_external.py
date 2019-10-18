@@ -19,21 +19,22 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from builtins import str
+from builtins import object
 import pytest
-import mox
+from mox3 import mox
 
 import os
 import subprocess
 import tempfile
 
-import omego.external
-from omego.external import External, RunException
+from omego import external
 
 
 class TestRunException(object):
 
     def setup_method(self, method):
-        self.ex = RunException(
+        self.ex = external.RunException(
             'Message', 'exe', ['arg1', 'arg2'], 1, 'out', 'err')
 
     def test_shortstr(self):
@@ -49,7 +50,7 @@ class TestRunException(object):
 class TestExternal(object):
 
     def setup_method(self, method):
-        self.ext = External()
+        self.ext = external.External(None, 'python-custom')
         self.mox = mox.Mox()
         self.envfilename = 'test.env'
 
@@ -65,25 +66,12 @@ class TestExternal(object):
         f = d.join(self.envfilename)
         f.write('TEST_ENVVAR1=abcde\nTEST_ENVVAR2=1=2=3=4=5\n')
 
-    @pytest.mark.parametrize('configured', [True, False])
-    def test_set_server_dir_and_has_config(self, tmpdir, configured):
+    def test_set_server_dir(self, tmpdir):
         self.create_dummy_server_dir(tmpdir)
-        if configured:
-            tmpdir.ensure('etc', 'grid', 'config.xml')
-
-        with pytest.raises(Exception) as excinfo:
-            self.ext.has_config()
-        assert str(excinfo.value) == 'No server directory set'
-
         with tmpdir.as_cwd():
             self.ext.set_server_dir('.')
 
         assert self.ext.dir == str(tmpdir)
-        assert self.ext.has_config() == configured
-
-        # Creating a config file should not change the original state
-        tmpdir.ensure('etc', 'grid', 'config.xml')
-        assert self.ext.has_config() == configured
 
     # def test_get_config(self):
     # Not easily testable since it requires the omero module
@@ -104,23 +92,28 @@ class TestExternal(object):
         assert env['TEST_ENVVAR2'] == '1=2=3=4=5'
 
     def test_omero_cli(self):
-        class MockCli:
-            def invoke(*args, **kwargs):
-                assert args[1:] == (['arg1', 'arg2'], )
-                assert kwargs == {'strict': True}
-
-        self.ext.cli = MockCli()
-        self.ext.omero_cli(['arg1', 'arg2'])
-
-    def test_omero_bin(self):
-        env = {'TEST': 'test'}
-        self.ext.old_env = env
-        self.mox.StubOutWithMock(self.ext, 'run')
-        self.ext.run('omero', ['arg1', 'arg2'], capturestd=True, env=env
-                     ).AndReturn(0)
+        self.mox.StubOutWithMock(external, 'run')
+        external.run('python-custom', ['omero', 'version']).AndReturn(0)
+        external.run(
+            'python-custom', ['omero', 'arg1', 'arg2'], capturestd=True
+            ).AndReturn((b'', b''))
         self.mox.ReplayAll()
 
-        self.ext.omero_bin(['arg1', 'arg2'])
+        self.ext.setup_omero_cli()
+        self.ext.omero_cli(['arg1', 'arg2'])
+        self.mox.VerifyAll()
+
+    def test_omero_old(self):
+        env = {'TEST': 'test'}
+        self.ext.old_env = env
+        self.ext.old_cli = '/old/omero'
+        self.mox.StubOutWithMock(external, 'run')
+        external.run(
+            'python-custom', ['/old/omero', 'arg1', 'arg2'], capturestd=True,
+            env=env).AndReturn((b'', b''))
+        self.mox.ReplayAll()
+
+        self.ext.omero_old(['arg1', 'arg2'])
         self.mox.VerifyAll()
 
     @pytest.mark.parametrize('retcode', [0, 1])
@@ -130,15 +123,15 @@ class TestExternal(object):
         env = {'TEST': 'test'}
         self.mox.StubOutWithMock(subprocess, 'call')
         self.mox.StubOutWithMock(tempfile, 'TemporaryFile')
-        self.mox.StubOutWithMock(omego.external, 'WINDOWS')
+        self.mox.StubOutWithMock(external, 'WINDOWS')
 
-        omego.external.WINDOWS = windows
+        external.WINDOWS = windows
 
         if capturestd:
-            outfile = open(str(tmpdir.join('std.out')), 'w+')
-            outfile.write('out')
-            errfile = open(str(tmpdir.join('std.err')), 'w+')
-            errfile.write('err')
+            outfile = open(str(tmpdir.join('std.out')), 'wb+')
+            outfile.write(b'out')
+            errfile = open(str(tmpdir.join('std.err')), 'wb+')
+            errfile.write(b'err')
 
             tempfile.TemporaryFile().AndReturn(outfile)
             tempfile.TemporaryFile().AndReturn(errfile)
@@ -152,26 +145,44 @@ class TestExternal(object):
         self.mox.ReplayAll()
 
         if retcode == 0:
-            stdout, stderr = self.ext.run(
+            stdout, stderr = external.run(
                 'test', ['arg1', 'arg2'], capturestd, env)
         else:
-            with pytest.raises(RunException) as excinfo:
-                self.ext.run('test', ['arg1', 'arg2'], capturestd, env)
+            with pytest.raises(external.RunException) as excinfo:
+                external.run('test', ['arg1', 'arg2'], capturestd, env)
             exc = excinfo.value
             assert exc.r == 1
-            assert exc.message == 'Non-zero return code'
+            assert exc.args[0] == 'Non-zero return code'
             stdout = exc.stdout
             stderr = exc.stderr
 
         if capturestd:
-            assert stdout == 'out'
-            assert stderr == 'err'
+            assert stdout == b'out'
+            assert stderr == b'err'
             outfile.close()
             errfile.close()
         else:
             assert stdout is None
             assert stderr is None
 
+        self.mox.VerifyAll()
+
+    @pytest.mark.parametrize('python,expected', [
+        ('', []),
+        ('/opt/custom/python-x', ['/opt/custom/python-x']),
+    ])
+    def test_run_python(self, python, expected):
+        ext = external.External(None, python)
+        env = {'TEST': 'test'}
+        self.mox.StubOutWithMock(subprocess, 'call')
+        self.mox.StubOutWithMock(external, 'WINDOWS')
+        external.WINDOWS = False
+        subprocess.call(
+            expected + ['cmd'], env=env, shell=False,
+            stdout=None, stderr=None).AndReturn(0)
+        self.mox.ReplayAll()
+
+        ext.run_python('cmd', [], env=env)
         self.mox.VerifyAll()
 
     def test_get_environment(self, tmpdir):

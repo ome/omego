@@ -1,19 +1,26 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()  # noqa
+from builtins import str
+from past.builtins import basestring
+from builtins import object
 import os
 import logging
 
-from HTMLParser import HTMLParser
-from urllib2 import (
+from html.parser import HTMLParser
+from urllib.error import (
     HTTPError,
     URLError,
 )
 import re
 
-import fileutils
+from . import fileutils
 from yaclifw.framework import Command, Stop
-from env import FileUtilsParser, JenkinsParser
+from .env import FileUtilsParser, JenkinsParser
 
 try:
     from xml.etree.ElementTree import XML
@@ -81,7 +88,7 @@ class Artifacts(object):
                     return unzipped
                 except Exception as e:
                     log.error('Unzip failed: %s', e)
-                    print e
+                    print(e)
                     raise Stop(20, 'Unzip failed, try unzipping manually')
             else:
                 log.warn('Not unzipping %s', localpath)
@@ -95,7 +102,7 @@ class Artifacts(object):
              'Alternatively a full filename can be specified to download '
              'any artifact, including those not listed.\n' +
              str(self.artifacts))
-        print s
+        print(s)
 
     def create_symlink(self, localpath):
         sym = self.args.sym
@@ -111,7 +118,7 @@ class Artifacts(object):
             log.debug('Creating symlink %s -> %s', sym, localpath)
             try:
                 os.unlink(sym)
-            except OSError as e:
+            except OSError:
                 pass
 
             try:
@@ -395,7 +402,7 @@ class ReleaseArtifacts(ArtifactsList):
             ice_ver = sorted(dl_icever.keys())[-1]
         else:
             ice_ver = 'ice%s' % args.ice.replace('.', '')
-            if ice_ver not in dl_icever.keys():
+            if ice_ver not in list(dl_icever.keys()):
                 raise AttributeError(
                     "No artifacts found for ice version: %s" % ice_ver)
 
@@ -432,7 +439,7 @@ class ReleaseArtifacts(ArtifactsList):
                           url.url, url.code)
                 raise Stop(
                     20, 'Downloads page failed, is the version correct?')
-            parser.feed(url.read())
+            parser.feed(url.read().decode())
         except HTTPError as e:
             log.error('Failed to get HTML from %s (%s)', dlurl, e)
             raise Stop(20, 'Downloads page failed, is the version correct?')

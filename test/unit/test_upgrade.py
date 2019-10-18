@@ -19,8 +19,10 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from __future__ import print_function
+from builtins import object
 import pytest
-import mox
+from mox3 import mox
 
 import copy
 import os
@@ -42,7 +44,7 @@ class TestUpgrade(object):
             self.delete_old = False
             self.keep_old_zip = False
             self.verbose = False
-            for k, v in args.iteritems():
+            for k, v in args.items():
                 setattr(self, k, v)
 
         def __eq__(self, o):
@@ -126,15 +128,15 @@ class TestUpgrade(object):
     @pytest.mark.parametrize('noweb', [True, False])
     def test_stop(self, noweb):
         ext = self.mox.CreateMock(External)
-        ext.omero_bin(['admin', 'status', '--nodeonly'])
-        ext.omero_bin(['admin', 'stop'])
+        ext.omero_old(['admin', 'status', '--nodeonly'])
+        ext.omero_old(['admin', 'stop'])
         if not noweb:
-            ext.omero_bin(['web', 'stop'])
+            ext.omero_old(['web', 'stop'])
         self.mox.ReplayAll()
 
         args = self.Args({'no_web': noweb})
         upgrade = self.PartialMockUnixInstall(args, ext)
-        print '*** %s' % upgrade.args.__dict__
+        print('*** %s' % upgrade.args.__dict__)
         upgrade.stop()
         self.mox.VerifyAll()
 
@@ -184,8 +186,8 @@ class TestUpgrade(object):
 
     def test_bin(self):
         ext = self.mox.CreateMock(External)
-        ext.omero_bin(['a', 'b'])
-        ext.omero_bin(['a', 'b'])
+        ext.omero_old(['a', 'b'])
+        ext.omero_old(['a', 'b'])
         self.mox.ReplayAll()
 
         upgrade = self.PartialMockUnixInstall({}, ext)

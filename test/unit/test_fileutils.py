@@ -19,8 +19,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from builtins import zip
+from builtins import str
+from builtins import range
+from builtins import object
 import pytest
-import mox
+from mox3 import mox
 
 import os
 import re
@@ -47,7 +51,7 @@ class TestFileutils(object):
             assert self.remaining > 0
             r = min(blocksize, self.remaining)
             self.remaining -= r
-            return 'x' * r
+            return b'x' * r
 
         def close(self):
             pass
@@ -143,20 +147,20 @@ class TestFileutils(object):
 
         with pytest.raises(fileutils.FileException) as excinfo:
             fileutils.check_extracted_paths(['a', '/b'])
-        assert excinfo.value.message == 'Insecure path in zipfile'
+        assert excinfo.value.args[0] == 'Insecure path in zipfile'
 
         with pytest.raises(fileutils.FileException) as excinfo:
             fileutils.check_extracted_paths(['a', 'a/../..'])
-        assert excinfo.value.message == 'Insecure path in zipfile'
+        assert excinfo.value.args[0] == 'Insecure path in zipfile'
 
         with pytest.raises(fileutils.FileException) as excinfo:
             fileutils.check_extracted_paths(['a', '..'])
-        assert excinfo.value.message == 'Insecure path in zipfile'
+        assert excinfo.value.args[0] == 'Insecure path in zipfile'
 
         with pytest.raises(fileutils.FileException) as excinfo:
             fileutils.check_extracted_paths(['a', 'b/c'], 'a')
-        assert excinfo.value.message == \
-            'Path in zipfile is not in required subdir'
+        assert excinfo.value.args[0] == (
+            'Path in zipfile is not in required subdir')
 
     @pytest.mark.parametrize('destdir', ['.', 'testdir'])
     def test_unzip(self, destdir):
@@ -170,13 +174,13 @@ class TestFileutils(object):
         self.mox.StubOutWithMock(os, 'chmod')
 
         files = ['test/', 'test/a', 'test/b/', 'test/b/c']
-        perms = [0755, 0644, 0755, 0550]
+        perms = [0o755, 0o644, 0o755, 0o550]
         infos = [MockZipInfo(f, p) for (f, p) in zip(files, perms)]
 
         mockzip = zipfile.ZipFile('path/to/test.zip')
         mockzip.namelist().AndReturn(files)
         mockzip.infolist().AndReturn(infos)
-        for n in xrange(4):
+        for n in range(4):
             mockzip.extract(infos[n], destdir)
             os.chmod(os.path.join(destdir, files[n]), perms[n])
 

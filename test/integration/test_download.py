@@ -19,6 +19,9 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from __future__ import division
+from past.utils import old_div
+from builtins import object
 import pytest  # noqa
 
 from yaclifw.framework import main
@@ -59,7 +62,7 @@ class TestDownload(Downloader):
         with tmpdir.as_cwd():
             self.download('--unzipdir', 'OMERO.py', '--branch', self.branch,
                           '--ice', self.ice)
-            expected = tmpdir / 'OMERO.py'
+            expected = old_div(tmpdir, 'OMERO.py')
             assert expected.exists()
             assert expected.isdir()
 
@@ -70,7 +73,7 @@ class TestDownload(Downloader):
             files = tmpdir.listdir()
             assert len(files) == 3
 
-            expected = tmpdir / 'OMERO.py'
+            expected = old_div(tmpdir, 'OMERO.py')
             assert expected.exists()
             assert expected.isdir()
 
@@ -82,7 +85,7 @@ class TestDownload(Downloader):
             files2diff = set(files2).symmetric_difference(files)
             assert len(files2diff) == 1
             sym2 = files2diff.pop()
-            assert sym2 == (tmpdir / 'custom.sym')
+            assert sym2 == (old_div(tmpdir, 'custom.sym'))
             assert sym2.isdir()
 
     def testDownloadRelease(self, tmpdir):
@@ -102,7 +105,7 @@ class TestDownload(Downloader):
         branch = self.branch + ':600'
         with pytest.raises(AttributeError) as exc:
             self.download('--branch', branch, '--ice', self.ice)
-        assert 'No artifacts' in exc.value.message
+        assert 'No artifacts' in exc.value.args[0]
 
 
 class TestDownloadBioFormats(Downloader):
