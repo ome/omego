@@ -45,6 +45,12 @@ class Artifacts(object):
 
     def __init__(self, args):
         self.args = args
+        if args.ci and not args.branch:
+            raise Stop(20, 'Argument ci passed but no job name/branch given')
+        if not args.ci:
+            args.ci = 'https://ci.openmicroscopy.org'
+        if not args.branch:
+            args.branch = 'latest'
         if args.build or re.match(r'[A-Za-z]\w+-\w+', args.branch):
             self.artifacts = JenkinsArtifacts(args)
         elif re.match('[0-9]+|latest$', args.branch):

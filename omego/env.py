@@ -110,13 +110,13 @@ class JenkinsParser(argparse.ArgumentParser):
             ' the downloads server.')
 
         Add = EnvDefault.add
-        Add(group, "ci", "https://ci.openmicroscopy.org",
+        Add(group, "ci", "",
             help="Base URL or short name of the Continuous Integration server "
-            "(CI only)")
+            "(CI only, default https://ci.openmicroscopy.org)")
         group.add_argument(
-            "--branch", "--release", default="latest",
+            "--branch", "--release", default="",
             help="The release series to download e.g. 5, 5.1, 5.1.2, "
-            "use 'latest' to get the latest release. "
+            "use 'latest' (default) to get the latest release. "
             "Alternatively the name of a Jenkins job e.g. OMERO-5.1-latest.")
         Add(group, "build", "",
             help="Full url of the Jenkins build containing the artifacts (CI"
