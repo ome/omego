@@ -1,6 +1,15 @@
 OMEGO version history
 =====================
 
+0.7.0 (November 2019)
+---------------------
+
+* Add Python 3 support in omego (#122)
+* Add support for OMERO bundles without embedded lib/python (#126)
+* Add --ci aliases and fix the --ci/--branch semantics (#121, #123)
+* Run integration tests on Ice 3.6 (#116, #120)
+
+
 0.6.5 (December 2017)
 ---------------------
 
