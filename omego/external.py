@@ -176,13 +176,15 @@ class External(object):
         env = self.get_environment(savevarsfile)
 
         def addpath(varname, p):
-            if not os.path.exists(p):
-                raise Exception("%s does not exist!" % p)
-            current = env.get(varname)
-            if current:
-                env[varname] = p + os.pathsep + current
+            current = env.get(varname, "")
+            if os.path.exists(p):
+                if current:
+                    env[varname] = p + os.pathsep + current
+                else:
+                    env[varname] = p
             else:
-                env[varname] = p
+                log.info("%s does not exist", p)
+                env[varname] = current
 
         olddir = os.path.abspath(olddir)
         lib = os.path.join(olddir, "lib", "python")

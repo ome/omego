@@ -218,7 +218,7 @@ class Install(object):
         else:
             if os.path.exists(target):
                 log.info('Deleting configuration file %s', target)
-                target.remove()
+                os.unlink(target)
 
         if prestartfile:
             for f in prestartfile:
