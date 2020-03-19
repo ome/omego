@@ -8,6 +8,7 @@ from future import standard_library
 from builtins import str
 from past.builtins import basestring
 from builtins import object
+import json
 import os
 import logging
 
@@ -52,7 +53,9 @@ class Artifacts(object):
             args.ci = 'https://ci.openmicroscopy.org'
         if not args.branch:
             args.branch = 'latest'
-        if args.build or re.match(r'[A-Za-z]\w+-\w+', args.branch):
+        if args.github:
+            self.artifacts = GithubArtifacts(args)
+        elif args.build or re.match(r'[A-Za-z]\w+-\w+', args.branch):
             self.artifacts = JenkinsArtifacts(args)
         elif re.match('[0-9]+|latest$', args.branch):
             self.artifacts = ReleaseArtifacts(args)
@@ -471,6 +474,56 @@ class ReleaseArtifacts(ArtifactsList):
                 pass
 
         return dl_icever
+
+
+class GithubArtifacts(ArtifactsList):
+    """
+    Fetch artifacts from GitHub releases
+    """
+
+    def __init__(self, args):
+        super(GithubArtifacts, self).__init__()
+        self.args = args
+
+        if re.match(r'[0-9]+\.[0-9]+\.[0-9]+', args.branch):
+            dl_url = 'https://api.github.com/repos/%s/releases/tags/v%s' % (
+                args.github, args.branch)
+        else:
+            raise ArtifactException(
+                'Only GitHub tags are supported', args.branch)
+
+        if args.ice:
+            raise ArtifactException(
+                'Ice argument not supported for GitHub releases', args.ice)
+
+        artifacturls = self.read_downloads(dl_url)
+        if len(artifacturls) <= 0:
+            raise AttributeError(
+                "No artifacts, please check the GitHUb releases page.")
+        self.find_artifacts(artifacturls)
+
+    @staticmethod
+    def read_downloads(dlurl):
+        url = None
+        d = None
+        try:
+            url = fileutils.open_url(dlurl)
+            log.debug('Fetching html from %s code:%d', url.url, url.code)
+            if url.code != 200:
+                log.error('Failed to get HTML from %s (code %d)',
+                          url.url, url.code)
+                raise Stop(
+                    20, 'Downloads page failed, is the version correct?')
+
+            d = json.load(url)
+        except HTTPError as e:
+            log.error('Failed to get HTML from %s (%s)', dlurl, e)
+            raise Stop(20, 'Downloads page failed, is the version correct?')
+        finally:
+            if url:
+                url.close()
+
+        return [a['browser_download_url'] for a in d['assets']]
 
 
 class DownloadCommand(Command):
