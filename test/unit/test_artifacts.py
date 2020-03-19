@@ -22,11 +22,17 @@
 from builtins import str
 from builtins import object
 import pytest
+import json
 from mox3 import mox
 
 from yaclifw.framework import Stop
 from omego.artifacts import ArtifactException, ArtifactsList
-from omego.artifacts import Artifacts, JenkinsArtifacts, ReleaseArtifacts
+from omego.artifacts import (
+    Artifacts,
+    GithubArtifacts,
+    JenkinsArtifacts,
+    ReleaseArtifacts,
+)
 # Import whatever XML module was imported in omego.artifacts to avoid dealing
 # with different versions
 from omego.artifacts import XML
@@ -153,6 +159,23 @@ class MockDownloadUrl(object):
         pass
 
 
+class MockGithubUrl(object):
+    pageurl = 'https://api.github.com/repos/ome/example/releases/tags/v0.0.0'
+    artifact_url = ('https://github.com/ome/example/releases/download/v0.0.0/'
+                    'OMERO.example-0.0.0.zip')
+    page_dict = {'assets': [{'browser_download_url': artifact_url}]}
+
+    def __init__(self):
+        self.code = 200
+        self.url = self.pageurl
+
+    def read(self):
+        return json.dumps(self.page_dict)
+
+    def close(self):
+        pass
+
+
 class Args(object):
     def __init__(self, matrix):
         if matrix:
@@ -173,6 +196,7 @@ class Args(object):
         self.branch = 'TEST-build'
         self.downloadurl = MockDownloadUrl.downloadurl
         self.sym = None
+        self.github = None
 
 
 class MoxBase(object):
@@ -302,6 +326,31 @@ class TestReleaseArtifacts(MoxBase):
             'ice34': [fullpath + MockDownloadUrl.artifactnames[0]],
             'ice35': [fullpath + MockDownloadUrl.artifactnames[1]]
             }
+        self.mox.VerifyAll()
+
+
+class TestGithubArtifacts(MoxBase):
+
+    def test_init(self):
+        self.mox.StubOutWithMock(fileutils, 'open_url')
+        fileutils.open_url(MockGithubUrl.pageurl).AndReturn(
+            MockGithubUrl())
+        self.mox.ReplayAll()
+
+        args = Args(False)
+        args.branch = '0.0.0'
+        args.github = 'ome/example'
+        a = GithubArtifacts(args)
+        assert a.get('example') == MockGithubUrl.artifact_url
+        self.mox.VerifyAll()
+
+    def test_nottag(self):
+        args = Args(False)
+        args.branch = 'latest'
+        args.github = 'ome/example'
+        with pytest.raises(ArtifactException) as exc:
+            GithubArtifacts(args)
+        assert exc.value.args[0] == 'Only GitHub tags are supported'
         self.mox.VerifyAll()
 
 
