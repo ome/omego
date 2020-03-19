@@ -108,6 +108,27 @@ class TestDownload(Downloader):
         assert 'No artifacts' in exc.value.args[0]
 
 
+class TestDownloadGithub(Downloader):
+
+    def setup_class(self):
+        self.artifact = 'insight'
+
+    def testDownloadGithub(self, tmpdir):
+        with tmpdir.as_cwd():
+            self.download(
+                '--release', '5.5.8',
+                '--github', 'ome/omero-insight',
+                '--sym', 'auto')
+        files = tmpdir.listdir()
+        assert len(files) == 3
+        print([f.basename for f in files])
+        assert sorted(f.basename for f in files) == [
+            'OMERO.insight',
+            'OMERO.insight-5.5.8',
+            'OMERO.insight-5.5.8.zip',
+        ]
+
+
 class TestDownloadBioFormats(Downloader):
 
     def setup_class(self):
