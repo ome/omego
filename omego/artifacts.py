@@ -499,7 +499,7 @@ class GithubArtifacts(ArtifactsList):
         artifacturls = self.read_downloads(dl_url)
         if len(artifacturls) <= 0:
             raise AttributeError(
-                "No artifacts, please check the GitHUb releases page.")
+                "No artifacts, please check the GitHub releases page.")
         self.find_artifacts(artifacturls)
 
     @staticmethod
