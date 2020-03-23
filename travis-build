@@ -24,7 +24,7 @@ fi
 #Install a new server without web
 #Tests rely on a non-zero error code being returned on failure
 if [ $TEST = install ]; then
-  omego install --github ome/openmicroscopy --initdb --dbhost localhost --dbname omero --prestartfile $HOME/config.omero -v --release 5.3.5 --ice 3.6 --no-web $OMEGO_OMERO_PYTHON
+  omego install --github ome/openmicroscopy --initdb --dbhost localhost --dbname omero --prestartfile $HOME/config.omero -v --release 5.3.5 --no-web $OMEGO_OMERO_PYTHON
 
   # Should return 0 DB_UPTODATE
   omego db upgrade -n --dbhost localhost --dbname omero --serverdir OMERO.server-5.3.5-ice36-b73 $OMEGO_OMERO_PYTHON
@@ -56,14 +56,14 @@ if [ $TEST = upgrade ]; then
   # Should return 0 DB_UPTODATE
   omego db upgrade -n --serverdir OMERO.server $OMEGO_OMERO_PYTHON
 
-  omego download --github ome/openmicroscopy --release 5.5 --ice 3.6 server --sym download-server-50
+  omego download --github ome/openmicroscopy --release 5.5 server --sym download-server-50
   # Should return 2 DB_UPGRADE_NEEDED
   RC=0;
   omego db upgrade -n --dbname omero --serverdir download-server-50 $OMEGO_OMERO_PYTHON || RC=$?
   test $RC -eq 2
 
   # Note this should use the already downloaded zip from the previous step
-  omego install --upgrade --managedb --release=5.5 --ice 3.6 --no-web $OMEGO_OMERO_PYTHON
+  omego install  --github ome/openmicroscopy --upgrade --managedb --release=5.5 --no-web $OMEGO_OMERO_PYTHON
 
   # Should return 0 DB_UPTODATE
   omego db upgrade -n --serverdir OMERO.server $OMEGO_OMERO_PYTHON
