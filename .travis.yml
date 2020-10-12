@@ -43,7 +43,7 @@ before_install:
   # This will need to be reviewed when the issue above is fixed
   - export PATH=/usr/bin/:$PATH
   - ./travis-install
-  - pip install flake8 tox
+  - pip install 'flake8<3.8' tox
   - flake8 -v .
 
 before_script:
