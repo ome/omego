@@ -41,7 +41,7 @@ before_install:
   # see https://github.com/travis-ci/travis-ci/issues/8048
   # Changing the value for sudo will also need to be reviewed at the same time
   # This will need to be reviewed when the issue above is fixed
-  - export PATH=/usr/bin/:$PATH
+  - if [ "${TRAVIS_PYTHON_VERSION:-}" = "2.7" ]; then export PATH=/usr/bin/:$PATH; fi
   - ./travis-install
   - pip install 'flake8<3.8' tox
   - flake8 -v .

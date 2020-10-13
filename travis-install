@@ -4,20 +4,50 @@ set -eux
 
 sudo apt-get update
 sudo apt-get -y install python-{pillow,numpy,psutil}
-sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 5E6DA83306132997
-sudo apt-add-repository "deb http://zeroc.com/download/apt/ubuntu`lsb_release -rs` stable main"
-sudo apt-get update
-sudo apt-get -y install zeroc-ice-all-runtime zeroc-ice-all-dev
+
+pushd /opt
+curl -sfL https://github.com/ome/zeroc-ice-ubuntu1804/releases/download/0.3.0/ice-3.6.5-0.3.0-ubuntu1804-amd64.tar.gz | sudo tar -zxf -
+popd
+sudo ln -s /opt/ice-3.6.5-0.3.0/bin/* /usr/local/bin/
 
 # The distribution Python 2.7 is still present when Travis is setup to use 3.6
 # so we can use it to run OMERO
-if [ "$TRAVIS_PYTHON_VERSION" = "3.6" ]; then
-  pip install https://github.com/ome/zeroc-ice-py-manylinux/releases/download/0.1.0/zeroc_ice-3.6.5-cp36-cp36m-manylinux2010_x86_64.whl
-  sudo pip2.7 install https://github.com/ome/zeroc-ice-py-manylinux/releases/download/0.1.0/zeroc_ice-3.6.5-cp27-cp27mu-manylinux2010_x86_64.whl
 
-  python3.6 -c 'import Ice; print(Ice.stringVersion())'
-  python2.7 -c 'import Ice; print(Ice.stringVersion())'
-else
-  sudo pip install https://github.com/ome/zeroc-ice-py-manylinux/releases/download/0.1.0/zeroc_ice-3.6.5-cp27-cp27mu-manylinux2010_x86_64.whl
-  python -c 'import Ice; print(Ice.stringVersion())'
+# First figure out which executables exist
+set +e
+echo $PATH
+
+python --version
+python2 --version
+python2.7 --version
+python3 --version
+python3.6 --version
+
+python3 -mpip --version
+python3.6 -mpip --version
+
+pip --version
+pip2 --version
+pip2.7 --version
+pip3 --version
+pip3.6 --version
+
+which python
+which python2
+which python2.7
+which python3
+which python3.6
+
+which pip
+which pip2
+which pip2.7
+which pip3
+which pip3.6
+set -e
+
+if [ "$TRAVIS_PYTHON_VERSION" = "3.6" ]; then
+  pip install https://github.com/ome/zeroc-ice-py-manylinux/releases/download/0.3.0/zeroc_ice-3.6.5-cp36-cp36m-manylinux2014_x86_64.whl
+  python3 -c 'import Ice; print(Ice.stringVersion())'
 fi
+sudo pip2.7 install https://github.com/ome/zeroc-ice-py-manylinux/releases/download/0.2.0/zeroc_ice-3.6.5-cp27-cp27mu-manylinux2010_x86_64.whl
+python2.7 -c 'import Ice; print(Ice.stringVersion())'
