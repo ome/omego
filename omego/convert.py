@@ -69,17 +69,17 @@ def parse(filename, MAX_TERM_COUNT=1000):
         parents = []
 
         termCount = 0
-        for l in f.readlines():
-            if l.startswith("id:"):
-                termId = l.strip()[4:]
-            if l.startswith("name:"):
-                name = l.strip()[6:]
-            elif l.startswith("def:"):
-                desc = l.strip()[5:]
-            elif l.startswith("is_a:"):
-                pid = l.strip()[6:].split(" ", 1)[0]
+        for line in f.readlines():
+            if line.startswith("id:"):
+                termId = line.strip()[4:]
+            if line.startswith("name:"):
+                name = line.strip()[6:]
+            elif line.startswith("def:"):
+                desc = line.strip()[5:]
+            elif line.startswith("is_a:"):
+                pid = line.strip()[6:].split(" ", 1)[0]
                 parents.append(pid)
-            if len(l) == 1:     # newline
+            if len(line) == 1:     # newline
                 # save
                 if termId is not None and name is not None:
                     terms[termId] = {'name': name, 'desc': desc,

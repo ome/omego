@@ -59,8 +59,7 @@ class TestUpgrade(object):
         self.upgrade(*args)
 
     @pytest.mark.slowtest
-    @pytest.mark.skipif(True,
-        reason='OMERO not supported on Python 3.6')
+    @pytest.mark.skipif(True, reason='OMERO not supported on Python 3.6')
     def testUpgradePython3(self):
         self.upgrade("--branch=OMERO-DEV-latest")
 
