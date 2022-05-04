@@ -15,18 +15,17 @@ jobs:
       fail-fast: false
       matrix:
         python-version:
-          - '3.6'
+          - '3.8'
         os:
           - ubuntu-20.04
-        commands: 
-          - 'upgrade'
+        commands:
           - 'install'
     runs-on: ${{ matrix.os }}
     services:
       postgres:
         image: postgres:11
         env:
-          POSTGRES_DB: omero        
+          POSTGRES_DB: omero
           POSTGRES_PASSWORD: omero
           POSTGRES_USER: omero
         ports:
@@ -58,6 +57,8 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install flake8 tox wheel pytest
+          pip install https://github.com/ome/zeroc-ice-ubuntu2004/releases/download/0.2.0/zeroc_ice-3.6.5-cp38-cp38-linux_x86_64.whl
+          pip install omero-server[default]
       - name: Set up OMERO config
         run: |
           mkdir $HOME/OMERO
@@ -69,11 +70,17 @@ jobs:
         run: |
           py=$(echo ${{ matrix.python-version }} | tr -d .)
           echo "::set-output name=py::$py"
+      - name: Check Ice version
+        run: python -c 'import Ice; print(Ice.stringVersion())'
       - name: Run tests
-        run: tox -e py${{ steps.toxtarget.outputs.py }}
+        run:
+          tox -e py${{ steps.toxtarget.outputs.py }}
         env:
           # The hostname used to communicate with the PostgreSQL service container
           POSTGRES_HOST: localhost
           # The default PostgreSQL port
           POSTGRES_PORT: 5432
-
+          POSTGRES_DB: omero
+          POSTGRES_PASSWORD: omero
+          POSTGRES_USER: omero
+          TEST: ${{ matrix.commands }}

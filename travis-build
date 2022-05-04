@@ -24,16 +24,18 @@ fi
 #Install a new server without web
 #Tests rely on a non-zero error code being returned on failure
 if [ $TEST = install ]; then
-  omego install --initdb --dbhost localhost --dbname omero --prestartfile $HOME/config.omero -v --release 5.3.5 --ice 3.6 --no-web $OMEGO_OMERO_PYTHON
+  export OMERODIR='./OMERO.server-5.6.4-ice36-b232'
+  omego install --initdb --dbhost localhost --dbname omero --prestartfile $HOME/config.omero -v --release 5.6.4 --ice 3.6 --no-web --no-start
 
+  ls OMERO.server
   # Should return 0 DB_UPTODATE
-  omego db upgrade -n --dbhost localhost --dbname omero --serverdir OMERO.server-5.3.5-ice36-b73 $OMEGO_OMERO_PYTHON
+  omego db upgrade -n --dbhost localhost --dbname omero --serverdir OMERO.server
 
   # Check the expected server version was downloaded
-  test $(readlink OMERO.server) = './OMERO.server-5.3.5-ice36-b73'
+  test $(readlink OMERO.server) = $OMERODIR
 
   # Check db dump file
-  omego db dump --serverdir OMERO.server --dumpfile travis-omero.pgdump $OMEGO_OMERO_PYTHON
+  omego db dump --serverdir OMERO.server --dumpfile travis-omero.pgdump
   
   pg_restore -l travis-omero.pgdump | grep 'dbpatch_versions_trigger'
 fi
