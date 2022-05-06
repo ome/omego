@@ -39,7 +39,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install Ice Java and Python binding
-        uses: jburel/action-ice@v1
+        uses: ome/action-ice@v1
       - name: Install Python dependencies
         run: |
           pip install flake8 tox wheel pytest
