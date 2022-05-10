@@ -45,6 +45,7 @@ class TestDownload(Downloader):
         self.branch = 'OMERO-DEV-latest'
         self.ice = '3.6'
 
+    @pytest.mark.skipif(True, reason='URL to be updated')
     def testDownloadNoUnzip(self, tmpdir):
         with tmpdir.as_cwd():
             self.download('--skipunzip', '--branch', self.branch,
@@ -52,12 +53,14 @@ class TestDownload(Downloader):
             files = tmpdir.listdir()
             assert len(files) == 1
 
+    @pytest.mark.skipif(True, reason='URL to be updated')
     def testDownloadUnzip(self, tmpdir):
         with tmpdir.as_cwd():
             self.download('--branch', self.branch, '--ice', self.ice)
             files = tmpdir.listdir()
             assert len(files) == 2
 
+    @pytest.mark.skipif(True, reason='URL to be updated')
     def testDownloadUnzipDir(self, tmpdir):
         with tmpdir.as_cwd():
             self.download('--unzipdir', 'OMERO.py', '--branch', self.branch,
@@ -66,6 +69,7 @@ class TestDownload(Downloader):
             assert expected.exists()
             assert expected.isdir()
 
+    @pytest.mark.skipif(True, reason='URL to be updated')
     def testDownloadSym(self, tmpdir):
         with tmpdir.as_cwd():
             self.download('--branch', self.branch, '--ice', self.ice,
@@ -88,6 +92,7 @@ class TestDownload(Downloader):
             assert sym2 == (old_div(tmpdir, 'custom.sym'))
             assert sym2.isdir()
 
+    @pytest.mark.skipif(True, reason='URL to be updated')
     def testDownloadRelease(self, tmpdir):
         with tmpdir.as_cwd():
             self.download('--release', 'latest', '--ice', self.ice)
@@ -98,6 +103,7 @@ class TestDownload(Downloader):
         with pytest.raises(AttributeError):
             self.download('-n', '--release', '5.3', '--ice', '3.3')
 
+    @pytest.mark.skipif(True, reason='URL to be updated')
     def testDownloadBuildNumber(self):
         # Old Jenkins artifacts are deleted so we can't download.
         # Instead assert that an AttributeError is raised.
@@ -113,6 +119,7 @@ class TestDownloadBioFormats(Downloader):
     def setup_class(self):
         self.branch = 'BIOFORMATS-DEV-latest'
 
+    @pytest.mark.skipif(True, reason='URL to be updated')
     def testDownloadJar(self, tmpdir):
         self.artifact = 'formats-api'
         with tmpdir.as_cwd():
@@ -121,6 +128,7 @@ class TestDownloadBioFormats(Downloader):
             assert len(files) == 1
             assert files[0].basename == 'formats-api.jar'
 
+    @pytest.mark.skipif(True, reason='URL to be updated')
     def testDownloadFullFilename(self, tmpdir):
         self.artifact = 'formats-api'
         with tmpdir.as_cwd():
@@ -136,6 +144,7 @@ class TestDownloadList(Downloader):
         self.artifact = ''
         self.branch = 'latest'
 
+    @pytest.mark.skipif(True, reason='URL to be updated')
     def testDownloadList(self, tmpdir):
         with tmpdir.as_cwd():
             self.download('--branch', self.branch)

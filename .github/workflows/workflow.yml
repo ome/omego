@@ -18,5 +18,56 @@ jobs:
           - '3.8'
         os:
           - ubuntu-20.04
+        commands:
+          - 'install'
+    runs-on: ${{ matrix.os }}
+    services:
+      postgres:
+        image: postgres:11
+        env:
+          POSTGRES_DB: omero
+          POSTGRES_PASSWORD: omero
+          POSTGRES_USER: omero
+        ports:
+          - 5432:5432
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v2
+      - name: Install Ice Java and Python binding
+        uses: ome/action-ice@v1
+      - name: Install Python dependencies
+        run: |
+          pip install flake8 tox wheel pytest
+          pip install omero-server[default]
+      - name: Run flake8
+        run: flake8 .
+      - name: Set up OMERO config
+        run: |
+          mkdir $HOME/OMERO
+          echo "config set omero.data.dir $HOME/OMERO" > $HOME/config.omero
+          echo "config set omero.db.name omero" >> $HOME/config.omero
+          echo "config set Ice.IPv6 0" >> $HOME/config.omero
+      - name: Get tox target
+        id: toxtarget
+        run: |
+          py=$(echo ${{ matrix.python-version }} | tr -d .)
+          echo "::set-output name=py::$py"
+      - name: Check Ice version
+        run: python -c 'import Ice; print(Ice.stringVersion())'
+      - name: Run tests
+        run:
+          tox -e py${{ steps.toxtarget.outputs.py }}
+        env:
+          # The hostname used to communicate with the PostgreSQL service container
+          POSTGRES_HOST: localhost
+          # The default PostgreSQL port
+          POSTGRES_PORT: 5432
+          POSTGRES_DB: omero
+          POSTGRES_PASSWORD: omero
+          POSTGRES_USER: omero
+          TEST: ${{ matrix.commands }}

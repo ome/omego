@@ -4,7 +4,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from future import standard_library
-standard_library.install_aliases()  # noqa
+
 from builtins import str
 from past.builtins import basestring
 from builtins import object
@@ -27,6 +27,7 @@ try:
 except ImportError:
     from elementtree.ElementTree import XML
 
+standard_library.install_aliases()  # noqa
 log = logging.getLogger("omego.artifacts")
 
 
