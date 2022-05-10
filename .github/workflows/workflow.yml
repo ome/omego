@@ -15,8 +15,65 @@ jobs:
       fail-fast: false
       matrix:
         python-version:
-          - '3.8'
+          - '3.6'
         os:
           - ubuntu-20.04
+        commands: 
+          - 'upgrade'
+          - 'install'
+    runs-on: ${{ matrix.os }}
+    services:
+      postgres:
+        image: postgres:11
+        env:
+          POSTGRES_DB: omero        
+          POSTGRES_PASSWORD: omero
+          POSTGRES_USER: omero
+        ports:
+          - 5432:5432
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Set up JDK 11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - name: Install slice2java
+        run: |
+          sudo apt-get install -y libmcpp-dev
+          wget -q https://github.com/ome/zeroc-ice-ubuntu2004/releases/download/0.2.0/ice-3.6.5-0.2.0-ubuntu2004-amd64.tar.gz
+          tar xf ice-3.6.5-0.2.0-ubuntu2004-amd64.tar.gz
+          mv ice-3.6.5-0.2.0 ice-3.6.5
+          mv ice-3.6.5 /opt
+          rm ice-3.6.5-0.2.0-ubuntu2004-amd64.tar.gz
+          echo "/opt/ice-3.6.5/bin" >> $GITHUB_PATH
+      - name: Install Python dependencies
+        run: |
+          pip install flake8 tox wheel pytest
+      - name: Set up OMERO config
+        run: |
+          mkdir $HOME/OMERO
+          echo "config set omero.data.dir $HOME/OMERO" > $HOME/config.omero
+          echo "config set omero.db.name omero" >> $HOME/config.omero
+          echo "config set Ice.IPv6 0" >> $HOME/config.omero
+      - name: Get tox target
+        id: toxtarget
+        run: |
+          py=$(echo ${{ matrix.python-version }} | tr -d .)
+          echo "::set-output name=py::$py"
+      - name: Run tests
+        run: tox -e py${{ steps.toxtarget.outputs.py }}
+        env:
+          # The hostname used to communicate with the PostgreSQL service container
+          POSTGRES_HOST: localhost
+          # The default PostgreSQL port
+          POSTGRES_PORT: 5432
+
