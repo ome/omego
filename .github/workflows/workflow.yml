@@ -1,0 +1,22 @@
+# Builds and performs various check
+
+---
+name: Build
+
+on: 
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Test
+    strategy:
+      # Keep running so we can see if other tests pass
+      fail-fast: false
+      matrix:
+        python-version:
+          - '3.8'
+        os:
+          - ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
