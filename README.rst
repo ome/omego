@@ -1,8 +1,8 @@
 OME, Go (omego)
 ===============
 
-.. image:: https://travis-ci.org/ome/omego.png
-   :target: http://travis-ci.org/ome/omego
+.. image:: https://github.com/ome/omego/actions/workflows/workflow.yml/badge.svg
+   :target: https://github.com/ome/omego/actions
 
 .. image:: https://badge.fury.io/py/omego.svg
     :target: https://badge.fury.io/py/omego
