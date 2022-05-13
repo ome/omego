@@ -12,7 +12,7 @@ omego version
 omego -h
 
 # Python 3.6: Run omego with Python 3.6 but run OMERO with Python 2.7
-if [ "${TRAVIS_PYTHON_VERSION:-}" = "3.6" ]; then
+if [ "${CI_PYTHON_VERSION:-}" = "3.6" ]; then
   OMERO_PYTHON="python2.7"
   OMEGO_OMERO_PYTHON="--python python2.7"
 else
@@ -35,9 +35,9 @@ if [ $TEST = install ]; then
   test $(readlink OMERO.server) = $OMERODIR
 
   # Check db dump file
-  omego db dump --serverdir OMERO.server --dumpfile travis-omero.pgdump
+  omego db dump --serverdir OMERO.server --dumpfile ci-omero.pgdump
   
-  pg_restore -l travis-omero.pgdump | grep 'dbpatch_versions_trigger'
+  pg_restore -l ci-omero.pgdump | grep 'dbpatch_versions_trigger'
 fi
 
 #Test a multistage DB upgrade (5.3 -> 5.4) as part of the server upgrade
