@@ -27,9 +27,9 @@ if [ $TEST = install ]; then
   test $(readlink OMERO.server) = $OMERODIR
 
   # Check db dump file
-  omego db dump --serverdir OMERO.server --dumpfile ci-omero.pgdump
+  omego db dump --serverdir OMERO.server --dumpfile omero.pgdump
   
-  pg_restore -l ci-omero.pgdump | grep 'dbpatch_versions_trigger'
+  pg_restore -l omero.pgdump | grep 'dbpatch_versions_trigger'
 fi
 
 #Test a multistage DB upgrade (5.3 -> 5.4) as part of the server upgrade
@@ -48,17 +48,17 @@ if [ $TEST = upgrade ]; then
   OMERO.server/bin/omero admin start;
 
   # Should return 0 DB_UPTODATE
-  omego db upgrade -n --serverdir OMERO.server $OMEGO_OMERO_PYTHON
+  omego db upgrade -n --serverdir OMERO.server
 
   omego download --release 5.5 --ice 3.6 server --sym download-server-50
   # Should return 2 DB_UPGRADE_NEEDED
   RC=0;
-  omego db upgrade -n --dbname omero --serverdir download-server-50 $OMEGO_OMERO_PYTHON || RC=$?
+  omego db upgrade -n --dbname omero --serverdir download-server-50 || RC=$?
   test $RC -eq 2
 
   # Note this should use the already downloaded zip from the previous step
-  omego install --upgrade --managedb --release=5.5 --ice 3.6 --no-web $OMEGO_OMERO_PYTHON
+  omego install --upgrade --managedb --release=5.5 --ice 3.6 --no-web
 
   # Should return 0 DB_UPTODATE
-  omego db upgrade -n --serverdir OMERO.server $OMEGO_OMERO_PYTHON
+  omego db upgrade -n --serverdir OMERO.server
 fi
