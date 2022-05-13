@@ -126,8 +126,8 @@ class External(object):
             stdout, stderr = self.omero_cli(
                 ['config', 'get', '--show-password'])
         except RunException as e:
-            log.warn('Failed to config get --show-password, trying without '
-                     '--show-password: %s', e)
+            log.warning('Failed to config get --show-password, trying without '
+                        '--show-password: %s', e)
             stdout, stderr = self.omero_cli(['config', 'get'])
         try:
             return dict(line.split('=', 1)

@@ -122,12 +122,12 @@ class Install(object):
                 args.upgradedb = True
             else:
                 if args.initdb or args.upgradedb:
-                    log.warn('--initdb and --upgradedb are deprecated, '
-                             'use --managedb')
+                    log.warning('--initdb and --upgradedb are deprecated, '
+                                'use --managedb')
 
         elif cmd == 'upgrade':
             # Deprecated behaviour
-            log.warn(
+            log.warning(
                 '"omero upgrade" is deprecated, use "omego install --upgrade"')
             cmd = 'install'
             args.upgrade = True
@@ -239,7 +239,7 @@ class Install(object):
 
     def directories(self):
         if self.samedir(self.dir, self.args.sym):
-            log.warn("Upgraded server was the same, not deleting")
+            log.warning("Upgraded server was the same, not deleting")
             return
 
         try:
@@ -281,7 +281,7 @@ class Install(object):
             status = db.check()
             log.debug('OMERO database upgrade status: %s', status)
         else:
-            log.warn('OMERO database check disabled')
+            log.warning('OMERO database check disabled')
             return DB_INIT_NEEDED
 
         if status == DB_INIT_NEEDED:
@@ -294,7 +294,7 @@ class Install(object):
                            'Install/Upgrade failed: OMERO database not found')
 
         elif status == DB_UPGRADE_NEEDED:
-            log.warn('OMERO database exists but is out of date')
+            log.warning('OMERO database exists but is out of date')
             if self.args.upgradedb:
                 log.debug('Upgrading OMERO database')
                 db.upgrade()
