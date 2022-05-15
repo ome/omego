@@ -242,7 +242,7 @@ class DbAdmin(object):
             try:
                 c = self.external.get_config()
             except Exception as e:
-                log.warn('config.xml not found: %s', e)
+                log.warning('config.xml not found: %s', e)
                 c = {}
 
             for k in db:
@@ -275,7 +275,7 @@ class DbAdmin(object):
             ] + list(psqlargs)
         stdout, stderr = external.run('psql', args, capturestd=True, env=env)
         if stderr:
-            log.warn('stderr: %s', stderr)
+            log.warning('stderr: %s', stderr)
         log.debug('stdout: %s', stdout)
         return stdout.decode()
 
@@ -290,7 +290,7 @@ class DbAdmin(object):
         stdout, stderr = external.run(
             'pg_dump', args, capturestd=True, env=env)
         if stderr:
-            log.warn('stderr: %s', stderr)
+            log.warning('stderr: %s', stderr)
         log.debug('stdout: %s', stdout)
         return stdout.decode()
 

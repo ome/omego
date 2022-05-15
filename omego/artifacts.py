@@ -98,7 +98,7 @@ class Artifacts(object):
                     print(e)
                     raise Stop(20, 'Unzip failed, try unzipping manually')
             else:
-                log.warn('Not unzipping %s', localpath)
+                log.warning('Not unzipping %s', localpath)
 
         return localpath
 
