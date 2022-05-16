@@ -38,7 +38,7 @@ class Downloader(object):
         main("omego", args=args, items=[("download", DownloadCommand)])
 
 
-class TestDownload(Downloader):
+class TestDownloadJenkins(Downloader):
 
     def setup_class(self):
         self.artifact = 'java'
@@ -97,6 +97,14 @@ class TestDownload(Downloader):
             self.download('--branch', branch, '--ice', self.ice)
         assert 'No artifacts' in exc.value.args[0]
 
+    def testDownloadList(self, tmpdir):
+        self.artifact = ''
+        self.branch = 'latest'
+        with tmpdir.as_cwd():
+            self.download('--branch', self.branch)
+            files = tmpdir.listdir()
+            assert len(files) == 0
+
 
 class TestDownloadRelease(Downloader):
 
@@ -128,16 +136,3 @@ class TestDownloadBioFormats(Downloader):
             assert len(files) == 1
             assert files[0].basename.endswith(".jar")
             assert files[0].basename.startswith('formats-api')
-
-
-class TestDownloadList(Downloader):
-
-    def setup_class(self):
-        self.artifact = ''
-        self.branch = 'latest'
-
-    def testDownloadList(self, tmpdir):
-        with tmpdir.as_cwd():
-            self.download('--branch', self.branch)
-            files = tmpdir.listdir()
-            assert len(files) == 0
