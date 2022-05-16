@@ -136,7 +136,6 @@ class TestDownloadList(Downloader):
         self.artifact = ''
         self.branch = 'latest'
 
-    @pytest.mark.skipif(True, reason='URL to be updated')
     def testDownloadList(self, tmpdir):
         with tmpdir.as_cwd():
             self.download('--branch', self.branch)
