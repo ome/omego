@@ -110,8 +110,8 @@ class TestDownload(Downloader):
 class TestDownloadRelease(Downloader):
 
     def setup_class(self):
-        # python artifact no longer exists
-        self.artifact = 'apidoc'
+        # python and apidoc artifact no longer exists
+        self.artifact = 'openmicroscopy'
 
     def testDownloadRelease(self, tmpdir):
         with tmpdir.as_cwd():
