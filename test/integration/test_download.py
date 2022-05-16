@@ -110,7 +110,7 @@ class TestDownload(Downloader):
 class TestDownloadRelease(Downloader):
 
     def setup_class(self):
-        # python and apidoc artifact no longer exists
+        # python and apidoc artifact no longer exist
         self.artifact = 'java'
 
     def testDownloadRelease(self, tmpdir):
