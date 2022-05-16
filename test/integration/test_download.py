@@ -136,3 +136,24 @@ class TestDownloadBioFormats(Downloader):
             assert len(files) == 1
             assert files[0].basename.endswith(".jar")
             assert files[0].basename.startswith('formats-api')
+
+
+class TestDownloadGithub(Downloader):
+
+    def setup_class(self):
+        self.artifact = 'insight'
+
+    def testDownloadGithub(self, tmpdir):
+        with tmpdir.as_cwd():
+            self.download(
+                '--release', '5.5.8',
+                '--github', 'ome/omero-insight',
+                '--sym', 'auto')
+        files = tmpdir.listdir()
+        assert len(files) == 3
+        print([f.basename for f in files])
+        assert sorted(f.basename for f in files) == [
+            'OMERO.insight',
+            'OMERO.insight-5.5.8',
+            'OMERO.insight-5.5.8.zip',
+        ]
