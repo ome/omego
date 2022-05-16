@@ -41,11 +41,10 @@ class Downloader(object):
 class TestDownload(Downloader):
 
     def setup_class(self):
-        self.artifact = 'python'
-        self.branch = 'OMERO-DEV-latest'
+        self.artifact = 'java'
+        self.branch = 'OMERO-build'
         self.ice = '3.6'
 
-    @pytest.mark.skipif(True, reason='URL to be updated')
     def testDownloadNoUnzip(self, tmpdir):
         with tmpdir.as_cwd():
             self.download('--skipunzip', '--branch', self.branch,
@@ -53,23 +52,20 @@ class TestDownload(Downloader):
             files = tmpdir.listdir()
             assert len(files) == 1
 
-    @pytest.mark.skipif(True, reason='URL to be updated')
     def testDownloadUnzip(self, tmpdir):
         with tmpdir.as_cwd():
             self.download('--branch', self.branch, '--ice', self.ice)
             files = tmpdir.listdir()
             assert len(files) == 2
 
-    @pytest.mark.skipif(True, reason='URL to be updated')
     def testDownloadUnzipDir(self, tmpdir):
         with tmpdir.as_cwd():
-            self.download('--unzipdir', 'OMERO.py', '--branch', self.branch,
+            self.download('--unzipdir', 'OMERO.java', '--branch', self.branch,
                           '--ice', self.ice)
-            expected = old_div(tmpdir, 'OMERO.py')
+            expected = old_div(tmpdir, 'OMERO.java')
             assert expected.exists()
             assert expected.isdir()
 
-    @pytest.mark.skipif(True, reason='URL to be updated')
     def testDownloadSym(self, tmpdir):
         with tmpdir.as_cwd():
             self.download('--branch', self.branch, '--ice', self.ice,
@@ -77,7 +73,7 @@ class TestDownload(Downloader):
             files = tmpdir.listdir()
             assert len(files) == 3
 
-            expected = old_div(tmpdir, 'OMERO.py')
+            expected = old_div(tmpdir, 'OMERO.java')
             assert expected.exists()
             assert expected.isdir()
 
@@ -92,7 +88,6 @@ class TestDownload(Downloader):
             assert sym2 == (old_div(tmpdir, 'custom.sym'))
             assert sym2.isdir()
 
-    @pytest.mark.skipif(True, reason='URL to be updated')
     def testDownloadBuildNumber(self):
         # Old Jenkins artifacts are deleted so we can't download.
         # Instead assert that an AttributeError is raised.
