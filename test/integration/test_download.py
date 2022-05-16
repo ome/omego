@@ -92,10 +92,6 @@ class TestDownload(Downloader):
             assert sym2 == (old_div(tmpdir, 'custom.sym'))
             assert sym2.isdir()
 
-    def testDownloadNonExistingArtifact(self):
-        with pytest.raises(AttributeError):
-            self.download('-n', '--release', '5.3', '--ice', '3.3')
-
     @pytest.mark.skipif(True, reason='URL to be updated')
     def testDownloadBuildNumber(self):
         # Old Jenkins artifacts are deleted so we can't download.
@@ -118,6 +114,10 @@ class TestDownloadRelease(Downloader):
             self.download('--release', 'latest', '--ice', '3.6')
             files = tmpdir.listdir()
             assert len(files) == 2
+
+    def testDownloadNonExistingArtifact(self):
+        with pytest.raises(AttributeError):
+            self.download('-n', '--release', '5.3', '--ice', '3.3')
 
 
 class TestDownloadBioFormats(Downloader):
