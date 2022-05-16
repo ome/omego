@@ -106,6 +106,7 @@ class TestDownload(Downloader):
             self.download('--branch', branch, '--ice', self.ice)
         assert 'No artifacts' in exc.value.args[0]
 
+
 class TestDownloadRelease(Downloader):
 
     def setup_class(self):
@@ -117,6 +118,7 @@ class TestDownloadRelease(Downloader):
             self.download('--release', 'latest', '--ice', '3.6')
             files = tmpdir.listdir()
             assert len(files) == 2
+
 
 class TestDownloadGithub(Downloader):
 
