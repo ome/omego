@@ -118,25 +118,16 @@ class TestDownloadRelease(Downloader):
 class TestDownloadBioFormats(Downloader):
 
     def setup_class(self):
-        self.branch = 'BIOFORMATS-DEV-latest'
+        self.branch = 'BIOFORMATS-build'
 
-    @pytest.mark.skipif(True, reason='URL to be updated')
     def testDownloadJar(self, tmpdir):
         self.artifact = 'formats-api'
         with tmpdir.as_cwd():
             self.download('--branch', self.branch)
             files = tmpdir.listdir()
             assert len(files) == 1
-            assert files[0].basename == 'formats-api.jar'
-
-    @pytest.mark.skipif(True, reason='URL to be updated')
-    def testDownloadFullFilename(self, tmpdir):
-        self.artifact = 'formats-api'
-        with tmpdir.as_cwd():
-            self.download('--branch', self.branch)
-            files = tmpdir.listdir()
-            assert len(files) == 1
-            assert files[0].basename == 'formats-api.jar'
+            assert files[0].basename.endswith(".jar")
+            assert files[0].basename.startswith('formats-api')
 
 
 class TestDownloadList(Downloader):
