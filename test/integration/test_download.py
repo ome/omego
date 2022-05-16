@@ -111,9 +111,8 @@ class TestDownloadRelease(Downloader):
 
     def setup_class(self):
         # python and apidoc artifact no longer exists
-        self.artifact = 'openmicroscopy'
+        self.artifact = 'java'
 
-    @pytest.mark.skipif(True, reason='URL to be updated')
     def testDownloadRelease(self, tmpdir):
         with tmpdir.as_cwd():
             self.download('--release', 'latest', '--ice', '3.6')
