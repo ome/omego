@@ -34,7 +34,7 @@ fi
 
 #Test a multistage DB upgrade (5.3 -> 5.4) as part of the server upgrade
 if [ $TEST = upgrade ]; then
-  omego download --github ome/openmicroscopy --release 5.3 server
+  omego download --github ome/openmicroscopy --release 5.3.5 server
   ln -s OMERO.server-5.3.5-ice36-b73 OMERO.server;
 
   # Should return 3 DB_INIT_NEEDED
@@ -50,7 +50,7 @@ if [ $TEST = upgrade ]; then
   # Should return 0 DB_UPTODATE
   omego db upgrade -n --serverdir OMERO.server
 
-  omego download --github ome/openmicroscopy --release 5.5 server --sym download-server-50
+  omego download --github ome/openmicroscopy --release 5.5.1 server --sym download-server-50
   # Should return 2 DB_UPGRADE_NEEDED
   RC=0;
   omego db upgrade -n --dbname omero --serverdir download-server-50 || RC=$?
