@@ -92,13 +92,6 @@ class TestDownload(Downloader):
             assert sym2 == (old_div(tmpdir, 'custom.sym'))
             assert sym2.isdir()
 
-    @pytest.mark.skipif(True, reason='URL to be updated')
-    def testDownloadRelease(self, tmpdir):
-        with tmpdir.as_cwd():
-            self.download('--release', 'latest', '--ice', self.ice)
-            files = tmpdir.listdir()
-            assert len(files) == 2
-
     def testDownloadNonExistingArtifact(self):
         with pytest.raises(AttributeError):
             self.download('-n', '--release', '5.3', '--ice', '3.3')
@@ -113,6 +106,17 @@ class TestDownload(Downloader):
             self.download('--branch', branch, '--ice', self.ice)
         assert 'No artifacts' in exc.value.args[0]
 
+class TestDownloadRelease(Downloader):
+
+    def setup_class(self):
+        # python artifact no longer exists
+        self.artifact = 'apidoc'
+
+    def testDownloadRelease(self, tmpdir):
+        with tmpdir.as_cwd():
+            self.download('--release', 'latest', '--ice', '3.6')
+            files = tmpdir.listdir()
+            assert len(files) == 2
 
 class TestDownloadGithub(Downloader):
 
