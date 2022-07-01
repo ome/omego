@@ -25,7 +25,7 @@ from builtins import object
 import pytest  # noqa
 
 from yaclifw.framework import main
-from omego.artifacts import DownloadCommand
+from omego.artifacts import ArtifactException, DownloadCommand
 
 
 class Downloader(object):
@@ -177,3 +177,19 @@ class TestDownloadGithub(Downloader):
         files = tmpdir.listdir()
         assert len(files) > 0
         print([f.basename for f in files])
+
+    def testDownloadGithub_major_invalid(self):
+        with pytest.raises(ArtifactException) as exc:
+            self.download(
+                '--release', '100',
+                '--github', 'ome/omero-insight',
+                '--sym', 'auto')
+        assert 'No tag' in exc.value.args[0]
+
+    def testDownloadGithub_major_minor_invalid(self):
+        with pytest.raises(ArtifactException) as exc:
+            self.download(
+                '--release', '100.1',
+                '--github', 'ome/omero-insight',
+                '--sym', 'auto')
+        assert 'No tag' in exc.value.args[0]
