@@ -157,3 +157,23 @@ class TestDownloadGithub(Downloader):
             'OMERO.insight-5.5.8',
             'OMERO.insight-5.5.8.zip',
         ]
+
+    def testDownloadGithub_major(self, tmpdir):
+        with tmpdir.as_cwd():
+            self.download(
+                '--release', '5',
+                '--github', 'ome/omero-insight',
+                '--sym', 'auto')
+        files = tmpdir.listdir()
+        assert len(files) > 0
+        print([f.basename for f in files])
+
+    def testDownloadGithub_major_minor(self, tmpdir):
+        with tmpdir.as_cwd():
+            self.download(
+                '--release', '5.7',
+                '--github', 'ome/omero-insight',
+                '--sym', 'auto')
+        files = tmpdir.listdir()
+        assert len(files) > 0
+        print([f.basename for f in files])
