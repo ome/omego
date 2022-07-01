@@ -28,6 +28,9 @@ try:
 except ImportError:
     from elementtree.ElementTree import XML
 
+from distutils.version import LooseVersion
+import requests
+
 standard_library.install_aliases()  # noqa
 log = logging.getLogger("omego.artifacts")
 
@@ -484,10 +487,13 @@ class GithubArtifacts(ArtifactsList):
     def __init__(self, args):
         super(GithubArtifacts, self).__init__()
         self.args = args
-
+        tag = None
         if re.match(r'[0-9]+\.[0-9]+\.[0-9]+', args.branch):
-            dl_url = 'https://api.github.com/repos/%s/releases/tags/v%s' % (
-                args.github, args.branch)
+            tag = args.branch
+        elif re.match(r'[0-9]+\.[0-9]+', args.branch):
+            tag = self.retrieve_tag(args.github, args.branch, major_only=False)
+        elif re.match(r'[0-9]+', args.branch):
+            tag = self.retrieve_tag(args.github, args.branch)
         else:
             raise ArtifactException(
                 'Only GitHub tags are supported', args.branch)
@@ -496,11 +502,41 @@ class GithubArtifacts(ArtifactsList):
             raise ArtifactException(
                 'Ice argument not supported for GitHub releases', args.ice)
 
+        if tag is None:
+            raise ArtifactException(
+                'No tag matching the specified value found. \
+                 Please check the GitHub releases page.', args.branch)
+
+        dl_url = 'https://api.github.com/repos/%s/releases/tags/v%s' % (
+                args.github, tag)
         artifacturls = self.read_downloads(dl_url)
         if len(artifacturls) <= 0:
             raise AttributeError(
                 "No artifacts, please check the GitHub releases page.")
         self.find_artifacts(artifacturls)
+
+    @staticmethod
+    def retrieve_tag(github_repo, value, major_only=True):
+        '''
+        First find all the tags associated to a release.
+        Find the tag corresponding to the specified value
+        either major or major.minor
+        '''
+        url = 'https://api.github.com/repos/%s/releases' % github_repo
+        json = requests.get(url).json()
+        tags = []
+        for i in range(len(json)):
+            tags.append(json[i]['tag_name'].replace("v", ""))
+
+        sorted(tags, key=LooseVersion)
+        for tag in tags:
+            major, minor, patch = re.search(r'(\d+)\.(\d+)\.(\d+)', str(tag)).groups() # noqa
+            if major_only:
+                if value == major:
+                    return tag
+            else:
+                if value == major + "." + minor:
+                    return tag
 
     @staticmethod
     def read_downloads(dlurl):
