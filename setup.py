@@ -121,7 +121,8 @@ setup(name='omego',
       # Skipping argparse for Python 2.7 and greater.
       install_requires=[
           'future',
-          'yaclifw>=0.1.1'
+          'yaclifw>=0.1.1',
+          'requests'
       ],
 
       # Using global variables
