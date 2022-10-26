@@ -56,7 +56,7 @@ jobs:
         id: toxtarget
         run: |
           py=$(echo ${{ matrix.python-version }} | tr -d .)
-          echo "::set-output name=py::$py"
+          echo "py=$py" >> $GITHUB_OUTPUT
       - name: Check Ice version
         run: python -c 'import Ice; print(Ice.stringVersion())'
       - name: Run tests
