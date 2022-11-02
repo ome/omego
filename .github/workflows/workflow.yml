@@ -43,7 +43,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install flake8 tox wheel pytest
-          pip install omero-server[default]
+          pip install omero-server
       - name: Run flake8
         run: flake8 .
       - name: Set up OMERO config
