@@ -17,7 +17,7 @@ omego -h
 #Tests rely on a non-zero error code being returned on failure
 if [ $TEST = install ]; then
   export OMERODIR='./OMERO.server-5.6.4-ice36-b232'
-  omego install --initdb --dbhost localhost --dbname omero --prestartfile $HOME/config.omero -v --release 5.6.4 --ice 3.6 --no-web --no-start
+  omego install --github ome/openmicroscopy --initdb --dbhost localhost --dbname omero --prestartfile $HOME/config.omero -v --release 5.6.4 --no-web --no-start
 
   ls OMERO.server
   # Should return 0 DB_UPTODATE
@@ -34,7 +34,7 @@ fi
 
 #Test a multistage DB upgrade (5.3 -> 5.4) as part of the server upgrade
 if [ $TEST = upgrade ]; then
-  omego download --release 5.3 --ice 3.6 server
+  omego download --github ome/openmicroscopy --release 5.3.5 server
   ln -s OMERO.server-5.3.5-ice36-b73 OMERO.server;
 
   # Should return 3 DB_INIT_NEEDED
@@ -50,7 +50,7 @@ if [ $TEST = upgrade ]; then
   # Should return 0 DB_UPTODATE
   omego db upgrade -n --serverdir OMERO.server
 
-  omego download --release 5.5 --ice 3.6 server --sym download-server-50
+  omego download --github ome/openmicroscopy --release 5.5.1 server --sym download-server-50
   # Should return 2 DB_UPGRADE_NEEDED
   RC=0;
   omego db upgrade -n --dbname omero --serverdir download-server-50 || RC=$?

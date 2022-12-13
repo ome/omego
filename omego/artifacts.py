@@ -8,6 +8,7 @@ from future import standard_library
 from builtins import str
 from past.builtins import basestring
 from builtins import object
+import json
 import os
 import logging
 
@@ -26,6 +27,9 @@ try:
     from xml.etree.ElementTree import XML
 except ImportError:
     from elementtree.ElementTree import XML
+
+from distutils.version import LooseVersion
+import requests
 
 standard_library.install_aliases()  # noqa
 log = logging.getLogger("omego.artifacts")
@@ -52,7 +56,9 @@ class Artifacts(object):
             args.ci = 'https://latest-ci.openmicroscopy.org/jenkins'
         if not args.branch:
             args.branch = 'latest'
-        if args.build or re.match(r'[A-Za-z]\w+-\w+', args.branch):
+        if args.github:
+            self.artifacts = GithubArtifacts(args)
+        elif args.build or re.match(r'[A-Za-z]\w+-\w+', args.branch):
             self.artifacts = JenkinsArtifacts(args)
         elif re.match('[0-9]+|latest$', args.branch):
             self.artifacts = ReleaseArtifacts(args)
@@ -471,6 +477,89 @@ class ReleaseArtifacts(ArtifactsList):
                 pass
 
         return dl_icever
+
+
+class GithubArtifacts(ArtifactsList):
+    """
+    Fetch artifacts from GitHub releases
+    """
+
+    def __init__(self, args):
+        super(GithubArtifacts, self).__init__()
+        self.args = args
+        tag = None
+        if re.match(r'[0-9]+\.[0-9]+\.[0-9]+', args.branch):
+            tag = args.branch
+        elif re.match(r'[0-9]+\.[0-9]+', args.branch):
+            tag = self.retrieve_tag(args.github, args.branch, major_only=False)
+        elif re.match(r'[0-9]+', args.branch):
+            tag = self.retrieve_tag(args.github, args.branch)
+        else:
+            raise ArtifactException(
+                'Only GitHub tags are supported', args.branch)
+
+        if args.ice:
+            raise ArtifactException(
+                'Ice argument not supported for GitHub releases', args.ice)
+
+        if tag is None:
+            raise ArtifactException(
+                'No tag matching the specified value found. \
+                 Please check the GitHub releases page.', args.branch)
+
+        dl_url = 'https://api.github.com/repos/%s/releases/tags/v%s' % (
+                args.github, tag)
+        artifacturls = self.read_downloads(dl_url)
+        if len(artifacturls) <= 0:
+            raise AttributeError(
+                "No artifacts, please check the GitHub releases page.")
+        self.find_artifacts(artifacturls)
+
+    @staticmethod
+    def retrieve_tag(github_repo, value, major_only=True):
+        '''
+        First find all the tags associated to a release.
+        Find the tag corresponding to the specified value
+        either major or major.minor
+        '''
+        url = 'https://api.github.com/repos/%s/releases' % github_repo
+        json = requests.get(url).json()
+        tags = []
+        for i in range(len(json)):
+            tags.append(json[i]['tag_name'].replace("v", ""))
+
+        sorted(tags, key=LooseVersion)
+        for tag in tags:
+            major, minor, patch = re.search(r'(\d+)\.(\d+)\.(\d+)', str(tag)).groups() # noqa
+            if major_only:
+                if value == major:
+                    return tag
+            else:
+                if value == major + "." + minor:
+                    return tag
+
+    @staticmethod
+    def read_downloads(dlurl):
+        url = None
+        d = None
+        try:
+            url = fileutils.open_url(dlurl)
+            log.debug('Fetching html from %s code:%d', url.url, url.code)
+            if url.code != 200:
+                log.error('Failed to get HTML from %s (code %d)',
+                          url.url, url.code)
+                raise Stop(
+                    20, 'Downloads page failed, is the version correct?')
+
+            d = json.load(url)
+        except HTTPError as e:
+            log.error('Failed to get HTML from %s (%s)', dlurl, e)
+            raise Stop(20, 'Downloads page failed, is the version correct?')
+        finally:
+            if url:
+                url.close()
+
+        return [a['browser_download_url'] for a in d['assets']]
 
 
 class DownloadCommand(Command):

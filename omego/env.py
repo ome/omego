@@ -131,6 +131,11 @@ class JenkinsParser(argparse.ArgumentParser):
             " DOWNLOADURL/omero/<version>/artifacts. Default: "
             "http://downloads.openmicroscopy.org")
 
+        Add(group, "github", "",
+            help="GitHub repository containing release artifacts in form "
+            "'org/repository', if set this will override all other artifact "
+            "sources, default disabled")
+
         Add(group, "ice",
             "", help="Ice version, default is the latest (release only)")
 

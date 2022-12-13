@@ -25,7 +25,7 @@ from builtins import object
 import pytest  # noqa
 
 from yaclifw.framework import main
-from omego.artifacts import DownloadCommand
+from omego.artifacts import ArtifactException, DownloadCommand
 
 
 class Downloader(object):
@@ -136,3 +136,60 @@ class TestDownloadBioFormats(Downloader):
             assert len(files) == 1
             assert files[0].basename.endswith(".jar")
             assert files[0].basename.startswith('formats-api')
+
+
+class TestDownloadGithub(Downloader):
+
+    def setup_class(self):
+        self.artifact = 'insight'
+
+    def testDownloadGithub(self, tmpdir):
+        with tmpdir.as_cwd():
+            self.download(
+                '--release', '5.5.8',
+                '--github', 'ome/omero-insight',
+                '--sym', 'auto')
+        files = tmpdir.listdir()
+        assert len(files) == 3
+        print([f.basename for f in files])
+        assert sorted(f.basename for f in files) == [
+            'OMERO.insight',
+            'OMERO.insight-5.5.8',
+            'OMERO.insight-5.5.8.zip',
+        ]
+
+    def testDownloadGithub_major(self, tmpdir):
+        with tmpdir.as_cwd():
+            self.download(
+                '--release', '5',
+                '--github', 'ome/omero-insight',
+                '--sym', 'auto')
+        files = tmpdir.listdir()
+        assert len(files) > 0
+        print([f.basename for f in files])
+
+    def testDownloadGithub_major_minor(self, tmpdir):
+        with tmpdir.as_cwd():
+            self.download(
+                '--release', '5.7',
+                '--github', 'ome/omero-insight',
+                '--sym', 'auto')
+        files = tmpdir.listdir()
+        assert len(files) > 0
+        print([f.basename for f in files])
+
+    def testDownloadGithub_major_invalid(self):
+        with pytest.raises(ArtifactException) as exc:
+            self.download(
+                '--release', '100',
+                '--github', 'ome/omero-insight',
+                '--sym', 'auto')
+        assert 'No tag' in exc.value.args[0]
+
+    def testDownloadGithub_major_minor_invalid(self):
+        with pytest.raises(ArtifactException) as exc:
+            self.download(
+                '--release', '100.1',
+                '--github', 'ome/omero-insight',
+                '--sym', 'auto')
+        assert 'No tag' in exc.value.args[0]
