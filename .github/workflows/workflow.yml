@@ -15,15 +15,15 @@ jobs:
       fail-fast: false
       matrix:
         python-version:
-          - '3.8'
+          - '3.10'
         os:
-          - ubuntu-20.04
+          - ubuntu-22.04
         commands:
           - 'install'
     runs-on: ${{ matrix.os }}
     services:
       postgres:
-        image: postgres:11
+        image: postgres:16
         env:
           POSTGRES_DB: omero
           POSTGRES_PASSWORD: omero
@@ -37,9 +37,9 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Install Ice Java and Python binding
-        uses: ome/action-ice@v1
+        uses: ome/action-ice@v4
       - name: Install Python dependencies
         run: |
           pip install flake8 tox wheel pytest

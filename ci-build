@@ -4,6 +4,12 @@ set -e
 set -u
 set -x
 
+python --version
+pip install setuptools==v71.1.0
+sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee /etc/apt/trusted.gpg.d/pgdg.asc &>/dev/null
+sudo apt update
+sudo apt install postgresql
 python setup.py test -t test/unit -v
 python setup.py test -t test/integration -v -m "not slowtest"
 python setup.py sdist install
@@ -29,7 +35,7 @@ if [ $TEST = install ]; then
   # Check db dump file
   omego db dump --serverdir OMERO.server --dumpfile omero.pgdump
   
-  pg_restore -l omero.pgdump | grep 'dbpatch_versions_trigger'
+  pg_restore --host=localhost -l omero.pgdump | grep 'dbpatch_versions_trigger'
 fi
 
 #Test a multistage DB upgrade (5.3 -> 5.4) as part of the server upgrade
