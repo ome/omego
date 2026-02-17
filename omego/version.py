@@ -22,7 +22,7 @@
 
 from __future__ import print_function
 import yaclifw.version
-from pkg_resources import resource_string
+import os
 
 
 class Version(yaclifw.version.Version):
@@ -32,4 +32,10 @@ class Version(yaclifw.version.Version):
 
     def __call__(self, args):
         super(yaclifw.version.Version, self).__call__(args)
-        print(resource_string(__name__, 'RELEASE-VERSION').rstrip())
+
+        # print version from RELEASE-VERSION file
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(base_dir, 'RELEASE-VERSION')
+        with open(file_path, 'r') as f:
+            data = f.read()
+            print(data)
