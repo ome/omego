@@ -32,5 +32,6 @@ class Version(yaclifw.version.Version):
 
     def __call__(self, args):
         super(yaclifw.version.Version, self).__call__(args)
-        data = importlib.resources.files(__name__).joinpath('RELEASE-VERSION').read_bytes()
+        data = importlib.resources.files(__name__).joinpath(
+            'RELEASE-VERSION').read_bytes()
         print(data.rstrip())
