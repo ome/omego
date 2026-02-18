@@ -1,7 +1,7 @@
 OME, Go (omego)
 ===============
 
-.. image:: https://github.com/ome/omego/actions/workflows/OMERO/badge.svg
+.. image:: https://github.com/ome/omego/workflows/OMERO/badge.svg
    :target: https://github.com/ome/omego/actions
 
 .. image:: https://badge.fury.io/py/omego.svg
