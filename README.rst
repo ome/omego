@@ -42,6 +42,6 @@ omego is released under the GPL.
 Copyright
 ---------
 
-2013-2016, The Open Microscopy Environment
+2013-2026, The Open Microscopy Environment
 
 .. _argparse: http://pypi.python.org/pypi/argparse
