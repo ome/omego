@@ -1,7 +1,7 @@
 # Builds and performs various check
 
 ---
-name: Build
+name: OMERO
 
 on: 
   push:

@@ -1,6 +1,11 @@
 OMEGO version history
 =====================
 
+0.8.0.rc1 (February 2026)
+-------------------------
+
+* Fix build & remove pkg_resources (#137)
+
 0.7.0 (November 2019)
 ---------------------
 
