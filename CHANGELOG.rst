@@ -1,6 +1,12 @@
 OMEGO version history
 =====================
 
+0.8.0 (February 2026)
+---------------------
+
+* Release of 0.8.0.rc1 - adjust release framework (#138)
+* Adjust LICENSE (#139)
+
 0.8.0.rc1 (February 2026)
 -------------------------
 
