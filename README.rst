@@ -1,7 +1,7 @@
 OME, Go (omego)
 ===============
 
-.. image:: https://github.com/ome/omego/actions/workflows/workflow.yml/badge.svg
+.. image:: https://github.com/ome/omego/workflows/OMERO/badge.svg
    :target: https://github.com/ome/omego/actions
 
 .. image:: https://badge.fury.io/py/omego.svg
@@ -11,18 +11,6 @@ The omego command provides utilities for installing and managing OME application
 
 Getting Started
 ---------------
-
-For Python 2.6, you will need to install `argparse`_
-
-::
-
-    $ pip install argparse
-
-With that, it's possible to execute omego:
-
-::
-
-    $ python omego/main.py
 
 Pip installation
 -----------------
@@ -43,5 +31,3 @@ Copyright
 ---------
 
 2013-2026, The Open Microscopy Environment
-
-.. _argparse: http://pypi.python.org/pypi/argparse

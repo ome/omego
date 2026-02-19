@@ -22,8 +22,8 @@ omego -h
 #Install a new server without web
 #Tests rely on a non-zero error code being returned on failure
 if [ $TEST = install ]; then
-  export OMERODIR='./OMERO.server-5.6.4-ice36-b232'
-  omego install --initdb --dbhost localhost --dbname omero --prestartfile $HOME/config.omero -v --release 5.6.4 --ice 3.6 --no-web --no-start
+  export OMERODIR='./OMERO.server-5.6.17-ice36'
+  omego install --initdb --dbhost localhost --dbname omero --prestartfile $HOME/config.omero -v --release 5.6.17 --ice 3.6 --no-web --no-start
 
   ls OMERO.server
   # Should return 0 DB_UPTODATE
